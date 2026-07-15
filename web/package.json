@@ -1,0 +1,26 @@
+{
+  "name": "corkboard-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@11.13.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "types": "openapi-typescript http://localhost:8080/api/v1/openapi.json -o src/api/types.gen.ts"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "openapi-typescript": "^7.8.0",
+    "typescript": "~5.8.3",
+    "vite": "^7.0.0"
+  }
+}

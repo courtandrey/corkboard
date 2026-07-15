@@ -1,0 +1,20 @@
+# env
+.env
+
+# server (Gradle / Kotlin)
+server/.gradle/
+server/build/
+server/out/
+server/generated/
+*/generated/
+
+# web (pnpm / Vite)
+node_modules/
+web/node_modules/
+web/dist/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+web/.pnpm-store/
