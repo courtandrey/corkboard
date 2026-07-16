@@ -48,6 +48,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
     implementation("org.springframework.boot:spring-boot-starter-jooq")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+    implementation("org.bouncycastle:bcprov-jdk18on:1.80")
+    implementation("com.bucket4j:bucket4j-core:8.10.1")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.flywaydb:flyway-database-postgresql")
@@ -101,7 +105,6 @@ tasks.register("jooqCodegen") {
                             .withDatabase(
                                 Database()
                                     .withInputSchema("public")
-                                    // Keep the PostGIS/Flyway installation out of the generated schema.
                                     .withExcludes("spatial_ref_sys|geometry_columns|geography_columns|flyway_schema_history")
                                     .withIncludeRoutines(false)
                                     .withIncludeUDTs(false)

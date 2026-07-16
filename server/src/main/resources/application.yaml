@@ -22,4 +22,11 @@ server:
 corkboard:
   web-origin: ${WEB_ORIGIN:http://localhost:5173}
   report-auto-hide-threshold: ${REPORT_AUTO_HIDE_THRESHOLD:5}
+  cookie-secure: ${COOKIE_SECURE:false}
+  session-ttl-days: ${SESSION_TTL_DAYS:30}
   google-client-id: ${GOOGLE_CLIENT_ID:}
+  google-client-secret: ${GOOGLE_CLIENT_SECRET:}
+  google-callback-url: ${GOOGLE_CALLBACK_URL:http://localhost:8080/api/v1/auth/google/callback}
+  auth-rate:
+    per-ip: 5
+    per-email: 5

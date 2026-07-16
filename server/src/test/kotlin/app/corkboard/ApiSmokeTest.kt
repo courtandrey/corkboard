@@ -5,37 +5,15 @@ import org.assertj.core.api.Assertions.assertThat
 import org.jooq.DSLContext
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.client.TestRestTemplate
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection
-import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
-import org.testcontainers.utility.DockerImageName
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Testcontainers
-class ApiSmokeTest {
-
-    companion object {
-        @Container
-        @ServiceConnection
-        @JvmStatic
-        val db = PostgreSQLContainer(
-            DockerImageName.parse("postgis/postgis:16-3.4-alpine")
-                .asCompatibleSubstituteFor("postgres")
-        )
-    }
-
-    @Autowired
-    lateinit var rest: TestRestTemplate
+class ApiSmokeTest : ApiTestBase() {
 
     @Autowired
     lateinit var dsl: DSLContext
 
     @Test
     fun `jooq generated schema queries the migrated database`() {
-        assertThat(dsl.fetchCount(USERS)).isEqualTo(0)
+        assertThat(dsl.selectCount().from(USERS).fetchOne(0, Int::class.java)).isNotNull
     }
 
     @Test

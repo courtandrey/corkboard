@@ -3,6 +3,7 @@
 
 # server (Gradle / Kotlin)
 server/.gradle/
+server/.kotlin/
 server/build/
 server/out/
 server/generated/

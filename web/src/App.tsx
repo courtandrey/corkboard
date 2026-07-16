@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "./api/client";
 import type { MetaResponse } from "./api/client";
+import { AuthPanel } from "./features/auth/AuthPanel";
 import { strings } from "./i18n/strings";
 
 export function App() {
@@ -20,13 +21,16 @@ export function App() {
       {error && <p>{strings.apiUnreachable(error)}</p>}
       {!meta && !error && <p>{strings.loading}</p>}
       {meta && (
-        <ul>
-          {meta.types.map((t) => (
-            <li key={t.key} style={{ color: t.color }}>
-              {t.label}
-            </li>
-          ))}
-        </ul>
+        <>
+          <AuthPanel googleAuth={meta.googleAuth} />
+          <ul>
+            {meta.types.map((t) => (
+              <li key={t.key} style={{ color: t.color }}>
+                {t.label}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </main>
   );
