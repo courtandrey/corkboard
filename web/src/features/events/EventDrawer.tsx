@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useEventDetail, useMe, useMeta } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
+import { ApplyBox } from "./ApplyBox";
 import { EventActions } from "./EventActions";
 
 function Linkified({ text }: { text: string }) {
@@ -67,6 +68,7 @@ export function EventDrawer() {
             {strings.event.postedBy(event.author.displayName)}{" "}
             {strings.event.memberSince(String(new Date(event.author.memberSince).getFullYear()))}
           </div>
+          {me && <ApplyBox event={event} />}
           {me && <EventActions event={event} />}
         </>
       )}

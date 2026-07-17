@@ -305,8 +305,149 @@ button.tag-chip.active {
   padding: 10px 12px;
 }
 
+.drawer.wide {
+  width: 720px;
+}
+
+.badge {
+  display: inline-block;
+  background: var(--stamp-red);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 10px;
+  padding: 0 5px;
+  margin-left: 4px;
+  vertical-align: top;
+}
+
+.bell-wrap {
+  position: relative;
+}
+
+.bell-panel {
+  position: absolute;
+  right: 0;
+  top: 34px;
+  width: 300px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--paper);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-paper);
+  padding: 10px;
+  z-index: 20;
+  color: var(--ink);
+}
+
+.bell-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--paper-edge);
+  padding: 6px 2px;
+  text-shadow: none;
+  cursor: pointer;
+}
+
+.bell-item.unread {
+  background: var(--sticky);
+}
+
+.messages-panes {
+  display: flex;
+  gap: 12px;
+  height: calc(100% - 80px);
+  min-height: 300px;
+}
+
+.conv-list {
+  width: 240px;
+  flex: 0 0 240px;
+  overflow-y: auto;
+  border-right: 1px solid var(--paper-edge);
+  padding-right: 8px;
+}
+
+.conv-row {
+  display: block;
+  padding: 8px 6px;
+  border-radius: var(--radius);
+  color: var(--ink);
+}
+
+.conv-row:hover {
+  background: var(--fb-blue-pale);
+  text-decoration: none;
+}
+
+.conv-row.active {
+  background: var(--fb-blue-pale);
+}
+
+.conv-snippet {
+  font-size: 11px;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thread {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.thread-header {
+  border-bottom: 1px solid var(--paper-edge);
+  padding-bottom: 6px;
+}
+
+.thread-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bubble {
+  max-width: 75%;
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid var(--fb-border);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.bubble.mine {
+  align-self: flex-end;
+  background: var(--fb-blue-pale);
+}
+
+.thread-input {
+  display: flex;
+  gap: 6px;
+  padding-top: 8px;
+}
+
+.thread-input input {
+  flex: 1;
+}
+
 @media (max-width: 768px) {
   .sidebar {
     display: none;
+  }
+
+  .drawer.wide {
+    width: 100%;
   }
 }

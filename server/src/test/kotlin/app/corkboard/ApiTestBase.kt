@@ -21,7 +21,6 @@ data class TestUser(val id: UUID, val email: String, val headers: HttpHeaders)
 abstract class ApiTestBase {
 
     companion object {
-        // Singleton container shared by every test class; Ryuk reaps it on JVM exit.
         @ServiceConnection
         @JvmStatic
         val db: PostgreSQLContainer<*> = PostgreSQLContainer(
@@ -50,6 +49,30 @@ abstract class ApiTestBase {
         headers.contentType = MediaType.APPLICATION_JSON
         val payload = body?.let { mapper.writeValueAsString(it) }
         return rest.exchange(path, method, HttpEntity(payload, headers), String::class.java)
+    }
+
+    protected fun createEvent(
+        user: TestUser,
+        lng: Double,
+        lat: Double,
+        type: String = "help",
+        title: String = "Helper-made note",
+        applyable: Boolean = true,
+    ): String {
+        val res = sendJson(
+            HttpMethod.POST, "/api/v1/events",
+            mapOf(
+                "type" to type,
+                "title" to title,
+                "body" to "Body of $title.",
+                "location" to mapOf("lng" to lng, "lat" to lat),
+                "applyable" to applyable,
+                "expiresAt" to java.time.Instant.now().plus(20, java.time.temporal.ChronoUnit.DAYS).toString(),
+            ),
+            user.headers,
+        )
+        check(res.statusCode.value() == 201) { "createEvent failed: ${res.body}" }
+        return json(res)["id"].asText()
     }
 
     protected fun registerUser(displayName: String = "Resident"): TestUser {

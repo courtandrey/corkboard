@@ -3,16 +3,13 @@ package app.corkboard.moderation
 import app.corkboard.common.ApiException
 import app.corkboard.common.ProblemCode
 import app.corkboard.jooq.enums.EventStatus as DbEventStatus
-import app.corkboard.jooq.enums.NotificationKind
 import app.corkboard.jooq.enums.ReportReason as DbReportReason
 import app.corkboard.jooq.tables.references.EVENTS
-import app.corkboard.jooq.tables.references.NOTIFICATIONS
 import app.corkboard.jooq.tables.references.REPORTS
-import com.fasterxml.jackson.databind.ObjectMapper
+import app.corkboard.notifications.NotificationKind
+import app.corkboard.notifications.NotificationService
 import java.util.UUID
 import org.jooq.DSLContext
-import org.jooq.JSONB
-import org.jooq.impl.DSL
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -20,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class ReportService(
     private val dsl: DSLContext,
-    private val objectMapper: ObjectMapper,
+    private val notifications: NotificationService,
 ) {
 
     @Transactional
@@ -43,27 +40,14 @@ class ReportService(
 
         val status = dsl.select(EVENTS.STATUS).from(EVENTS)
             .where(EVENTS.ID.eq(eventId)).fetchOne(EVENTS.STATUS)
-        if (status == DbEventStatus.under_review) {
-            notifyAuthorOnce(eventId, authorId, event[EVENTS.TITLE]!!)
-        }
-    }
-
-    private fun notifyAuthorOnce(eventId: UUID, authorId: UUID, title: String) {
-        val alreadyNotified = dsl.fetchExists(
-            DSL.selectOne().from(NOTIFICATIONS).where(
-                NOTIFICATIONS.USER_ID.eq(authorId),
-                NOTIFICATIONS.KIND.eq(NotificationKind.event_under_review),
-                DSL.condition("{0}->>'eventId' = {1}", NOTIFICATIONS.PAYLOAD, DSL.`val`(eventId.toString())),
+        if (status == DbEventStatus.under_review &&
+            !notifications.existsForEvent(authorId, NotificationKind.EVENT_UNDER_REVIEW, eventId)
+        ) {
+            notifications.create(
+                authorId,
+                NotificationKind.EVENT_UNDER_REVIEW,
+                mapOf("eventId" to eventId.toString(), "eventTitle" to event[EVENTS.TITLE]),
             )
-        )
-        if (alreadyNotified) return
-        val payload = objectMapper.writeValueAsString(
-            mapOf("eventId" to eventId.toString(), "eventTitle" to title)
-        )
-        dsl.insertInto(NOTIFICATIONS)
-            .set(NOTIFICATIONS.USER_ID, authorId)
-            .set(NOTIFICATIONS.KIND, NotificationKind.event_under_review)
-            .set(NOTIFICATIONS.PAYLOAD, JSONB.valueOf(payload))
-            .execute()
+        }
     }
 }

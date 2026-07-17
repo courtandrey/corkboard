@@ -1,6 +1,15 @@
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, query } from "./client";
-import type { AuthResponse, EventDetail, MetaResponse, TagListResponse, ViewportResponse } from "./client";
+import type {
+  AuthResponse,
+  ConversationListResponse,
+  EventDetail,
+  MessageListResponse,
+  MetaResponse,
+  NotificationListResponse,
+  TagListResponse,
+  ViewportResponse,
+} from "./client";
 import type { Filters, Viewport } from "../stores/boardStore";
 
 export function useMeta() {
@@ -53,6 +62,30 @@ export function useViewportEvents(viewport: Viewport | null, filters: Filters) {
           q: filters.q,
         })}`,
       ),
+  });
+}
+
+export function useNotifications(enabled: boolean) {
+  return useQuery({
+    queryKey: ["notifications"],
+    enabled,
+    queryFn: () => api.get<NotificationListResponse>("/api/v1/notifications"),
+  });
+}
+
+export function useConversations(enabled: boolean) {
+  return useQuery({
+    queryKey: ["conversations"],
+    enabled,
+    queryFn: () => api.get<ConversationListResponse>("/api/v1/conversations"),
+  });
+}
+
+export function useMessages(conversationId: string | undefined) {
+  return useQuery({
+    queryKey: ["messages", conversationId],
+    enabled: !!conversationId,
+    queryFn: () => api.get<MessageListResponse>(`/api/v1/conversations/${conversationId}/messages`),
   });
 }
 

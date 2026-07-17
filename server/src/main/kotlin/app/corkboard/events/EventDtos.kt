@@ -82,6 +82,12 @@ data class TagRef(
     val slug: String,
 )
 
+data class EventSnippet(
+    val id: UUID,
+    val title: String,
+    val status: EventStatus,
+)
+
 data class AuthorCard(
     val displayName: String,
     val avatarSeed: String,

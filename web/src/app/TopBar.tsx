@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { useMe } from "../api/hooks";
+import { NotificationsBell } from "../features/notifications/NotificationsBell";
 import { strings } from "../i18n/strings";
 import { useBoardStore } from "../stores/boardStore";
 
@@ -42,6 +43,8 @@ export function TopBar() {
       <span className="spacer" />
       {me ? (
         <>
+          <Link to="/messages">{strings.messagesUi.title}</Link>
+          <NotificationsBell />
           <span>{strings.auth.signedInAs(me.displayName)}</span>
           <button type="button" onClick={signOut}>
             {strings.auth.signOut}

@@ -30,6 +30,13 @@ class Spec10AnonymousAccessTest : ApiTestBase() {
             HttpMethod.POST to "/api/v1/events/00000000-0000-0000-0000-000000000000/hide",
             HttpMethod.DELETE to "/api/v1/events/00000000-0000-0000-0000-000000000000/hide",
             HttpMethod.POST to "/api/v1/events/00000000-0000-0000-0000-000000000000/report",
+            HttpMethod.POST to "/api/v1/events/00000000-0000-0000-0000-000000000000/apply",
+            HttpMethod.GET to "/api/v1/me/applications?role=sent",
+            HttpMethod.GET to "/api/v1/conversations",
+            HttpMethod.GET to "/api/v1/conversations/00000000-0000-0000-0000-000000000000/messages",
+            HttpMethod.POST to "/api/v1/conversations/00000000-0000-0000-0000-000000000000/read",
+            HttpMethod.GET to "/api/v1/notifications",
+            HttpMethod.POST to "/api/v1/notifications/read",
         )
         for ((method, path) in routes) {
             val res = rest.exchange(path, method, HttpEntity.EMPTY, String::class.java)
