@@ -6,6 +6,8 @@ import type {
   EventDetail,
   MessageListResponse,
   MetaResponse,
+  MyApplicationsResponse,
+  MyEventsResponse,
   NotificationListResponse,
   TagListResponse,
   ViewportResponse,
@@ -86,6 +88,22 @@ export function useMessages(conversationId: string | undefined) {
     queryKey: ["messages", conversationId],
     enabled: !!conversationId,
     queryFn: () => api.get<MessageListResponse>(`/api/v1/conversations/${conversationId}/messages`),
+  });
+}
+
+export function useMyEvents(enabled: boolean) {
+  return useQuery({
+    queryKey: ["myEvents"],
+    enabled,
+    queryFn: () => api.get<MyEventsResponse>("/api/v1/me/events"),
+  });
+}
+
+export function useReceivedApplications(enabled: boolean) {
+  return useQuery({
+    queryKey: ["myApplications", "received"],
+    enabled,
+    queryFn: () => api.get<MyApplicationsResponse>("/api/v1/me/applications?role=received"),
   });
 }
 

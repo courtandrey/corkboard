@@ -43,6 +43,7 @@ export function TopBar() {
       <span className="spacer" />
       {me ? (
         <>
+          <Link to="/me/pins">{strings.myPins.title}</Link>
           <Link to="/messages">{strings.messagesUi.title}</Link>
           <NotificationsBell />
           <span>{strings.auth.signedInAs(me.displayName)}</span>

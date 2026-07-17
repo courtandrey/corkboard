@@ -10,6 +10,7 @@ import java.util.UUID
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -67,6 +68,23 @@ class EventController(
         @Valid @RequestBody req: UpdateEventRequest,
         auth: SessionAuthentication,
     ): EventDetail = events.update(id, auth.user.userId, req)
+
+    @DeleteMapping("/{id}")
+    fun remove(@PathVariable id: UUID, auth: SessionAuthentication): ResponseEntity<Void> {
+        events.remove(id, auth.user.userId)
+        return ResponseEntity.noContent().build()
+    }
+
+    @PostMapping("/{id}/resolve")
+    fun resolve(@PathVariable id: UUID, auth: SessionAuthentication): EventDetail =
+        events.resolve(id, auth.user.userId)
+
+    @PostMapping("/{id}/renew")
+    fun renew(
+        @PathVariable id: UUID,
+        @Valid @RequestBody req: RenewRequest,
+        auth: SessionAuthentication,
+    ): EventDetail = events.renew(id, auth.user.userId, req.expiresAt)
 
     private fun viewerId(principal: Principal?): UUID? =
         (principal as? SessionAuthentication)?.user?.userId

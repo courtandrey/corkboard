@@ -101,6 +101,31 @@ data class ViewerState(
     val isAuthor: Boolean,
 )
 
+data class RenewRequest(
+    @field:Future
+    val expiresAt: Instant,
+)
+
+data class MyEventItem(
+    val id: UUID,
+    val type: EventType,
+    val status: EventStatus,
+    val title: String,
+    val location: LatLng,
+    val applyable: Boolean,
+    val score: Int,
+    val applicationCount: Int,
+    val expiresAt: Instant,
+    val resolvedAt: Instant?,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+)
+
+data class MyEventsResponse(
+    val items: List<MyEventItem>,
+    val nextCursor: String?,
+)
+
 data class EventDetail(
     val id: UUID,
     val type: EventType,

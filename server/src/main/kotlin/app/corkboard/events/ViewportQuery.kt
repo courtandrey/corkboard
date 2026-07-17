@@ -95,13 +95,19 @@ class ViewportQuery(
     }
 
     private fun conditions(p: Params, east: Double): Condition {
+        val now = OffsetDateTime.now(clock)
         var cond = DSL.condition(
             "{0} && ST_MakeEnvelope({1}, {2}, {3}, {4}, 4326)",
             EVENTS.LOCATION, DSL.`val`(p.bounds.west), DSL.`val`(p.bounds.south),
             DSL.`val`(east), DSL.`val`(p.bounds.north),
         )
-            .and(EVENTS.STATUS.eq(DbEventStatus.active))
-            .and(EVENTS.EXPIRES_AT.gt(OffsetDateTime.now(clock)))
+            .and(
+                EVENTS.STATUS.eq(DbEventStatus.active).and(EVENTS.EXPIRES_AT.gt(now))
+                    .or(
+                        EVENTS.STATUS.eq(DbEventStatus.resolved)
+                            .and(EVENTS.RESOLVED_AT.gt(now.minusHours(48)))
+                    )
+            )
 
         p.types?.takeIf { it.isNotEmpty() }?.let { types ->
             cond = cond.and(EVENTS.TYPE.`in`(types.map { DbEventType.valueOf(it.key) }))

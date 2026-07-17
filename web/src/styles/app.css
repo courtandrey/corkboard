@@ -356,6 +356,35 @@ button.tag-chip.active {
   background: var(--sticky);
 }
 
+.status-chip {
+  display: inline-block;
+  border: 2px double var(--stamp-red);
+  color: var(--stamp-red);
+  border-radius: var(--radius);
+  padding: 0 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  margin-left: 6px;
+}
+
+.pin-row {
+  border-top: 1px solid var(--paper-edge);
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pin-applications {
+  margin-left: 12px;
+  border-left: 2px solid var(--fb-blue-pale);
+  padding-left: 10px;
+}
+
+.pin-application {
+  padding: 6px 0;
+}
+
 .messages-panes {
   display: flex;
   gap: 12px;

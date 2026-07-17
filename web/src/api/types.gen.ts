@@ -52,6 +52,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resolve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{id}/report": {
         parameters: {
             query?: never;
@@ -62,6 +78,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["report"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{id}/renew": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["renew"];
         delete?: never;
         options?: never;
         head?: never;
@@ -206,7 +238,7 @@ export interface paths {
         get: operations["detail"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["remove"];
         options?: never;
         head?: never;
         patch: operations["update"];
@@ -276,6 +308,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_3"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/applications": {
         parameters: {
             query?: never;
@@ -315,7 +363,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -416,6 +464,10 @@ export interface components {
             /** @enum {string} */
             reason: "spam" | "offensive" | "scam" | "danger" | "other";
             detail?: string;
+        };
+        RenewRequest: {
+            /** Format: date-time */
+            expiresAt: string;
         };
         ApplyRequest: {
             message: string;
@@ -564,6 +616,33 @@ export interface components {
             label: string;
             color: string;
             applyableDefault: boolean;
+        };
+        MyEventItem: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            type: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice";
+            /** @enum {string} */
+            status: "active" | "resolved" | "expired" | "removed" | "under_review";
+            title: string;
+            location: components["schemas"]["LatLng"];
+            applyable: boolean;
+            /** Format: int32 */
+            score: number;
+            /** Format: int32 */
+            applicationCount: number;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            resolvedAt?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        MyEventsResponse: {
+            items: components["schemas"]["MyEventItem"][];
+            nextCursor?: string;
         };
         ApplicationGroup: {
             event: components["schemas"]["EventSnippet"];
@@ -745,6 +824,28 @@ export interface operations {
             };
         };
     };
+    resolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EventDetail"];
+                };
+            };
+        };
+    };
     report: {
         parameters: {
             query?: never;
@@ -766,6 +867,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    renew: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenewRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EventDetail"];
+                };
             };
         };
     };
@@ -1016,6 +1143,26 @@ export interface operations {
             };
         };
     };
+    remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     update: {
         parameters: {
             query?: never;
@@ -1134,6 +1281,30 @@ export interface operations {
             };
         };
     };
+    list_3: {
+        parameters: {
+            query?: {
+                status?: string;
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MyEventsResponse"];
+                };
+            };
+        };
+    };
     myApplications: {
         parameters: {
             query: {
@@ -1176,7 +1347,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query?: {
                 cursor?: string;

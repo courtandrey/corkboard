@@ -93,13 +93,7 @@ class EventService(
 
     @Transactional
     fun update(id: UUID, viewerId: UUID, req: UpdateEventRequest): EventDetail {
-        val event = fetchEvent(id)
-        if (event.status in HIDDEN_STATUSES && event.authorId != viewerId) {
-            throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
-        }
-        if (event.authorId != viewerId) {
-            throw ApiException(HttpStatus.FORBIDDEN, ProblemCode.FORBIDDEN)
-        }
+        val event = fetchAuthored(id, viewerId)
         if ((req.type != null || req.location != null) && event.applicationCount > 0) {
             throw ApiException(HttpStatus.CONFLICT, ProblemCode.EDIT_LOCKED)
         }
@@ -122,6 +116,94 @@ class EventService(
 
         req.tags?.let { tags.replaceEventTags(id, it) }
         return detail(id, viewerId)
+    }
+
+    @Transactional
+    fun resolve(id: UUID, viewerId: UUID): EventDetail {
+        val event = fetchAuthored(id, viewerId)
+        if (event.status != DbEventStatus.active) {
+            throw ApiException(HttpStatus.CONFLICT, ProblemCode.INVALID_STATUS)
+        }
+        dsl.update(EVENTS)
+            .set(EVENTS.STATUS, DbEventStatus.resolved)
+            .set(EVENTS.RESOLVED_AT, OffsetDateTime.now(clock))
+            .where(EVENTS.ID.eq(id))
+            .execute()
+        return detail(id, viewerId)
+    }
+
+    @Transactional
+    fun renew(id: UUID, viewerId: UUID, expiresAt: Instant): EventDetail {
+        val event = fetchAuthored(id, viewerId)
+        if (event.status != DbEventStatus.active && event.status != DbEventStatus.expired) {
+            throw ApiException(HttpStatus.CONFLICT, ProblemCode.INVALID_STATUS)
+        }
+        checkExpiry(expiresAt)
+        dsl.update(EVENTS)
+            .set(EVENTS.STATUS, DbEventStatus.active)
+            .set(EVENTS.EXPIRES_AT, expiresAt.atOffset(ZoneOffset.UTC))
+            .where(EVENTS.ID.eq(id))
+            .execute()
+        return detail(id, viewerId)
+    }
+
+    @Transactional
+    fun remove(id: UUID, viewerId: UUID) {
+        fetchAuthored(id, viewerId)
+        dsl.update(EVENTS)
+            .set(EVENTS.STATUS, DbEventStatus.removed)
+            .where(EVENTS.ID.eq(id))
+            .execute()
+    }
+
+    fun myEvents(userId: UUID, status: EventStatus?, cursor: String?, limit: Int): MyEventsResponse {
+        var cond = EVENTS.AUTHOR_ID.eq(userId)
+        status?.let { cond = cond.and(EVENTS.STATUS.eq(DbEventStatus.valueOf(it.key))) }
+        app.corkboard.common.Cursors.decode(cursor ?: "")?.let { (at, cursorId) ->
+            cond = cond.and(DSL.row(EVENTS.CREATED_AT, EVENTS.ID).lessThan(at, cursorId))
+        }
+        val rows = dsl.select(
+            EVENTS.ID, EVENTS.TYPE, EVENTS.STATUS, EVENTS.TITLE, LNG, LAT,
+            EVENTS.APPLYABLE, EVENTS.SCORE, EVENTS.APPLICATION_COUNT,
+            EVENTS.EXPIRES_AT, EVENTS.RESOLVED_AT, EVENTS.CREATED_AT, EVENTS.UPDATED_AT,
+        )
+            .from(EVENTS)
+            .where(cond)
+            .orderBy(EVENTS.CREATED_AT.desc(), EVENTS.ID.desc())
+            .limit(limit + 1)
+            .fetch()
+        val page = rows.take(limit)
+        val nextCursor = if (rows.size > limit) {
+            page.last().let { app.corkboard.common.Cursors.encode(it[EVENTS.CREATED_AT]!!, it[EVENTS.ID]!!) }
+        } else null
+        val items = page.map { r ->
+            MyEventItem(
+                id = r[EVENTS.ID]!!,
+                type = EventType.fromKey(r[EVENTS.TYPE]!!.literal)!!,
+                status = EventStatus.fromDb(r[EVENTS.STATUS]!!.literal),
+                title = r[EVENTS.TITLE]!!,
+                location = LatLng(r[LNG]!!, r[LAT]!!),
+                applyable = r[EVENTS.APPLYABLE]!!,
+                score = r[EVENTS.SCORE]!!,
+                applicationCount = r[EVENTS.APPLICATION_COUNT]!!,
+                expiresAt = r[EVENTS.EXPIRES_AT]!!.toInstant(),
+                resolvedAt = r[EVENTS.RESOLVED_AT]?.toInstant(),
+                createdAt = r[EVENTS.CREATED_AT]!!.toInstant(),
+                updatedAt = r[EVENTS.UPDATED_AT]!!.toInstant(),
+            )
+        }
+        return MyEventsResponse(items, nextCursor)
+    }
+
+    private fun fetchAuthored(id: UUID, viewerId: UUID): EventRow {
+        val event = fetchEvent(id)
+        if (event.status in HIDDEN_STATUSES && event.authorId != viewerId) {
+            throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
+        }
+        if (event.authorId != viewerId) {
+            throw ApiException(HttpStatus.FORBIDDEN, ProblemCode.FORBIDDEN)
+        }
+        return event
     }
 
     fun requireViewableAuthor(id: UUID, viewerId: UUID?): UUID {

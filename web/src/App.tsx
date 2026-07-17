@@ -8,6 +8,7 @@ import { EventDrawer } from "./features/events/EventDrawer";
 import { CreateEventFlow } from "./features/events/CreateEventFlow";
 import { AuthDrawer } from "./features/auth/AuthDrawer";
 import { MessagesDrawer } from "./features/messaging/MessagesDrawer";
+import { MyPins } from "./features/events/MyPins";
 import { useSocket } from "./features/realtime/useSocket";
 import { filtersToSearch, useBoardStore } from "./stores/boardStore";
 
@@ -31,6 +32,7 @@ export function App() {
           <Route path="/" element={null} />
           <Route path="/events/:id" element={<EventDrawer />} />
           <Route path="/new" element={<CreateEventFlow />} />
+          <Route path="/me/pins" element={<MyPins />} />
           <Route path="/messages" element={<MessagesDrawer />} />
           <Route path="/messages/:conversationId" element={<MessagesDrawer />} />
           <Route path="/login" element={<AuthDrawer />} />
