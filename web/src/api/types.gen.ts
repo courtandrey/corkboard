@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/api/v1/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list"];
+        put?: never;
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register": {
         parameters: {
             query?: never;
@@ -50,6 +66,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["update"];
         trace?: never;
     };
     "/api/v1/meta": {
@@ -104,6 +136,66 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        CreateEventRequest: {
+            /** @enum {string} */
+            type: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice";
+            title: string;
+            body: string;
+            location: components["schemas"]["LatLng"];
+            applyable: boolean;
+            /** Format: date-time */
+            expiresAt: string;
+            tags: string[];
+        };
+        LatLng: {
+            /** Format: double */
+            lng: number;
+            /** Format: double */
+            lat: number;
+        };
+        AuthorCard: {
+            displayName: string;
+            avatarSeed: string;
+            /** Format: date-time */
+            memberSince: string;
+        };
+        EventDetail: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            type: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice";
+            /** @enum {string} */
+            status: "active" | "resolved" | "expired" | "removed" | "under_review";
+            title: string;
+            body: string;
+            location: components["schemas"]["LatLng"];
+            applyable: boolean;
+            /** Format: int32 */
+            score: number;
+            /** Format: int32 */
+            applicationCount: number;
+            tags: components["schemas"]["TagRef"][];
+            author: components["schemas"]["AuthorCard"];
+            viewerState: components["schemas"]["ViewerState"];
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            resolvedAt?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        TagRef: {
+            name: string;
+            slug: string;
+        };
+        ViewerState: {
+            voted: boolean;
+            hidden: boolean;
+            applied: boolean;
+            isAuthor: boolean;
+        };
         RegisterRequest: {
             email: string;
             password: string;
@@ -129,6 +221,17 @@ export interface components {
             password: string;
             /** @enum {string} */
             transport?: "cookie" | "bearer";
+        };
+        UpdateEventRequest: {
+            /** @enum {string} */
+            type?: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice";
+            title?: string;
+            body?: string;
+            location?: components["schemas"]["LatLng"];
+            applyable?: boolean;
+            /** Format: date-time */
+            expiresAt?: string;
+            tags?: string[];
         };
         Limits: {
             /** Format: int32 */
@@ -178,6 +281,29 @@ export interface components {
         HealthResponse: {
             status: string;
         };
+        EventPin: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            type: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice";
+            title: string;
+            location: components["schemas"]["LatLng"];
+            applyable: boolean;
+            /** Format: int32 */
+            score: number;
+            /** Format: int32 */
+            applicationCount: number;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ViewportResponse: {
+            items: components["schemas"]["EventPin"][];
+            /** Format: int32 */
+            total: number;
+            truncated: boolean;
+        };
     };
     responses: never;
     parameters: never;
@@ -187,6 +313,58 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list: {
+        parameters: {
+            query: {
+                bbox: string;
+                zoom?: number;
+                types?: string;
+                tags?: string;
+                applyable?: boolean;
+                q?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ViewportResponse"];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEventRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EventDetail"];
+                };
+            };
+        };
+    };
     register: {
         parameters: {
             query?: never;
@@ -249,6 +427,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthResponse"];
+                };
+            };
+        };
+    };
+    detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EventDetail"];
+                };
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEventRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EventDetail"];
                 };
             };
         };

@@ -5,8 +5,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 
-// Spec §14.1 e2e #10: the anonymous access matrix — public reads stay readable,
-// every authenticated route answers 401 problem+json. Grows with each milestone.
 class Spec10AnonymousAccessTest : ApiTestBase() {
 
     @Test
@@ -14,6 +12,10 @@ class Spec10AnonymousAccessTest : ApiTestBase() {
         assertThat(rest.getForEntity("/api/v1/health", String::class.java).statusCode.value()).isEqualTo(200)
         assertThat(rest.getForEntity("/api/v1/meta", String::class.java).statusCode.value()).isEqualTo(200)
         assertThat(rest.getForEntity("/api/v1/openapi.json", String::class.java).statusCode.value()).isEqualTo(200)
+        assertThat(
+            rest.getForEntity("/api/v1/events?bbox=-74.1,40.6,-73.8,40.9&zoom=13", String::class.java)
+                .statusCode.value()
+        ).isEqualTo(200)
     }
 
     @Test
@@ -21,6 +23,8 @@ class Spec10AnonymousAccessTest : ApiTestBase() {
         val routes = listOf(
             HttpMethod.GET to "/api/v1/auth/me",
             HttpMethod.POST to "/api/v1/auth/logout",
+            HttpMethod.POST to "/api/v1/events",
+            HttpMethod.PATCH to "/api/v1/events/00000000-0000-0000-0000-000000000000",
         )
         for ((method, path) in routes) {
             val res = rest.exchange(path, method, HttpEntity.EMPTY, String::class.java)

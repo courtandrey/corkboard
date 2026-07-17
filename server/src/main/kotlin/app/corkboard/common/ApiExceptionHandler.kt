@@ -1,5 +1,6 @@
 package app.corkboard.common
 
+import jakarta.validation.ConstraintViolationException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
@@ -22,6 +23,17 @@ class ApiExceptionHandler(private val problems: Problems) {
             setProperty(
                 "fields",
                 e.bindingResult.fieldErrors.associate { it.field to (it.defaultMessage ?: "invalid") },
+            )
+        }
+
+    @ExceptionHandler(ConstraintViolationException::class)
+    fun invalidParams(e: ConstraintViolationException): ProblemDetail =
+        problems.detail(HttpStatus.UNPROCESSABLE_ENTITY, ProblemCode.VALIDATION_FAILED).apply {
+            setProperty(
+                "fields",
+                e.constraintViolations.associate {
+                    it.propertyPath.toString().substringAfterLast('.') to it.message
+                },
             )
         }
 

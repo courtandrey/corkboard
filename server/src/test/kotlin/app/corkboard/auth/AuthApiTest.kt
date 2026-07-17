@@ -1,12 +1,9 @@
 package app.corkboard.auth
 
 import app.corkboard.ApiTestBase
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
 import java.util.UUID
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
@@ -16,9 +13,6 @@ import org.springframework.test.context.TestPropertySource
 
 @TestPropertySource(properties = ["corkboard.auth-rate.per-ip=10000"])
 class AuthApiTest : ApiTestBase() {
-
-    @Autowired
-    lateinit var mapper: ObjectMapper
 
     private fun uniqueEmail() = "user-${UUID.randomUUID()}@example.com"
 
@@ -32,8 +26,6 @@ class AuthApiTest : ApiTestBase() {
 
     private fun get(path: String, headers: HttpHeaders = HttpHeaders()): ResponseEntity<String> =
         rest.exchange(path, HttpMethod.GET, HttpEntity<Void>(headers), String::class.java)
-
-    private fun json(res: ResponseEntity<String>): JsonNode = mapper.readTree(res.body)
 
     private fun sessionCookie(res: ResponseEntity<String>): String? =
         res.headers[HttpHeaders.SET_COOKIE]?.firstOrNull { it.startsWith("cb_session=") }

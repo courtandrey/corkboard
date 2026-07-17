@@ -6,6 +6,13 @@ export type AuthResponse = components["schemas"]["AuthResponse"];
 export type UserResponse = components["schemas"]["UserResponse"];
 export type RegisterRequest = components["schemas"]["RegisterRequest"];
 export type LoginRequest = components["schemas"]["LoginRequest"];
+export type TypeMeta = components["schemas"]["TypeMeta"];
+export type EventPin = components["schemas"]["EventPin"];
+export type EventDetail = components["schemas"]["EventDetail"];
+export type ViewportResponse = components["schemas"]["ViewportResponse"];
+export type CreateEventRequest = components["schemas"]["CreateEventRequest"];
+export type UpdateEventRequest = components["schemas"]["UpdateEventRequest"];
+export type LatLng = components["schemas"]["LatLng"];
 
 export class ApiError extends Error {
   constructor(
@@ -49,4 +56,15 @@ export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T = void>(path: string, body?: unknown) =>
     request<T>(path, { method: "POST", body: body ? JSON.stringify(body) : undefined }),
+  patch: <T>(path: string, body: unknown) =>
+    request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
 };
+
+export function query(params: Record<string, string | number | boolean | undefined>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== "") search.set(key, String(value));
+  }
+  const s = search.toString();
+  return s ? `?${s}` : "";
+}

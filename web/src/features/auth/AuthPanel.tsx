@@ -1,24 +1,21 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { api, ApiError } from "../../api/client";
-import type { AuthResponse, UserResponse } from "../../api/client";
+import type { AuthResponse } from "../../api/client";
+import { useInvalidateMe, useMe, useMeta } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
 
 const s = strings.auth;
 
-export function AuthPanel({ googleAuth }: { googleAuth: boolean }) {
-  const [user, setUser] = useState<UserResponse | null>(null);
-  const [booting, setBooting] = useState(true);
+export function AuthPanel({ onSignedIn }: { onSignedIn?: () => void }) {
+  const { data: me } = useMe();
+  const { data: meta } = useMeta();
+  const invalidateMe = useInvalidateMe();
   const [mode, setMode] = useState<"signIn" | "register">("signIn");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    api
-      .get<AuthResponse>("/api/v1/auth/me")
-      .then((res) => setUser(res.user))
-      .catch(() => setUser(null))
-      .finally(() => setBooting(false));
     if (new URLSearchParams(window.location.search).get("authError") === "google") {
       setError(s.googleFailed);
     }
@@ -32,15 +29,17 @@ export function AuthPanel({ googleAuth }: { googleAuth: boolean }) {
     setBusy(true);
     setError(null);
     try {
-      const res =
-        mode === "signIn"
-          ? await api.post<AuthResponse>("/api/v1/auth/login", { email, password })
-          : await api.post<AuthResponse>("/api/v1/auth/register", {
-              email,
-              password,
-              displayName: String(data.get("displayName") ?? ""),
-            });
-      setUser(res.user);
+      if (mode === "signIn") {
+        await api.post<AuthResponse>("/api/v1/auth/login", { email, password });
+      } else {
+        await api.post<AuthResponse>("/api/v1/auth/register", {
+          email,
+          password,
+          displayName: String(data.get("displayName") ?? ""),
+        });
+      }
+      await invalidateMe();
+      onSignedIn?.();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : s.genericError);
     } finally {
@@ -48,29 +47,13 @@ export function AuthPanel({ googleAuth }: { googleAuth: boolean }) {
     }
   }
 
-  async function signOut() {
-    await api.post("/api/v1/auth/logout");
-    setUser(null);
-  }
-
-  if (booting) {
-    return <p>{strings.loading}</p>;
-  }
-
-  if (user) {
-    return (
-      <section>
-        <p>{s.signedInAs(user.displayName)}</p>
-        <button type="button" onClick={signOut}>
-          {s.signOut}
-        </button>
-      </section>
-    );
+  if (me) {
+    return <p>{s.signedInAs(me.displayName)}</p>;
   }
 
   return (
     <section>
-      <form onSubmit={submit}>
+      <form className="form-grid" onSubmit={submit}>
         <label>
           {s.email}
           <input name="email" type="email" required autoComplete="email" />
@@ -83,17 +66,35 @@ export function AuthPanel({ googleAuth }: { googleAuth: boolean }) {
         )}
         <label>
           {s.password}
-          <input name="password" type="password" required minLength={8} autoComplete="current-password" />
+          <input
+            name="password"
+            type="password"
+            required
+            minLength={8}
+            autoComplete={mode === "register" ? "new-password" : "current-password"}
+          />
         </label>
-        <button type="submit" disabled={busy}>
+        <button type="submit" className="primary" disabled={busy}>
           {mode === "signIn" ? s.signIn : s.register}
         </button>
       </form>
-      {googleAuth && <a href="/api/v1/auth/google">{s.googleSignIn}</a>}
-      <button type="button" onClick={() => setMode(mode === "signIn" ? "register" : "signIn")}>
+      {meta?.googleAuth && (
+        <p>
+          <a href="/api/v1/auth/google">{s.googleSignIn}</a>
+        </p>
+      )}
+      <button
+        type="button"
+        onClick={() => setMode(mode === "signIn" ? "register" : "signIn")}
+        style={{ marginTop: 8 }}
+      >
         {mode === "signIn" ? s.switchToRegister : s.switchToSignIn}
       </button>
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <p className="error-note" role="alert">
+          {error}
+        </p>
+      )}
     </section>
   );
 }

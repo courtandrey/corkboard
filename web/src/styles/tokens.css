@@ -1,0 +1,21 @@
+:root {
+  --fb-blue: #3b5998;
+  --fb-blue-dark: #2f477a;
+  --fb-blue-pale: #d8dfea;
+  --fb-border: #bdc7d8;
+  --page-bg: #edeff4;
+
+  /* materials */
+  --cork: #c89f6e;
+  --paper: #fdfbf2;
+  --paper-edge: #e4dfc8;
+  --sticky: #fef6a9;
+  --ink: #2b2b2b;
+  --ink-soft: #6b6b6b;
+  --stamp-red: #b3352c;
+
+  --radius: 3px;
+  --shadow-paper: 1px 2px 4px rgba(60, 45, 20, 0.25);
+
+  --font-ui: "Lucida Grande", "Lucida Sans Unicode", Tahoma, Verdana, sans-serif;
+}

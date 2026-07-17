@@ -11,10 +11,15 @@
     "types": "openapi-typescript http://localhost:8080/api/v1/openapi.json -o src/api/types.gen.ts"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.101.2",
+    "maplibre-gl": "^5.24.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-router": "^7.18.1",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@types/geojson": "^7946.0.16",
     "@types/node": "^26.1.1",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",

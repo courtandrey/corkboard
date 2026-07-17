@@ -1,9 +1,24 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter } from "react-router";
+import "maplibre-gl/dist/maplibre-gl.css";
+import "./styles/tokens.css";
+import "./styles/app.css";
 import { App } from "./App";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: 1, refetchOnWindowFocus: true },
+  },
+});
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </QueryClientProvider>
   </StrictMode>,
 );

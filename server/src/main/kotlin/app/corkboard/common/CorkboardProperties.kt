@@ -12,6 +12,7 @@ data class CorkboardProperties(
     val googleClientSecret: String,
     val googleCallbackUrl: String,
     val authRate: AuthRate,
+    val seedDemoPassword: String = "",
 ) {
     data class AuthRate(val perIp: Int, val perEmail: Int)
 

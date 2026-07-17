@@ -8,7 +8,6 @@ import org.jooq.DSLContext
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 
-// The create-or-link matrix of spec §7.3.
 class GoogleIdentityServiceTest : ApiTestBase() {
 
     @Autowired

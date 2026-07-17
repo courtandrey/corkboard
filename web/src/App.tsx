@@ -1,37 +1,35 @@
-import { useEffect, useState } from "react";
-import { api } from "./api/client";
-import type { MetaResponse } from "./api/client";
-import { AuthPanel } from "./features/auth/AuthPanel";
-import { strings } from "./i18n/strings";
+import { useEffect } from "react";
+import { Route, Routes, useSearchParams } from "react-router";
+import { TopBar } from "./app/TopBar";
+import { FilterSidebar } from "./features/board/FilterSidebar";
+import { BoardMap } from "./features/board/BoardMap";
+import { EventDrawer } from "./features/events/EventDrawer";
+import { CreateEventFlow } from "./features/events/CreateEventFlow";
+import { AuthDrawer } from "./features/auth/AuthDrawer";
+import { filtersToSearch, useBoardStore } from "./stores/boardStore";
 
 export function App() {
-  const [meta, setMeta] = useState<MetaResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const filters = useBoardStore((s) => s.filters);
+  const [, setSearchParams] = useSearchParams();
 
   useEffect(() => {
-    api
-      .get<MetaResponse>("/api/v1/meta")
-      .then(setMeta)
-      .catch((e: Error) => setError(e.message));
-  }, []);
+    setSearchParams(filtersToSearch(filters), { replace: true });
+  }, [filters, setSearchParams]);
 
   return (
-    <main style={{ fontFamily: "Tahoma, Verdana, sans-serif", padding: 24 }}>
-      <h1>{strings.appName}</h1>
-      {error && <p>{strings.apiUnreachable(error)}</p>}
-      {!meta && !error && <p>{strings.loading}</p>}
-      {meta && (
-        <>
-          <AuthPanel googleAuth={meta.googleAuth} />
-          <ul>
-            {meta.types.map((t) => (
-              <li key={t.key} style={{ color: t.color }}>
-                {t.label}
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </main>
+    <div className="layout">
+      <TopBar />
+      <div className="board">
+        <FilterSidebar />
+        <BoardMap />
+        <Routes>
+          <Route path="/" element={null} />
+          <Route path="/events/:id" element={<EventDrawer />} />
+          <Route path="/new" element={<CreateEventFlow />} />
+          <Route path="/login" element={<AuthDrawer />} />
+          <Route path="*" element={null} />
+        </Routes>
+      </div>
+    </div>
   );
 }

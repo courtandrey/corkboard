@@ -25,10 +25,13 @@ services:
       SPRING_DATASOURCE_USERNAME: corkboard
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-corkboard}
       WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:5173}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-30}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL:-}
       REPORT_AUTO_HIDE_THRESHOLD: ${REPORT_AUTO_HIDE_THRESHOLD:-5}
+      SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-}
     volumes:
       - ./server:/app
       - gradle-cache:/root/.gradle
@@ -44,6 +47,8 @@ services:
     command: sh -c "corepack enable && pnpm install && pnpm dev --host"
     environment:
       API_PROXY_TARGET: http://api:8080
+      MAP_STYLE_URL: ${MAP_STYLE_URL:-https://tiles.openfreemap.org/styles/liberty}
+      DEFAULT_CENTER: ${DEFAULT_CENTER:--73.9857,40.7484}
     volumes:
       - ./web:/app
       - web-node-modules:/app/node_modules

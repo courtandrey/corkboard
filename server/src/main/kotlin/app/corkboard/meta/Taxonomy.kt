@@ -1,5 +1,7 @@
 package app.corkboard.meta
 
+import com.fasterxml.jackson.annotation.JsonValue
+
 enum class EventType(
     val color: String,
     val applyableDefault: Boolean,
@@ -12,7 +14,12 @@ enum class EventType(
     HAPPENING("#C94C4C", false),
     NOTICE("#8A8A8A", false);
 
+    @get:JsonValue
     val key: String = name.lowercase()
+
+    companion object {
+        fun fromKey(key: String): EventType? = entries.firstOrNull { it.key == key }
+    }
     val labelKey: String = "event-type.$key"
 }
 
