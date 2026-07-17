@@ -1,14 +1,23 @@
 import { useNavigate } from "react-router";
-import { useMeta } from "../../api/hooks";
+import { useMeta, useTagSearch } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
 import { useBoardStore } from "../../stores/boardStore";
 
 export function FilterSidebar() {
   const { data: meta } = useMeta();
+  const { data: topTags } = useTagSearch("");
   const filters = useBoardStore((s) => s.filters);
   const toggleType = useBoardStore((s) => s.toggleType);
   const setFilters = useBoardStore((s) => s.setFilters);
   const navigate = useNavigate();
+
+  function toggleTag(slug: string) {
+    setFilters({
+      tags: filters.tags.includes(slug)
+        ? filters.tags.filter((t) => t !== slug)
+        : [...filters.tags, slug],
+    });
+  }
 
   return (
     <aside className="sidebar">
@@ -43,6 +52,23 @@ export function FilterSidebar() {
           {strings.board.applyableOnly}
         </label>
       </div>
+      {topTags && topTags.items.length > 0 && (
+        <div className="panel">
+          <h3>{strings.tags.popularTitle}</h3>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+            {topTags.items.map((t) => (
+              <button
+                key={t.slug}
+                type="button"
+                className={`tag-chip${filters.tags.includes(t.slug) ? " active" : ""}`}
+                onClick={() => toggleTag(t.slug)}
+              >
+                {t.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

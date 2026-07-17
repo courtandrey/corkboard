@@ -23,6 +23,19 @@ class TagService(private val dsl: DSLContext) {
         }
     }
 
+    fun search(q: String?, limit: Int): List<TagItem> {
+        var query = dsl.select(TAGS.NAME, TAGS.SLUG, TAGS.USAGE_COUNT).from(TAGS)
+        val prefix = q?.trim()?.takeIf { it.isNotEmpty() }
+        val step = if (prefix != null) {
+            query.where(TAGS.NAME.startsWithIgnoreCase(prefix).or(TAGS.SLUG.startsWith(slugify(prefix))))
+        } else {
+            query
+        }
+        return step.orderBy(TAGS.USAGE_COUNT.desc(), TAGS.SLUG.asc())
+            .limit(limit)
+            .fetch { TagItem(it[TAGS.NAME]!!, it[TAGS.SLUG]!!, it[TAGS.USAGE_COUNT]!!) }
+    }
+
     fun eventTags(eventId: UUID): List<Pair<String, String>> =
         dsl.select(TAGS.NAME, TAGS.SLUG)
             .from(TAGS)

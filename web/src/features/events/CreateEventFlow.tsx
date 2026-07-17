@@ -8,6 +8,7 @@ import { useMe, useMeta } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
 import { useBoardStore } from "../../stores/boardStore";
 import { AuthPanel } from "../auth/AuthPanel";
+import { TagInput } from "../tags/TagInput";
 
 const s = strings.create;
 
@@ -28,6 +29,7 @@ export function CreateEventFlow() {
   const [placing, setPlacing] = useState(true);
   const [type, setType] = useState<string | null>(null);
   const [applyable, setApplyable] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -77,11 +79,6 @@ export function CreateEventFlow() {
     event.preventDefault();
     if (!draftLocation || !type) return;
     const data = new FormData(event.currentTarget);
-    const tags = String(data.get("tags") ?? "")
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean)
-      .slice(0, 5);
     setBusy(true);
     setError(null);
     try {
@@ -182,7 +179,7 @@ export function CreateEventFlow() {
         </label>
         <label>
           {s.tagsLabel}
-          <input name="tags" />
+          <TagInput value={tags} onChange={setTags} max={limits?.tagsMax ?? 5} />
         </label>
         <button type="submit" className="primary" disabled={busy}>
           {s.submit}

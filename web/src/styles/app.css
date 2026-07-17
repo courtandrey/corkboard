@@ -219,6 +219,18 @@ textarea {
   margin-right: 4px;
 }
 
+button.tag-chip {
+  cursor: pointer;
+  text-shadow: none;
+  color: var(--ink);
+}
+
+button.tag-chip.active {
+  background: var(--fb-blue);
+  border-color: var(--fb-blue-dark);
+  color: #fff;
+}
+
 .meta-row {
   color: var(--ink-soft);
   font-size: 11px;

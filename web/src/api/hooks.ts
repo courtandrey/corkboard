@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, query } from "./client";
-import type { AuthResponse, EventDetail, MetaResponse, ViewportResponse } from "./client";
+import type { AuthResponse, EventDetail, MetaResponse, TagListResponse, ViewportResponse } from "./client";
 import type { Filters, Viewport } from "../stores/boardStore";
 
 export function useMeta() {
@@ -53,6 +53,14 @@ export function useViewportEvents(viewport: Viewport | null, filters: Filters) {
           q: filters.q,
         })}`,
       ),
+  });
+}
+
+export function useTagSearch(q: string) {
+  return useQuery({
+    queryKey: ["tags", q],
+    queryFn: () => api.get<TagListResponse>(`/api/v1/tags${query({ q })}`),
+    staleTime: 30_000,
   });
 }
 

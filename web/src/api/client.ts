@@ -13,6 +13,10 @@ export type ViewportResponse = components["schemas"]["ViewportResponse"];
 export type CreateEventRequest = components["schemas"]["CreateEventRequest"];
 export type UpdateEventRequest = components["schemas"]["UpdateEventRequest"];
 export type LatLng = components["schemas"]["LatLng"];
+export type VoteResponse = components["schemas"]["VoteResponse"];
+export type TagItem = components["schemas"]["TagItem"];
+export type TagListResponse = components["schemas"]["TagListResponse"];
+export type ReportRequest = components["schemas"]["ReportRequest"];
 
 export class ApiError extends Error {
   constructor(
@@ -58,6 +62,7 @@ export const api = {
     request<T>(path, { method: "POST", body: body ? JSON.stringify(body) : undefined }),
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
+  del: (path: string) => request<void>(path, { method: "DELETE" }),
 };
 
 export function query(params: Record<string, string | number | boolean | undefined>): string {

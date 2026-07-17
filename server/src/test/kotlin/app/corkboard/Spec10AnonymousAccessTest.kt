@@ -16,6 +16,7 @@ class Spec10AnonymousAccessTest : ApiTestBase() {
             rest.getForEntity("/api/v1/events?bbox=-74.1,40.6,-73.8,40.9&zoom=13", String::class.java)
                 .statusCode.value()
         ).isEqualTo(200)
+        assertThat(rest.getForEntity("/api/v1/tags", String::class.java).statusCode.value()).isEqualTo(200)
     }
 
     @Test
@@ -25,6 +26,10 @@ class Spec10AnonymousAccessTest : ApiTestBase() {
             HttpMethod.POST to "/api/v1/auth/logout",
             HttpMethod.POST to "/api/v1/events",
             HttpMethod.PATCH to "/api/v1/events/00000000-0000-0000-0000-000000000000",
+            HttpMethod.POST to "/api/v1/events/00000000-0000-0000-0000-000000000000/vote",
+            HttpMethod.POST to "/api/v1/events/00000000-0000-0000-0000-000000000000/hide",
+            HttpMethod.DELETE to "/api/v1/events/00000000-0000-0000-0000-000000000000/hide",
+            HttpMethod.POST to "/api/v1/events/00000000-0000-0000-0000-000000000000/report",
         )
         for ((method, path) in routes) {
             val res = rest.exchange(path, method, HttpEntity.EMPTY, String::class.java)

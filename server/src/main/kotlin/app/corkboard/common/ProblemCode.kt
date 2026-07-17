@@ -10,6 +10,7 @@ enum class ProblemCode {
     EMAIL_TAKEN,
     BREACHED_PASSWORD,
     RATE_LIMITED,
+    OWN_EVENT,
     EDIT_LOCKED,
     EXPIRY_TOO_FAR,
     VALIDATION_FAILED,

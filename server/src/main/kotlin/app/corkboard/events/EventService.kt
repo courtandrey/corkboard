@@ -124,6 +124,16 @@ class EventService(
         return detail(id, viewerId)
     }
 
+    fun requireViewableAuthor(id: UUID, viewerId: UUID?): UUID {
+        val row = dsl.select(EVENTS.AUTHOR_ID, EVENTS.STATUS)
+            .from(EVENTS).where(EVENTS.ID.eq(id)).fetchOne()
+            ?: throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
+        if (row[EVENTS.STATUS] in HIDDEN_STATUSES && row[EVENTS.AUTHOR_ID] != viewerId) {
+            throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
+        }
+        return row[EVENTS.AUTHOR_ID]!!
+    }
+
     private fun fetchEvent(id: UUID): EventRow =
         dsl.select(
             EVENTS.ID, EVENTS.AUTHOR_ID, EVENTS.TYPE, EVENTS.STATUS, EVENTS.TITLE, EVENTS.BODY,

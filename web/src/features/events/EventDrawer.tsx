@@ -1,7 +1,8 @@
 import { Fragment } from "react";
 import { useNavigate, useParams } from "react-router";
-import { useEventDetail, useMeta } from "../../api/hooks";
+import { useEventDetail, useMe, useMeta } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
+import { EventActions } from "./EventActions";
 
 function Linkified({ text }: { text: string }) {
   const parts = text.split(/(https?:\/\/[^\s]+)/g);
@@ -24,6 +25,7 @@ export function EventDrawer() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: meta } = useMeta();
+  const { data: me } = useMe();
   const { data: event, error } = useEventDetail(id);
 
   const type = meta?.types.find((t) => t.key === event?.type);
@@ -65,6 +67,7 @@ export function EventDrawer() {
             {strings.event.postedBy(event.author.displayName)}{" "}
             {strings.event.memberSince(String(new Date(event.author.memberSince).getFullYear()))}
           </div>
+          {me && <EventActions event={event} />}
         </>
       )}
     </section>
