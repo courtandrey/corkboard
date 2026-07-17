@@ -10,10 +10,12 @@ import { AuthDrawer } from "./features/auth/AuthDrawer";
 import { MessagesDrawer } from "./features/messaging/MessagesDrawer";
 import { MyPins } from "./features/events/MyPins";
 import { useSocket } from "./features/realtime/useSocket";
+import { strings } from "./i18n/strings";
 import { filtersToSearch, useBoardStore } from "./stores/boardStore";
 
 export function App() {
   const filters = useBoardStore((s) => s.filters);
+  const toggleSidebar = useBoardStore((s) => s.toggleSidebar);
   const [, setSearchParams] = useSearchParams();
   const { data: me } = useMe();
   useSocket(!!me);
@@ -27,6 +29,9 @@ export function App() {
       <TopBar />
       <div className="board">
         <FilterSidebar />
+        <button type="button" className="filters-toggle" onClick={toggleSidebar}>
+          {strings.board.filtersToggle}
+        </button>
         <BoardMap />
         <Routes>
           <Route path="/" element={null} />

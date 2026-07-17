@@ -26,11 +26,13 @@ interface BoardState {
   filters: Filters;
   crosshair: boolean;
   draftLocation: LatLng | null;
+  sidebarOpen: boolean;
   setViewport: (viewport: Viewport) => void;
   setFilters: (patch: Partial<Filters>) => void;
   toggleType: (key: string) => void;
   setCrosshair: (on: boolean) => void;
   setDraftLocation: (location: LatLng | null) => void;
+  toggleSidebar: () => void;
 }
 
 const POSITION_KEY = "corkboard.position";
@@ -93,4 +95,6 @@ export const useBoardStore = create<BoardState>((set) => ({
     })),
   setCrosshair: (on) => set({ crosshair: on, draftLocation: null }),
   setDraftLocation: (location) => set({ draftLocation: location }),
+  sidebarOpen: false,
+  toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
 }));

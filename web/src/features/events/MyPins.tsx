@@ -4,6 +4,7 @@ import { api } from "../../api/client";
 import type { ApplicationItem, MyEventItem } from "../../api/client";
 import { useMe, useMeta, useMyEvents, useReceivedApplications } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
+import { PixelAvatar } from "../../ui/PixelAvatar";
 
 const s = strings.myPins;
 
@@ -23,6 +24,7 @@ function ApplicationRow({ application }: { application: ApplicationItem }) {
 
   return (
     <div className="pin-application">
+      {application.applicant && <PixelAvatar seed={application.applicant.avatarSeed} size={18} />}{" "}
       <strong>{application.applicant?.displayName}</strong>{" "}
       <span className="meta-row">{strings.messagesUi.statusLabel(application.status)}</span>
       {application.message && <div className="conv-snippet">{application.message}</div>}

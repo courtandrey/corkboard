@@ -4,18 +4,20 @@ import type { GeoJSONSource, MapMouseEvent } from "maplibre-gl";
 import type { FeatureCollection, Point } from "geojson";
 import { useMatch, useNavigate } from "react-router";
 import { useMeta, useViewportEvents } from "../../api/hooks";
-import type { EventPin } from "../../api/client";
+import type { EventPin, MetaResponse } from "../../api/client";
 import { strings } from "../../i18n/strings";
+import { pushpinDataUri } from "../../ui/pushpin";
 import { loadSavedPosition, savePosition, useBoardStore } from "../../stores/boardStore";
 
 const FALLBACK_ZOOM = 13;
+const OVERLAP_ZOOM = 13.05;
 
 function defaultCenter(): [number, number] {
   const [lng, lat] = __DEFAULT_CENTER__.split(",").map(Number);
   return [lng, lat];
 }
 
-function toFeatureCollection(items: EventPin[]): FeatureCollection {
+function toFeatureCollection(items: EventPin[], selectedId: string | undefined): FeatureCollection {
   return {
     type: "FeatureCollection",
     features: items.map((pin) => ({
@@ -26,10 +28,38 @@ function toFeatureCollection(items: EventPin[]): FeatureCollection {
         type: pin.type,
         title: pin.title,
         score: pin.score,
+        selected: pin.id === selectedId,
       },
     })),
   };
 }
+
+async function registerPushpins(map: maplibregl.Map, meta: MetaResponse): Promise<void> {
+  const load = (name: string, uri: string) =>
+    new Promise<void>((resolve) => {
+      if (map.hasImage(name)) return resolve();
+      const img = new Image(48, 64);
+      img.onload = () => {
+        if (!map.hasImage(name)) map.addImage(name, img, { pixelRatio: 2 });
+        resolve();
+      };
+      img.onerror = () => resolve();
+      img.src = uri;
+    });
+  await Promise.all(
+    meta.types.flatMap((t) => [
+      load(`pin-${t.key}`, pushpinDataUri(t.color)),
+      load(`pin-${t.key}-pressed`, pushpinDataUri(t.color, true)),
+    ]),
+  );
+}
+
+const PIN_ICON = [
+  "concat",
+  "pin-",
+  ["get", "type"],
+  ["case", ["get", "selected"], "-pressed", ""],
+];
 
 export function BoardMap() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -37,6 +67,7 @@ export function BoardMap() {
   const popupRef = useRef<maplibregl.Popup | null>(null);
   const draftMarkerRef = useRef<maplibregl.Marker | null>(null);
   const loadedRef = useRef(false);
+  const easedToRef = useRef<string | null>(null);
 
   const { data: meta } = useMeta();
   const viewport = useBoardStore((s) => s.viewport);
@@ -47,6 +78,7 @@ export function BoardMap() {
   const setDraftLocation = useBoardStore((s) => s.setDraftLocation);
   const navigate = useNavigate();
   const selectedMatch = useMatch("/events/:id");
+  const selectedId = selectedMatch?.params.id;
 
   const { data } = useViewportEvents(viewport, filters);
 
@@ -85,28 +117,36 @@ export function BoardMap() {
     });
 
     map.on("load", () => {
-      loadedRef.current = true;
       map.addSource("events", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
       });
-      map.addLayer({
-        id: "event-pins",
-        type: "circle",
-        source: "events",
-        paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 5, 16, 9],
-          "circle-color": "#8A8A8A",
-          "circle-stroke-width": 1.5,
-          "circle-stroke-color": "#ffffff",
-        },
-      });
-      map.on("mouseenter", "event-pins", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "event-pins", () => {
-        map.getCanvas().style.cursor = "";
-      });
+      const symbol = (id: string, overlap: boolean) =>
+        map.addLayer({
+          id,
+          type: "symbol",
+          source: "events",
+          minzoom: overlap ? OVERLAP_ZOOM : 0,
+          maxzoom: overlap ? 24 : OVERLAP_ZOOM,
+          layout: {
+            "icon-image": PIN_ICON as never,
+            "icon-anchor": "bottom",
+            "icon-allow-overlap": overlap,
+            "icon-padding": 1,
+            "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.8, 15, 1.05],
+          },
+        });
+      symbol("pins-low", false);
+      symbol("pins-high", true);
+      for (const layer of ["pins-low", "pins-high"]) {
+        map.on("mouseenter", layer, () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+        map.on("mouseleave", layer, () => {
+          map.getCanvas().style.cursor = "";
+        });
+      }
+      loadedRef.current = true;
       publishViewport();
     });
 
@@ -128,12 +168,7 @@ export function BoardMap() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !meta) return;
-    const apply = () => {
-      const match: unknown[] = ["match", ["get", "type"]];
-      for (const t of meta.types) match.push(t.key, t.color);
-      match.push("#8A8A8A");
-      map.setPaintProperty("event-pins", "circle-color", match);
-    };
+    const apply = () => void registerPushpins(map, meta);
     if (loadedRef.current) apply();
     else map.once("load", apply);
   }, [meta]);
@@ -143,12 +178,29 @@ export function BoardMap() {
     if (!map || !data) return;
     const apply = () => {
       (map.getSource("events") as GeoJSONSource | undefined)?.setData(
-        toFeatureCollection(data.items),
+        toFeatureCollection(data.items, selectedId),
       );
     };
     if (loadedRef.current) apply();
     else map.once("load", apply);
-  }, [data]);
+  }, [data, selectedId]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !data || !selectedId) {
+      easedToRef.current = null;
+      return;
+    }
+    if (easedToRef.current === selectedId) return;
+    const pin = data.items.find((p) => p.id === selectedId);
+    if (!pin) return;
+    easedToRef.current = selectedId;
+    map.easeTo({
+      center: [pin.location.lng, pin.location.lat],
+      offset: [-160, 0],
+      duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 450,
+    });
+  }, [data, selectedId]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -156,34 +208,42 @@ export function BoardMap() {
 
     const onPinClick = (event: MapMouseEvent) => {
       if (useBoardStore.getState().crosshair) return;
-      const feature = map.queryRenderedFeatures(event.point, { layers: ["event-pins"] })[0];
+      const feature = map.queryRenderedFeatures(event.point, { layers: ["pins-low", "pins-high"] })[0];
       if (!feature) return;
       const props = feature.properties as { id: string; type: string; title: string; score: number };
-      const label = meta.types.find((t) => t.key === props.type)?.label ?? props.type;
-      const color = meta.types.find((t) => t.key === props.type)?.color ?? "#8A8A8A";
+      const type = meta.types.find((t) => t.key === props.type);
 
       popupRef.current?.remove();
       const container = document.createElement("div");
-      const chip = document.createElement("span");
-      chip.className = "type-chip";
-      chip.style.background = color;
-      chip.textContent = label;
+      container.className = "paper-note";
+
+      const pinImg = document.createElement("img");
+      pinImg.className = "paper-note-pin";
+      pinImg.alt = "";
+      pinImg.src = pushpinDataUri(type?.color ?? "#8A8A8A");
+
       const title = document.createElement("p");
-      title.style.margin = "6px 0";
-      title.style.fontWeight = "bold";
+      title.className = "note-title";
       title.textContent = props.title;
+
       const metaRow = document.createElement("div");
       metaRow.className = "meta-row";
-      metaRow.textContent = strings.board.points(props.score);
+      const chip = document.createElement("span");
+      chip.className = "type-chip";
+      chip.style.background = type?.color ?? "#8A8A8A";
+      chip.textContent = type?.label ?? props.type;
+      metaRow.append(chip, ` · ${strings.board.points(props.score)}`);
+
       const more = document.createElement("button");
       more.textContent = strings.board.readMore;
       more.addEventListener("click", () => {
         popupRef.current?.remove();
         navigate(`/events/${props.id}`);
       });
-      container.append(chip, title, metaRow, more);
 
-      popupRef.current = new maplibregl.Popup({ className: "note-popup", offset: 10 })
+      container.append(pinImg, title, metaRow, more);
+
+      popupRef.current = new maplibregl.Popup({ className: "note-popup", offset: 26 })
         .setLngLat((feature.geometry as Point).coordinates as [number, number])
         .setDOMContent(container)
         .addTo(map);
@@ -194,10 +254,12 @@ export function BoardMap() {
       setDraftLocation({ lng: event.lngLat.lng, lat: event.lngLat.lat });
     };
 
-    map.on("click", "event-pins", onPinClick);
+    map.on("click", "pins-low", onPinClick);
+    map.on("click", "pins-high", onPinClick);
     map.on("click", onMapClick);
     return () => {
-      map.off("click", "event-pins", onPinClick);
+      map.off("click", "pins-low", onPinClick);
+      map.off("click", "pins-high", onPinClick);
       map.off("click", onMapClick);
     };
   }, [meta, navigate, setDraftLocation]);
@@ -206,7 +268,13 @@ export function BoardMap() {
     const map = mapRef.current;
     if (!map) return;
     if (draftLocation && !draftMarkerRef.current) {
-      const marker = new maplibregl.Marker({ draggable: true, color: "#B3352C" })
+      const element = document.createElement("img");
+      element.className = "draft-pin";
+      element.alt = "";
+      element.width = 30;
+      element.height = 40;
+      element.src = pushpinDataUri("#B3352C");
+      const marker = new maplibregl.Marker({ element, draggable: true, anchor: "bottom" })
         .setLngLat([draftLocation.lng, draftLocation.lat])
         .addTo(map);
       marker.on("dragend", () => {
@@ -231,28 +299,11 @@ export function BoardMap() {
   }
 
   const shown = data?.items.length ?? 0;
-  const selectedId = selectedMatch?.params.id;
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !loadedRef.current) return;
-    map.setPaintProperty("event-pins", "circle-stroke-color", [
-      "case",
-      ["==", ["get", "id"], selectedId ?? ""],
-      "#2B2B2B",
-      "#ffffff",
-    ]);
-  }, [selectedId, data]);
 
   return (
     <div className="map-wrap">
       <div ref={containerRef} className={`map${crosshair ? " crosshair" : ""}`} />
-      <button
-        type="button"
-        style={{ position: "absolute", top: 12, left: 12, zIndex: 5 }}
-        onClick={locateMe}
-        title={strings.board.useMyLocation}
-      >
+      <button type="button" className="locate-btn" onClick={locateMe} title={strings.board.useMyLocation}>
         📍 {strings.board.useMyLocation}
       </button>
       {data && (

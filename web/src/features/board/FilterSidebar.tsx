@@ -19,8 +19,10 @@ export function FilterSidebar() {
     });
   }
 
+  const sidebarOpen = useBoardStore((s) => s.sidebarOpen);
+
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${sidebarOpen ? " open" : ""}`}>
       <button type="button" className="primary" onClick={() => navigate("/new")}>
         {strings.board.pinANote}
       </button>

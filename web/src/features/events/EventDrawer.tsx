@@ -2,6 +2,7 @@ import { Fragment, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useEventDetail, useMe, useMeta } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
+import { PixelAvatar } from "../../ui/PixelAvatar";
 import { ApplyBox } from "./ApplyBox";
 import { EventActions } from "./EventActions";
 import { EventEditForm } from "./EventEditForm";
@@ -54,9 +55,11 @@ export function EventDrawer() {
             </span>
           )}
           {event.status !== "active" && (
-            <span className="status-chip">{strings.myPins.statusHeading[event.status] ?? event.status}</span>
+            <span className={`stamp${event.status === "resolved" ? "" : " muted"}`}>
+              {strings.myPins.statusHeading[event.status] ?? event.status}
+            </span>
           )}
-          <h2>{event.title}</h2>
+          <h2 className="note-title-large">{event.title}</h2>
           <div className="meta-row">
             {strings.board.points(event.score)}
             {" · "}
@@ -75,9 +78,12 @@ export function EventDrawer() {
               ))}
             </p>
           )}
-          <div className="meta-row">
-            {strings.event.postedBy(event.author.displayName)}{" "}
-            {strings.event.memberSince(String(new Date(event.author.memberSince).getFullYear()))}
+          <div className="meta-row" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <PixelAvatar seed={event.author.avatarSeed} size={22} />
+            <span>
+              {strings.event.postedBy(event.author.displayName)}{" "}
+              {strings.event.memberSince(String(new Date(event.author.memberSince).getFullYear()))}
+            </span>
           </div>
           {event.viewerState.isAuthor && (
             <button type="button" onClick={() => setEditing(true)}>

@@ -21,6 +21,7 @@ export const strings = {
     searchPlaceholder: "search notes…",
     filtersTitle: "Show on the board",
     applyableOnly: "Only notes you can respond to",
+    filtersToggle: "Filters",
     pinANote: "Pin a note",
     useMyLocation: "Use my location",
     showing: (shown: number, total: number, capped: boolean) =>

@@ -6,12 +6,14 @@ import { api } from "../../api/client";
 import type { ConversationSummary, MessageResponse } from "../../api/client";
 import { useConversations, useMe, useMessages } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
+import { PixelAvatar } from "../../ui/PixelAvatar";
 
 const s = strings.messagesUi;
 
 function ConversationRow({ conversation, active }: { conversation: ConversationSummary; active: boolean }) {
   return (
     <Link to={`/messages/${conversation.id}`} className={`conv-row${active ? " active" : ""}`}>
+      <PixelAvatar seed={conversation.otherParty.avatarSeed} size={18} />{" "}
       <strong>{conversation.otherParty.displayName}</strong>
       {conversation.unreadCount > 0 && <span className="badge">{conversation.unreadCount}</span>}
       <div className="meta-row">{conversation.event.title}</div>

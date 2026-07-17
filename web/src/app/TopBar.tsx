@@ -6,6 +6,10 @@ import { useMe } from "../api/hooks";
 import { NotificationsBell } from "../features/notifications/NotificationsBell";
 import { strings } from "../i18n/strings";
 import { useBoardStore } from "../stores/boardStore";
+import { PixelAvatar } from "../ui/PixelAvatar";
+import { pushpinDataUri } from "../ui/pushpin";
+
+const logoPin = pushpinDataUri("#C94C4C");
 
 export function TopBar() {
   const { data: me } = useMe();
@@ -26,10 +30,14 @@ export function TopBar() {
     navigate("/");
   }
 
+  const [before, after] = strings.appName.split(/o(.*)/s);
+
   return (
     <header className="topbar">
-      <Link to="/" className="logo">
-        {strings.appName}
+      <Link to="/" className="logo" aria-label={strings.appName}>
+        <span>{before}</span>
+        <img className="logo-pin" src={logoPin} alt="o" />
+        <span>{after}</span>
       </Link>
       <form onSubmit={onSearch}>
         <input
@@ -46,7 +54,10 @@ export function TopBar() {
           <Link to="/me/pins">{strings.myPins.title}</Link>
           <Link to="/messages">{strings.messagesUi.title}</Link>
           <NotificationsBell />
-          <span>{strings.auth.signedInAs(me.displayName)}</span>
+          <span className="whoami">
+            <PixelAvatar seed={me.avatarSeed} size={22} />
+            {me.displayName}
+          </span>
           <button type="button" onClick={signOut}>
             {strings.auth.signOut}
           </button>
