@@ -18,6 +18,9 @@ jooq:
 check:
 	cd server && ./gradlew check
 	cd web && pnpm typecheck
+	cd web && pnpm test
 
 seed:
-	docker compose run --rm --no-deps api ./gradlew --no-daemon bootRun --args='--spring.profiles.active=seed'
+	docker compose stop api
+	docker compose run --rm api ./gradlew --no-daemon --project-cache-dir /root/.gradle/project-cache bootRun --args='--spring.profiles.active=seed'
+	docker compose start api

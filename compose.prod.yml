@@ -5,26 +5,26 @@ services:
       POSTGRES_DB: corkboard
       POSTGRES_USER: corkboard
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-corkboard}
-    ports:
-      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U corkboard -d corkboard"]
       interval: 5s
       timeout: 3s
       retries: 20
     volumes:
-      - dbdata:/var/lib/postgresql/data
+      - dbdata-prod:/var/lib/postgresql/data
 
   api:
-    image: eclipse-temurin:21-jdk
-    working_dir: /app
-    command: ./gradlew --no-daemon --project-cache-dir /root/.gradle/project-cache bootRun
+    build:
+      context: .
+      network: host
+      args:
+        MAP_STYLE_URL: ${MAP_STYLE_URL:-https://tiles.openfreemap.org/styles/liberty}
+        DEFAULT_CENTER: ${DEFAULT_CENTER:--73.9857,40.7484}
     environment:
-      GRADLE_BUILD_DIR: /root/.gradle/corkboard-build
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/corkboard
       SPRING_DATASOURCE_USERNAME: corkboard
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-corkboard}
-      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:5173}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:8080}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-30}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
@@ -33,32 +33,11 @@ services:
       REPORT_AUTO_HIDE_THRESHOLD: ${REPORT_AUTO_HIDE_THRESHOLD:-5}
       SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-}
       SEED_FORCE: ${SEED_FORCE:-false}
-    volumes:
-      - ./server:/app
-      - gradle-cache:/root/.gradle
     ports:
       - "${API_PORT:-8080}:8080"
     depends_on:
       db:
         condition: service_healthy
 
-  web:
-    image: node:22-alpine
-    working_dir: /app
-    command: sh -c "corepack enable && pnpm install && pnpm dev --host"
-    environment:
-      API_PROXY_TARGET: http://api:8080
-      MAP_STYLE_URL: ${MAP_STYLE_URL:-https://tiles.openfreemap.org/styles/liberty}
-      DEFAULT_CENTER: ${DEFAULT_CENTER:--73.9857,40.7484}
-    volumes:
-      - ./web:/app
-      - web-node-modules:/app/node_modules
-    ports:
-      - "5173:5173"
-    depends_on:
-      - api
-
 volumes:
-  dbdata:
-  gradle-cache:
-  web-node-modules:
+  dbdata-prod:

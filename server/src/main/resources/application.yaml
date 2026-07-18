@@ -31,3 +31,4 @@ corkboard:
     per-ip: 5
     per-email: 5
   seed-demo-password: ${SEED_DEMO_PASSWORD:}
+  seed-force: ${SEED_FORCE:false}

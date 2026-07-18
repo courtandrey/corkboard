@@ -1,13 +1,24 @@
 package app.corkboard.seed
 
+import app.corkboard.applications.ApplicationService
 import app.corkboard.auth.AuthService
 import app.corkboard.auth.RegisterRequest
 import app.corkboard.common.CorkboardProperties
 import app.corkboard.events.CreateEventRequest
 import app.corkboard.events.EventService
 import app.corkboard.events.LatLng
+import app.corkboard.events.VoteService
+import app.corkboard.jobs.ExpirationSweep
+import app.corkboard.jooq.tables.references.EVENTS
+import app.corkboard.jooq.tables.references.TAGS
 import app.corkboard.jooq.tables.references.USERS
+import app.corkboard.messaging.ApplicationStatus
+import app.corkboard.messaging.ConversationService
 import app.corkboard.meta.EventType
+import app.corkboard.moderation.HideService
+import app.corkboard.moderation.ReportReason
+import app.corkboard.moderation.ReportRequest
+import app.corkboard.moderation.ReportService
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID
@@ -28,6 +39,12 @@ class SeedRunner(
     private val dsl: DSLContext,
     private val auth: AuthService,
     private val events: EventService,
+    private val votes: VoteService,
+    private val hides: HideService,
+    private val reports: ReportService,
+    private val applications: ApplicationService,
+    private val conversations: ConversationService,
+    private val sweep: ExpirationSweep,
     private val props: CorkboardProperties,
     private val context: ConfigurableApplicationContext,
 ) : ApplicationRunner {
@@ -35,14 +52,12 @@ class SeedRunner(
     private val log = LoggerFactory.getLogger(javaClass)
     private val random = Random(20070214)
 
-    private data class SeedNote(
-        val type: EventType,
+    private data class Created(
+        val id: UUID,
+        val authorId: UUID,
         val title: String,
-        val body: String,
-        val near: Pair<Double, Double>,
         val applyable: Boolean,
-        val tags: List<String> = emptyList(),
-        val expiryDays: Long = 30,
+        val expired: Boolean,
     )
 
     override fun run(args: ApplicationArguments) {
@@ -58,197 +73,252 @@ class SeedRunner(
 
     private fun seed() {
         check(props.seedDemoPassword.isNotBlank()) { "SEED_DEMO_PASSWORD must be set to seed" }
-        if (dsl.fetchExists(USERS, USERS.EMAIL.eq(DEMO_EMAIL))) {
-            log.info("Seed skipped: {} already exists", DEMO_EMAIL)
-            return
+        if (dsl.fetchExists(USERS, USERS.EMAIL.eq(SeedData.DEMO_EMAIL))) {
+            if (!props.seedForce) {
+                log.info("Seed skipped: {} already exists (set SEED_FORCE=true to wipe and reload)", SeedData.DEMO_EMAIL)
+                return
+            }
+            wipe()
         }
 
-        val demo = auth.register(
-            RegisterRequest(DEMO_EMAIL, props.seedDemoPassword, "Demo Resident"), null,
-        ).user.id
-        val residents = RESIDENTS.map { name ->
-            auth.register(
-                RegisterRequest(
-                    "${name.lowercase().replace(' ', '.')}@corkboard.local",
-                    "Seed-${UUID.randomUUID()}",
-                    name,
-                ),
-                null,
-            ).user.id
-        }
-        val authors = residents + demo
-
-        NOTES.forEachIndexed { i, note ->
-            val authorId = if (note.title.contains("Pirozhok")) demo else authors[i % authors.size]
-            events.create(
-                authorId,
-                CreateEventRequest(
-                    type = note.type,
-                    title = note.title,
-                    body = note.body,
-                    location = jitter(note.near),
-                    applyable = note.applyable,
-                    expiresAt = Instant.now().plus(note.expiryDays, ChronoUnit.DAYS),
-                    tags = note.tags,
-                ),
+        val demo = register(SeedData.DEMO_EMAIL, "Demo Resident", props.seedDemoPassword)
+        val residents = SeedData.RESIDENTS.map { name ->
+            register(
+                "${name.lowercase().replace(Regex("[^a-z]+"), ".").trim('.')}@corkboard.local",
+                name,
+                "Seed-${UUID.randomUUID()}",
             )
         }
-        log.info("Seeded {} users and {} events", authors.size, NOTES.size)
+        val users = residents + demo
+
+        val created = mutableListOf<Created>()
+
+        SeedData.HANDCRAFTED.forEachIndexed { i, note ->
+            val authorId = when {
+                note.title == SeedData.PIROZHOK_TITLE -> demo
+                i % 7 == 3 -> demo
+                else -> residents[i % residents.size]
+            }
+            created += create(
+                authorId,
+                note.type,
+                note.title,
+                note.body,
+                jitter(note.near, 0.012, 0.008),
+                note.applyable,
+                Instant.now().plus(note.expiryDays, ChronoUnit.DAYS),
+                note.tags,
+            )
+        }
+
+        repeat(PROCEDURAL_COUNT) {
+            val hood = pickNeighborhood()
+            val type = pickType()
+            val item = SeedData.FILLERS.getValue(type).random(random)
+            val title = fill(SeedData.TITLE_TEMPLATES.getValue(type).random(random), item, hood.name)
+            val body = fill(SeedData.BODY_TEMPLATES.random(random), SeedData.BODY_SNIPPETS.random(random), hood.name)
+            val expired = random.nextDouble() < 0.03
+            val expiresAt = if (expired) {
+                Instant.now().minus(random.nextLong(1, 5), ChronoUnit.DAYS)
+            } else {
+                Instant.now().plus(random.nextLong(3, 61), ChronoUnit.DAYS)
+            }
+            val applyable = if (random.nextDouble() < 0.15) !type.applyableDefault else type.applyableDefault
+            val tags = if (random.nextDouble() < 0.4) {
+                List(random.nextInt(1, 3)) { SeedData.TAG_POOL.random(random) }.distinct()
+            } else emptyList()
+            created += create(
+                residents.random(random), type, title, body,
+                jitter(hood.lng to hood.lat, 0.016, 0.011),
+                applyable, expiresAt, tags,
+            )
+        }
+
+        castVotes(created, users)
+        resolveSome(created)
+        storyArc(created, demo, residents)
+        extraApplications(created, users)
+        scatterHides(created, residents)
+        reportSpam(created, residents)
+
+        sweep.sweep()
+
+        log.info(
+            "Seeded {} users, {} events ({} handcrafted), {} tags",
+            users.size, created.size, SeedData.HANDCRAFTED.size, dsl.fetchCount(TAGS),
+        )
     }
 
-    private fun jitter(center: Pair<Double, Double>): LatLng =
+    private fun wipe() {
+        log.info("SEED_FORCE set — wiping existing data")
+        dsl.truncate(USERS).cascade().execute()
+        dsl.truncate(TAGS).restartIdentity().cascade().execute()
+    }
+
+    private fun register(email: String, displayName: String, password: String): UUID =
+        auth.register(RegisterRequest(email, password, displayName), null).user.id
+
+    private fun create(
+        authorId: UUID,
+        type: EventType,
+        title: String,
+        body: String,
+        location: LatLng,
+        applyable: Boolean,
+        expiresAt: Instant,
+        tags: List<String>,
+    ): Created {
+        val detail = events.create(
+            authorId,
+            CreateEventRequest(
+                type = type,
+                title = title.take(120),
+                body = body,
+                location = location,
+                applyable = applyable,
+                expiresAt = expiresAt,
+                tags = tags,
+            ),
+        )
+        return Created(detail.id, authorId, title, applyable, expired = expiresAt.isBefore(Instant.now()))
+    }
+
+    private fun castVotes(created: List<Created>, users: List<UUID>) {
+        var total = 0
+        for (event in created) {
+            if (event.expired) continue
+            val roll = random.nextDouble()
+            val target = when {
+                roll < 0.45 -> 0
+                roll < 0.75 -> random.nextInt(1, 4)
+                roll < 0.93 -> random.nextInt(4, 12)
+                else -> random.nextInt(12, 23)
+            }
+            if (target == 0) continue
+            val voters = users.filter { it != event.authorId }.shuffled(random).take(target)
+            voters.forEach { votes.toggle(event.id, it) }
+            total += voters.size
+        }
+        log.info("Cast {} votes", total)
+    }
+
+    private fun resolveSome(created: List<Created>) {
+        val candidates = created.filter { !it.expired && it.title != SeedData.PIROZHOK_TITLE }
+        val toResolve = candidates.shuffled(random).take((created.size * 0.08).toInt())
+        toResolve.forEach { events.resolve(it.id, it.authorId) }
+        log.info("Resolved {} events", toResolve.size)
+    }
+
+    private fun storyArc(created: List<Created>, demo: UUID, residents: List<UUID>) {
+        val pirozhok = created.first { it.title == SeedData.PIROZHOK_TITLE }
+        val (marisol, tommy, june) = residents.take(3)
+
+        val sighting = applications.apply(
+            pirozhok.id, marisol,
+            "I think I saw him this morning by the community garden compost bins — grey tabby, red collar, very interested in someone's sandwich.",
+        )
+        applications.apply(
+            pirozhok.id, tommy,
+            "I put my number on the board at the laundromat and I'll keep an eye out on my night walks.",
+        )
+        applications.apply(
+            pirozhok.id, june,
+            "Checked the parking garage on 9th where the strays hang out — no luck yet, but I'll look again tomorrow.",
+        )
+
+        applications.updateStatus(sighting.application.id, demo, ApplicationStatus.ACCEPTED)
+        val thread = sighting.conversationId
+        conversations.send(thread, demo, "The compost bins! Of course. Was he still there when you left?")
+        conversations.send(thread, marisol, "He was — I didn't want to spook him. I can stand watch by the gate if you head over now.")
+        conversations.send(thread, demo, "On my way with the treat bag. Ten minutes.")
+        conversations.send(thread, marisol, "He's here, he's fine, he's furious about the rain. See you at the gate.")
+        conversations.send(thread, demo, "GOT HIM. He's home, eating like nothing happened. Thank you so, so much.")
+        conversations.markRead(thread, demo)
+        conversations.markRead(thread, marisol)
+
+        events.resolve(pirozhok.id, demo)
+        log.info("Story arc seeded (Pirozhok is home)")
+    }
+
+    private fun extraApplications(created: List<Created>, users: List<UUID>) {
+        val applyable = created
+            .filter { it.applyable && !it.expired && it.title != SeedData.PIROZHOK_TITLE }
+            .shuffled(random)
+            .take(6)
+        for (event in applyable) {
+            val applicants = users.filter { it != event.authorId }.shuffled(random).take(random.nextInt(1, 3))
+            for (applicant in applicants) {
+                runCatching {
+                    applications.apply(
+                        event.id, applicant,
+                        listOf(
+                            "Count me in — when works best?",
+                            "I can help with this. Around most evenings.",
+                            "Still available? I'm two streets over.",
+                            "Sounds lovely, I'd like to join.",
+                        ).random(random),
+                    )
+                }
+            }
+        }
+    }
+
+    private fun scatterHides(created: List<Created>, residents: List<UUID>) {
+        val hiders = residents.shuffled(random).take(3)
+        for (hider in hiders) {
+            created.shuffled(random).take(2).forEach { event ->
+                if (event.authorId != hider) runCatching { hides.hide(event.id, hider) }
+            }
+        }
+    }
+
+    private fun reportSpam(created: List<Created>, residents: List<UUID>) {
+        val spam = created.first { it.title == SeedData.SPAM_TITLE }
+        residents.filter { it != spam.authorId }.take(2).forEach { reporter ->
+            reports.report(spam.id, reporter, ReportRequest(ReportReason.SPAM, "Obvious get-rich scheme."))
+        }
+        log.info("Reported the spammy note twice (below threshold)")
+    }
+
+    private fun pickNeighborhood(): Neighborhood {
+        val total = SeedData.NEIGHBORHOODS.sumOf { it.weight }
+        var roll = random.nextInt(total)
+        for (hood in SeedData.NEIGHBORHOODS) {
+            roll -= hood.weight
+            if (roll < 0) return hood
+        }
+        return SeedData.NEIGHBORHOODS.last()
+    }
+
+    private fun pickType(): EventType {
+        val weights = listOf(
+            EventType.LOST_FOUND to 12, EventType.ACTIVITY to 14, EventType.CLUB to 12,
+            EventType.HELP to 16, EventType.GIVEAWAY to 16, EventType.HAPPENING to 16,
+            EventType.NOTICE to 14,
+        )
+        var roll = random.nextInt(weights.sumOf { it.second })
+        for ((type, weight) in weights) {
+            roll -= weight
+            if (roll < 0) return type
+        }
+        return EventType.NOTICE
+    }
+
+    private fun fill(template: String, item: String, hood: String): String =
+        template
+            .replace("{item}", item)
+            .replace("{snippet}", item)
+            .replace("{place}", SeedData.LANDMARKS.random(random))
+            .replace("{day}", SeedData.WEEKDAYS.random(random))
+            .replace("{hood}", hood)
+
+    private fun jitter(center: Pair<Double, Double>, lngSpread: Double, latSpread: Double): LatLng =
         LatLng(
-            lng = center.first + (random.nextDouble() - 0.5) * 0.012,
-            lat = center.second + (random.nextDouble() - 0.5) * 0.008,
+            lng = center.first + (random.nextDouble() - 0.5) * lngSpread,
+            lat = center.second + (random.nextDouble() - 0.5) * latSpread,
         )
 
     companion object {
-        const val DEMO_EMAIL = "demo@corkboard.local"
-
-        private val RESIDENTS = listOf(
-            "Marisol Vega", "Tommy Okafor", "June Park", "Sasha Lindqvist", "Ray Delgado",
-            "Priya Raman", "Old Gus", "Wendy Liu", "Bram de Vries", "Katya Morozova",
-        )
-
-        private val EAST_VILLAGE = -73.9816 to 40.7265
-        private val WILLIAMSBURG = -73.9573 to 40.7081
-        private val PARK_SLOPE = -73.9776 to 40.6710
-        private val UWS = -73.9754 to 40.7870
-        private val HARLEM = -73.9465 to 40.8116
-        private val MIDTOWN = -73.9857 to 40.7484
-        private val BUSHWICK = -73.9210 to 40.6944
-        private val LES = -73.9871 to 40.7180
-        private val ASTORIA = -73.9235 to 40.7644
-        private val BLIJDORP = 4.4530 to 51.9310
-        private val KRALINGEN = 4.5080 to 51.9260
-        private val DELFSHAVEN = 4.4430 to 51.9040
-
-        private val NOTES = listOf(
-            SeedNote(
-                EventType.LOST_FOUND, "Missing cat Pirozhok — grey tabby, red collar",
-                "He slipped out Tuesday night near Tompkins Square. Shy but food-motivated; rattle a treat bag and he'll come to you. Please write if you spot him, his humans are worried sick.",
-                EAST_VILLAGE, applyable = true, tags = listOf("cats", "east-village"), expiryDays = 21,
-            ),
-            SeedNote(
-                EventType.LOST_FOUND, "Found: single house key on a frog keychain",
-                "Picked it up by the dog run gate on Saturday morning. Describe the frog and it's yours.",
-                EAST_VILLAGE, applyable = true, tags = listOf("found"),
-            ),
-            SeedNote(
-                EventType.ACTIVITY, "Five-a-side football, Sunday mornings",
-                "We're four regulars short since the weather turned. East River Park fields at 9am, all levels genuinely welcome — we play for the coffee afterwards as much as the game.",
-                LES, applyable = true, tags = listOf("5-a-side", "beginners-welcome"), expiryDays = 45,
-            ),
-            SeedNote(
-                EventType.ACTIVITY, "Morning run club — slow pace, fast gossip",
-                "Loop around Prospect Park, 7am Tuesdays and Fridays. We wait for stragglers at the boathouse.",
-                PARK_SLOPE, applyable = true, tags = listOf("running", "beginners-welcome"), expiryDays = 60,
-            ),
-            SeedNote(
-                EventType.CLUB, "Chess in the park — bring your own clock",
-                "Every Saturday by the fountain, weather permitting. Blitz until someone's phone dies. Kibitzers tolerated, barely.",
-                UWS, applyable = true, tags = listOf("chess"), expiryDays = 60,
-            ),
-            SeedNote(
-                EventType.CLUB, "Board games night above the laundromat",
-                "Thursdays at 7. We own too many games and not enough friends. Catan ban currently in effect after The Incident.",
-                BUSHWICK, applyable = true, tags = listOf("board-games", "beginners-welcome"), expiryDays = 60,
-            ),
-            SeedNote(
-                EventType.HELP, "Need a hand moving a couch two blocks",
-                "It's a two-seater, not a monster. Saturday around noon, pizza and eternal gratitude included.",
-                WILLIAMSBURG, applyable = true, tags = listOf("moving"), expiryDays = 7,
-            ),
-            SeedNote(
-                EventType.HELP, "Offering: bike repair on weekends",
-                "Retired mechanic, miss the work. Flats, brakes, gears — bring it by the community garden Saturday mornings. Donations go to the garden's seed fund.",
-                HARLEM, applyable = true, tags = listOf("bikes"), expiryDays = 60,
-            ),
-            SeedNote(
-                EventType.HELP, "Dog walker needed, gentle old beagle",
-                "Biscuit is eleven and walks like it. Twenty minutes at lunchtime, weekdays. He will love you unconditionally and immediately.",
-                ASTORIA, applyable = true, tags = listOf("dogs"), expiryDays = 30,
-            ),
-            SeedNote(
-                EventType.GIVEAWAY, "Free: bookshelf, solid pine, slightly scratched",
-                "Moving out, can't take it. Fits a lot of books and one medium cat. First come, first served — stoop pickup on 7th street.",
-                PARK_SLOPE, applyable = true, tags = listOf("furniture"), expiryDays = 10,
-            ),
-            SeedNote(
-                EventType.GIVEAWAY, "Sourdough starter, needs a good home",
-                "His name is Clint Yeastwood. Fed daily, very active. I'm traveling for two months and he deserves better.",
-                WILLIAMSBURG, applyable = true, tags = listOf("baking"), expiryDays = 14,
-            ),
-            SeedNote(
-                EventType.GIVEAWAY, "Moving box mountain — free for the taking",
-                "About thirty sturdy boxes, flattened, plus packing paper. Take some, take all.",
-                MIDTOWN, applyable = true, expiryDays = 7,
-            ),
-            SeedNote(
-                EventType.HAPPENING, "Stoop sale marathon on Berry Street",
-                "Six households, one Saturday, everything from vinyl to a kayak. Starts at 10, the good stuff goes by 11.",
-                WILLIAMSBURG, applyable = false, tags = listOf("stoop-sale"), expiryDays = 5,
-            ),
-            SeedNote(
-                EventType.HAPPENING, "Open-air movie night: The Princess Bride",
-                "Bring a blanket to the community garden Friday at dusk. Popcorn provided by Gus, who insists it's the good kind.",
-                HARLEM, applyable = false, tags = listOf("movies"), expiryDays = 8,
-            ),
-            SeedNote(
-                EventType.HAPPENING, "Saturday farmers market is back",
-                "The cider doughnut stand returned. This is not a drill. Under the elevated tracks, 8am to 2pm.",
-                ASTORIA, applyable = false, expiryDays = 30,
-            ),
-            SeedNote(
-                EventType.NOTICE, "Water shutoff Thursday morning, our block",
-                "Con Ed says 9am to noon for the buildings between 4th and 6th. Fill a kettle the night before.",
-                EAST_VILLAGE, applyable = false, expiryDays = 4,
-            ),
-            SeedNote(
-                EventType.NOTICE, "Please stop feeding the pigeons on the corner",
-                "They have unionized. They wait for the 8:15 lady like clockwork and the sidewalk shows it. The bench people beg you.",
-                UWS, applyable = false, expiryDays = 30,
-            ),
-            SeedNote(
-                EventType.NOTICE, "New bike lane painting next week",
-                "Bedford between N 4th and Metropolitan, Monday through Wednesday. Expect cones, confusion, and one very proud city van.",
-                WILLIAMSBURG, applyable = false, tags = listOf("bikes"), expiryDays = 12,
-            ),
-            SeedNote(
-                EventType.LOST_FOUND, "Lost: kid's scooter, blue with dinosaur stickers",
-                "Left outside the bakery for ten minutes. My son has been a stoic little soldier about it but I know that scooter meant the world.",
-                PARK_SLOPE, applyable = true, tags = listOf("lost"), expiryDays = 20,
-            ),
-            SeedNote(
-                EventType.ACTIVITY, "Beginner tai chi on the pier",
-                "Wednesdays at sunrise. Wear comfortable shoes, expect herons.",
-                BLIJDORP, applyable = true, tags = listOf("beginners-welcome"), expiryDays = 60,
-            ),
-            SeedNote(
-                EventType.GIVEAWAY, "Gratis: stapel NL-studieboeken",
-                "Inburgering gehaald! Boeken mogen door naar de volgende. Afhalen in Kralingen.",
-                KRALINGEN, applyable = true, tags = listOf("books"), expiryDays = 21,
-            ),
-            SeedNote(
-                EventType.CLUB, "Klaverjassen in het buurthuis",
-                "Dinsdagavond, inzet is de eer en een rol koeken. Nieuwe leden van harte welkom.",
-                DELFSHAVEN, applyable = true, tags = listOf("board-games"), expiryDays = 60,
-            ),
-            SeedNote(
-                EventType.HAPPENING, "Canal-side vinyl swap",
-                "Crates out along the water Sunday afternoon. Bring records, leave with different records. That's the whole event.",
-                DELFSHAVEN, applyable = false, tags = listOf("music"), expiryDays = 9,
-            ),
-            SeedNote(
-                EventType.NOTICE, "Brug dicht voor onderhoud dit weekend",
-                "De fietsbrug bij het park is zaterdag en zondag afgesloten. Omleiding via de sluis.",
-                BLIJDORP, applyable = false, expiryDays = 3,
-            ),
-            SeedNote(
-                EventType.LOST_FOUND, "Gevonden: bos sleutels met bakfiets-hanger",
-                "Lagen op het bankje bij de speeltuin. Herken je de hanger, stuur een berichtje.",
-                KRALINGEN, applyable = true, tags = listOf("found"), expiryDays = 14,
-            ),
-        )
+        const val PROCEDURAL_COUNT = 250
     }
 }

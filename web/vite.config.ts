@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
 const apiTarget = process.env.API_PROXY_TARGET ?? "http://localhost:8080";
@@ -17,5 +17,8 @@ export default defineConfig({
       "/api": { target: apiTarget, changeOrigin: false },
       "/ws": { target: apiTarget, ws: true },
     },
+  },
+  test: {
+    environment: "jsdom",
   },
 });

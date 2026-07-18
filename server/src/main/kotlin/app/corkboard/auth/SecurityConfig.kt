@@ -55,6 +55,17 @@ class SecurityConfig(
                     "/api/v1/events/*",
                     "/api/v1/tags",
                     "/ws",
+                    "/",
+                    "/index.html",
+                    "/assets/**",
+                    "/fonts/**",
+                    "/favicon.svg",
+                    "/events/*",
+                    "/new",
+                    "/login",
+                    "/me/pins",
+                    "/messages",
+                    "/messages/*",
                 ).permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()
                     .anyRequest().authenticated()
