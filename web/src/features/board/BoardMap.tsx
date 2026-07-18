@@ -93,6 +93,9 @@ export function BoardMap() {
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     mapRef.current = map;
+    if (import.meta.env.DEV) {
+      (window as unknown as { __corkboardMap?: maplibregl.Map }).__corkboardMap = map;
+    }
 
     const publishViewport = () => {
       const bounds = map.getBounds();

@@ -61,10 +61,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       problem?.fields,
     );
   }
-  if (res.status === 204) {
-    return undefined as T;
-  }
-  return (await res.json()) as T;
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 export const api = {

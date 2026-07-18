@@ -54,6 +54,7 @@ PostgreSQL 16 + PostGIS 3.4 — GiST spatial index, triggers for denormalized co
 | `make seed` | seed through the service layer (idempotent; `SEED_FORCE=true` wipes) |
 | `make check` | server build + all e2e specs (Testcontainers) + web typecheck + smoke tests |
 | `make types` | regenerate `types.gen.ts` from the running API |
+| `cd web && pnpm e2e` | Playwright browser regression suite (needs the running, seeded dev stack) |
 | `make jooq` | regenerate jOOQ classes after a migration change |
 
 Ten numbered end-to-end specs from the specification (§14.1) run as `@SpringBootTest` against a disposable PostGIS container — from "register → pin → appears in the right viewport" to "five reports take it off the board" — with a mutable `Clock` so expiry tests control time. Frontend testing is smoke-level by design; the visual language is reviewed by eye against spec §10.
