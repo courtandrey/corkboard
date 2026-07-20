@@ -12,7 +12,7 @@ test("board renders chrome, server-driven filters, and pins", async ({ page }) =
   ]) {
     await expect(page.getByText(label, { exact: true })).toBeVisible();
   }
-  await expect(page.locator(".status-line")).toHaveText(/Showing \d+ of \d+\+? notes/);
+  await expect(page.locator(".status-line")).toHaveText(/\d+ notes? on this stretch of the board/);
   await expect(page.getByText("Popular tags")).toBeVisible();
   await page.screenshot({ path: `${SHOTS}/board.png` });
 });
@@ -36,7 +36,7 @@ test("search narrows the board; pin click opens popup then drawer", async ({ pag
   );
   await page.getByLabel("search notes…").fill("Pirozhok");
   await page.getByLabel("search notes…").press("Enter");
-  await expect(page.locator(".status-line")).toHaveText(/Showing 1 of 1/);
+  await expect(page.locator(".status-line")).toHaveText(/1 note on this stretch/);
 
   const popup = page.locator(".paper-note");
   await expect(async () => {

@@ -1,55 +1,98 @@
 import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import type { GeoJSONSource, MapMouseEvent } from "maplibre-gl";
-import type { FeatureCollection, Point } from "geojson";
+import type { Feature, FeatureCollection, Point } from "geojson";
 import { useMatch, useNavigate } from "react-router";
 import { useMeta, useViewportEvents } from "../../api/hooks";
-import type { EventPin, MetaResponse } from "../../api/client";
+import { api, query } from "../../api/client";
+import type { MetaResponse, ViewportResponse } from "../../api/client";
 import { strings } from "../../i18n/strings";
-import { pushpinDataUri } from "../../ui/pushpin";
+import { clusterPushpinDataUri, pushpinDataUri } from "../../ui/pushpin";
 import { loadSavedPosition, savePosition, useBoardStore } from "../../stores/boardStore";
 
 const FALLBACK_ZOOM = 13;
-const OVERLAP_ZOOM = 13.05;
+const MAX_SPLIT_ZOOM = 18;
+const SPLIT_EPS = 45 / 2 ** MAX_SPLIT_ZOOM;
 
 function defaultCenter(): [number, number] {
   const [lng, lat] = __DEFAULT_CENTER__.split(",").map(Number);
   return [lng, lat];
 }
 
-function toFeatureCollection(items: EventPin[], selectedId: string | undefined): FeatureCollection {
-  return {
-    type: "FeatureCollection",
-    features: items.map((pin) => ({
-      type: "Feature",
-      geometry: { type: "Point", coordinates: [pin.location.lng, pin.location.lat] },
-      properties: {
-        id: pin.id,
-        type: pin.type,
-        title: pin.title,
-        score: pin.score,
-        selected: pin.id === selectedId,
-      },
-    })),
-  };
+function countLabel(count: number): string {
+  return count > 99 ? "99+" : String(count);
+}
+
+function wrapLng(value: number): number {
+  return ((((value + 180) % 360) + 360) % 360) - 180;
+}
+
+function normalizeBounds(bounds: maplibregl.LngLatBounds) {
+  let west = bounds.getWest();
+  let east = bounds.getEast();
+  if (east - west >= 360) {
+    west = -180;
+    east = 180;
+  } else {
+    west = wrapLng(west);
+    east = wrapLng(east);
+    if (east === -180) east = 180;
+  }
+  const south = Math.min(Math.max(bounds.getSouth(), -85), 84.99);
+  const north = Math.min(Math.max(bounds.getNorth(), south + 0.01), 85);
+  return { west, south, east, north };
+}
+
+function toFeatureCollection(
+  data: ViewportResponse,
+  selectedId: string | undefined,
+): FeatureCollection {
+  const pins: Feature[] = data.items.map((pin) => ({
+    type: "Feature",
+    geometry: { type: "Point", coordinates: [pin.location.lng, pin.location.lat] },
+    properties: {
+      kind: "pin",
+      id: pin.id,
+      type: pin.type,
+      title: pin.title,
+      score: pin.score,
+      selected: pin.id === selectedId,
+    },
+  }));
+  const clusters: Feature[] = data.clusters.map((cluster) => ({
+    type: "Feature",
+    geometry: { type: "Point", coordinates: [cluster.location.lng, cluster.location.lat] },
+    properties: {
+      kind: "cluster",
+      count: cluster.count,
+      countLabel: countLabel(cluster.count),
+      west: cluster.bounds.west,
+      south: cluster.bounds.south,
+      east: cluster.bounds.east,
+      north: cluster.bounds.north,
+    },
+  }));
+  return { type: "FeatureCollection", features: [...pins, ...clusters] };
+}
+
+function loadImage(map: maplibregl.Map, name: string, uri: string, size: [number, number]): Promise<void> {
+  return new Promise((resolve) => {
+    if (map.hasImage(name)) return resolve();
+    const img = new Image(size[0], size[1]);
+    img.onload = () => {
+      if (!map.hasImage(name)) map.addImage(name, img, { pixelRatio: 2 });
+      resolve();
+    };
+    img.onerror = () => resolve();
+    img.src = uri;
+  });
 }
 
 async function registerPushpins(map: maplibregl.Map, meta: MetaResponse): Promise<void> {
-  const load = (name: string, uri: string) =>
-    new Promise<void>((resolve) => {
-      if (map.hasImage(name)) return resolve();
-      const img = new Image(48, 64);
-      img.onload = () => {
-        if (!map.hasImage(name)) map.addImage(name, img, { pixelRatio: 2 });
-        resolve();
-      };
-      img.onerror = () => resolve();
-      img.src = uri;
-    });
   await Promise.all(
     meta.types.flatMap((t) => [
-      load(`pin-${t.key}`, pushpinDataUri(t.color)),
-      load(`pin-${t.key}-pressed`, pushpinDataUri(t.color, true)),
+      loadImage(map, `pin-${t.key}`, pushpinDataUri(t.color), [48, 64]),
+      loadImage(map, `pin-${t.key}-pressed`, pushpinDataUri(t.color, true), [48, 64]),
     ]),
   );
 }
@@ -98,15 +141,9 @@ export function BoardMap() {
     }
 
     const publishViewport = () => {
-      const bounds = map.getBounds();
       const center = map.getCenter();
       setViewport({
-        bbox: {
-          west: bounds.getWest(),
-          south: bounds.getSouth(),
-          east: bounds.getEast(),
-          north: bounds.getNorth(),
-        },
+        bbox: normalizeBounds(map.getBounds()),
         zoom: map.getZoom(),
         center: { lng: center.lng, lat: center.lat },
       });
@@ -119,29 +156,41 @@ export function BoardMap() {
       debounce = window.setTimeout(publishViewport, 300);
     });
 
+    map.on("styleimagemissing", (event) => {
+      const name = event.id;
+      if (!name.startsWith("cluster-")) return;
+      void loadImage(map, name, clusterPushpinDataUri(name.slice("cluster-".length)), [64, 80]);
+    });
+
     map.on("load", () => {
       map.addSource("events", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
       });
-      const symbol = (id: string, overlap: boolean) =>
-        map.addLayer({
-          id,
-          type: "symbol",
-          source: "events",
-          minzoom: overlap ? OVERLAP_ZOOM : 0,
-          maxzoom: overlap ? 24 : OVERLAP_ZOOM,
-          layout: {
-            "icon-image": PIN_ICON as never,
-            "icon-anchor": "bottom",
-            "icon-allow-overlap": overlap,
-            "icon-padding": 1,
-            "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.8, 15, 1.05],
-          },
-        });
-      symbol("pins-low", false);
-      symbol("pins-high", true);
-      for (const layer of ["pins-low", "pins-high"]) {
+      map.addLayer({
+        id: "pins",
+        type: "symbol",
+        source: "events",
+        filter: ["==", ["get", "kind"], "pin"],
+        layout: {
+          "icon-image": PIN_ICON as never,
+          "icon-anchor": "bottom",
+          "icon-allow-overlap": true,
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.8, 15, 1.05],
+        },
+      });
+      map.addLayer({
+        id: "clusters",
+        type: "symbol",
+        source: "events",
+        filter: ["==", ["get", "kind"], "cluster"],
+        layout: {
+          "icon-image": ["concat", "cluster-", ["get", "countLabel"]] as never,
+          "icon-anchor": "bottom",
+          "icon-allow-overlap": true,
+        },
+      });
+      for (const layer of ["pins", "clusters"]) {
         map.on("mouseenter", layer, () => {
           map.getCanvas().style.cursor = "pointer";
         });
@@ -181,7 +230,7 @@ export function BoardMap() {
     if (!map || !data) return;
     const apply = () => {
       (map.getSource("events") as GeoJSONSource | undefined)?.setData(
-        toFeatureCollection(data.items, selectedId),
+        toFeatureCollection(data, selectedId),
       );
     };
     if (loadedRef.current) apply();
@@ -209,14 +258,10 @@ export function BoardMap() {
     const map = mapRef.current;
     if (!map || !meta) return;
 
-    const onPinClick = (event: MapMouseEvent) => {
-      if (useBoardStore.getState().crosshair) return;
-      const feature = map.queryRenderedFeatures(event.point, { layers: ["pins-low", "pins-high"] })[0];
-      if (!feature) return;
+    const openPinPopup = (feature: Feature) => {
       const props = feature.properties as { id: string; type: string; title: string; score: number };
       const type = meta.types.find((t) => t.key === props.type);
 
-      popupRef.current?.remove();
       const container = document.createElement("div");
       container.className = "paper-note";
 
@@ -245,25 +290,87 @@ export function BoardMap() {
       });
 
       container.append(pinImg, title, metaRow, more);
-
+      popupRef.current?.remove();
       popupRef.current = new maplibregl.Popup({ className: "note-popup", offset: 26 })
         .setLngLat((feature.geometry as Point).coordinates as [number, number])
         .setDOMContent(container)
         .addTo(map);
     };
 
-    const onMapClick = (event: MapMouseEvent) => {
-      if (!useBoardStore.getState().crosshair) return;
-      setDraftLocation({ lng: event.lngLat.lng, lat: event.lngLat.lat });
+    const openMemberList = async (feature: Feature) => {
+      const props = feature.properties as {
+        count: number; west: number; south: number; east: number; north: number;
+      };
+      const eps = 1e-6;
+      const res = await api.get<ViewportResponse>(
+        `/api/v1/events${query({
+          bbox: [props.west - eps, props.south - eps, props.east + eps, props.north + eps].join(","),
+          zoom: 22,
+          clustered: false,
+          limit: 100,
+        })}`,
+      );
+
+      const container = document.createElement("div");
+      container.className = "paper-note cluster-list";
+
+      const title = document.createElement("p");
+      title.className = "note-title";
+      title.textContent = strings.board.clusterList(props.count);
+      container.append(title);
+
+      for (const pin of res.items) {
+        const row = document.createElement("button");
+        row.className = "cluster-list-row";
+        const dot = document.createElement("span");
+        dot.className = "type-dot";
+        dot.style.background = meta.types.find((t) => t.key === pin.type)?.color ?? "#8A8A8A";
+        row.append(dot, ` ${pin.title}`);
+        row.addEventListener("click", () => {
+          popupRef.current?.remove();
+          navigate(`/events/${pin.id}`);
+        });
+        container.append(row);
+      }
+
+      popupRef.current?.remove();
+      popupRef.current = new maplibregl.Popup({ className: "note-popup", offset: 34, maxWidth: "280px" })
+        .setLngLat((feature.geometry as Point).coordinates as [number, number])
+        .setDOMContent(container)
+        .addTo(map);
     };
 
-    map.on("click", "pins-low", onPinClick);
-    map.on("click", "pins-high", onPinClick);
-    map.on("click", onMapClick);
+    const onClick = (event: MapMouseEvent) => {
+      if (useBoardStore.getState().crosshair) {
+        setDraftLocation({ lng: event.lngLat.lng, lat: event.lngLat.lat });
+        return;
+      }
+      const feature = map.queryRenderedFeatures(event.point, { layers: ["pins", "clusters"] })[0];
+      if (!feature) return;
+      if (feature.properties?.kind === "pin") {
+        openPinPopup(feature as unknown as Feature);
+        return;
+      }
+      const props = feature.properties as { west: number; south: number; east: number; north: number };
+      const extent = Math.max(props.east - props.west, props.north - props.south);
+      if (extent < SPLIT_EPS) {
+        void openMemberList(feature as unknown as Feature);
+      } else {
+        popupRef.current?.remove();
+        map.fitBounds(
+          [[props.west, props.south], [props.east, props.north]],
+          {
+            padding: 96,
+            maxZoom: MAX_SPLIT_ZOOM,
+            duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 500,
+          },
+        );
+      }
+    };
+
+    map.on("click", onClick);
     return () => {
-      map.off("click", "pins-low", onPinClick);
-      map.off("click", "pins-high", onPinClick);
-      map.off("click", onMapClick);
+      map.off("click", onClick);
     };
   }, [meta, navigate, setDraftLocation]);
 
@@ -301,8 +408,6 @@ export function BoardMap() {
     );
   }
 
-  const shown = data?.items.length ?? 0;
-
   return (
     <div className="map-wrap">
       <div ref={containerRef} className={`map${crosshair ? " crosshair" : ""}`} />
@@ -311,9 +416,7 @@ export function BoardMap() {
       </button>
       {data && (
         <div className="status-line" role="status">
-          {shown === 0
-            ? strings.board.emptyViewport
-            : strings.board.showing(shown, data.total, data.truncated || data.total >= 500)}
+          {data.total === 0 ? strings.board.emptyViewport : strings.board.notesHere(data.total)}
         </div>
       )}
     </div>

@@ -50,8 +50,8 @@ def fetch(params):
 
 
 def main():
-    print(f"| scenario | items | total | p50 ms | p95 ms | max ms |")
-    print(f"|---|---|---|---|---|---|")
+    print("| scenario | items | clusters | total | p50 ms | p95 ms | max ms |")
+    print("|---|---|---|---|---|---|---|")
     for name, params in SCENARIOS:
         for _ in range(WARMUP):
             fetch(params)
@@ -63,7 +63,7 @@ def main():
         p50 = statistics.median(times)
         p95 = times[int(len(times) * 0.95) - 1]
         print(
-            f"| {name} | {len(body['items'])} | {body['total']} "
+            f"| {name} | {len(body['items'])} | {len(body.get('clusters', []))} | {body['total']} "
             f"| {p50:.1f} | {p95:.1f} | {times[-1]:.1f} |"
         )
 

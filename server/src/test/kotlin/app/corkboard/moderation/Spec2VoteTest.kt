@@ -32,8 +32,8 @@ class Spec2VoteTest : ApiTestBase() {
         val author = registerUser("Vote Author")
         val voter = registerUser("Voter")
         val bbox = "30.20,60.10,30.40,60.20"
-        val plain = createEvent(author, "Unloved note", 30.3001, 60.1501)
-        val loved = createEvent(author, "Beloved note", 30.3002, 60.1502)
+        val plain = createEvent(author, "Unloved note", 30.2501, 60.1301)
+        val loved = createEvent(author, "Beloved note", 30.3502, 60.1702)
 
         val voted = sendJson(HttpMethod.POST, "/api/v1/events/$loved/vote", null, voter.headers)
         assertThat(voted.statusCode.value()).isEqualTo(200)

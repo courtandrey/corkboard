@@ -42,8 +42,8 @@ class Spec9ExpirationTest : ApiTestBase() {
     @Test
     fun `sweep warns authors, flips overdue notes, and renew revives them`() {
         val author = registerUser("Sweep Author")
-        val longLived = createEvent(author, 38.3001, 56.1501, expiresInDays = 30, title = "Long-lived note")
-        val shortLived = createEvent(author, 38.3002, 56.1502, expiresInDays = 2, title = "Short-lived note")
+        val longLived = createEvent(author, 38.2601, 56.1301, expiresInDays = 30, title = "Long-lived note")
+        val shortLived = createEvent(author, 38.3502, 56.1702, expiresInDays = 2, title = "Short-lived note")
         val viewport = "/api/v1/events?bbox=38.20,56.10,38.40,56.20&zoom=14"
 
         sweep.sweep()

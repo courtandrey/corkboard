@@ -71,10 +71,23 @@ data class EventPin(
     val createdAt: Instant,
 )
 
+data class ClusterBounds(
+    val west: Double,
+    val south: Double,
+    val east: Double,
+    val north: Double,
+)
+
+data class ClusterPin(
+    val count: Int,
+    val location: LatLng,
+    val bounds: ClusterBounds,
+)
+
 data class ViewportResponse(
     val items: List<EventPin>,
+    val clusters: List<ClusterPin>,
     val total: Int,
-    val truncated: Boolean,
 )
 
 data class TagRef(

@@ -24,8 +24,9 @@ export const strings = {
     filtersToggle: "Filters",
     pinANote: "Pin a note",
     useMyLocation: "Use my location",
-    showing: (shown: number, total: number, capped: boolean) =>
-      `Showing ${shown} of ${total}${capped ? "+" : ""} notes${capped || total > shown ? " — zoom in to see more" : ""}`,
+    notesHere: (total: number) =>
+      `${total} ${total === 1 ? "note" : "notes"} on this stretch of the board`,
+    clusterList: (count: number) => `${count} notes pinned right here`,
     emptyViewport: "Nothing pinned around here yet. Be the first to put something on the board.",
     readMore: "read more",
     points: (n: number) => `${n} ${n === 1 ? "point" : "points"}`,

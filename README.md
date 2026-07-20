@@ -21,7 +21,7 @@ Without `make`: the `Makefile` documents the underlying commands; each target is
 
 ## What it does
 
-- **The board is a map.** MapLibre GL with hand-drawn pushpin sprites, one color per note type, spatially thinned server-side so a dense downtown never drowns out your quiet street.
+- **The board is a map.** MapLibre GL with hand-drawn pushpin sprites, one color per note type. Every note in view is always represented: dense spots merge into a counted pin on a world-anchored grid, so nothing flickers in or out while you pan or zoom. Clicking a merged pin zooms until it splits — or, when its notes share one exact spot, opens a pick-list.
 - **Seven kinds of notes** — lost & found, activities, clubs, help, giveaways, happenings, notices — defined once on the server and served to every client from `GET /api/v1/meta`.
 - **Respond privately.** Applyable notes open a 1:1 conversation with the author; accept/decline, unread counts, live delivery over a plain WebSocket.
 - **Points, hides, reports.** Upvotes drive ranking; hiding is personal; five distinct reports take a note off the board for review automatically (a database trigger enforces it).

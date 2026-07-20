@@ -38,3 +38,32 @@ export function pushpinSvg(color: string, pressed = false): string {
 export function pushpinDataUri(color: string, pressed = false): string {
   return `data:image/svg+xml,${encodeURIComponent(pushpinSvg(color, pressed))}`;
 }
+
+// Merged pin: wider head with the member count baked into the sprite, so no
+// map-font glyphs are needed to label it.
+export function clusterPushpinSvg(label: string): string {
+  const color = "#3b5998";
+  const rim = shade(color, 0.72);
+  const glow = shade(color, 1.25);
+  const fontSize = label.length <= 1 ? 13 : label.length === 2 ? 11 : 9;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
+  <defs>
+    <radialGradient id="c${label}" cx="0.38" cy="0.32" r="0.85">
+      <stop offset="0" stop-color="${glow}"/>
+      <stop offset="0.62" stop-color="${color}"/>
+      <stop offset="1" stop-color="${rim}"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="17.6" cy="37.4" rx="7" ry="2" fill="rgba(46,32,14,0.28)"/>
+  <path d="M14.8 24.5 L17.2 24.5 L16.45 37 L15.55 37 Z" fill="#8a8f97"/>
+  <circle cx="16" cy="13" r="12" fill="url(#c${label})"/>
+  <circle cx="16" cy="13" r="12" fill="none" stroke="${rim}" stroke-width="0.8" opacity="0.7"/>
+  <ellipse cx="12" cy="8" rx="3.4" ry="2.1" transform="rotate(-28 12 8)" fill="rgba(255,255,255,0.6)"/>
+  <text x="16" y="${13 + fontSize * 0.36}" text-anchor="middle" font-family="Tahoma, Verdana, sans-serif"
+        font-weight="bold" font-size="${fontSize}" fill="#ffffff">${label}</text>
+</svg>`;
+}
+
+export function clusterPushpinDataUri(label: string): string {
+  return `data:image/svg+xml,${encodeURIComponent(clusterPushpinSvg(label))}`;
+}

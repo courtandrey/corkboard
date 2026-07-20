@@ -10,6 +10,8 @@ import app.corkboard.meta.EventType
 import java.time.Clock
 import java.time.OffsetDateTime
 import java.util.UUID
+import kotlin.math.ceil
+import kotlin.math.floor
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
@@ -30,77 +32,127 @@ class ViewportQuery(
         val q: String?,
         val viewerId: UUID?,
         val limit: Int,
+        val clustered: Boolean = true,
     )
 
-    fun run(p: Params): ViewportResponse {
-        val truncated = p.bounds.west > p.bounds.east
-        val east = if (truncated) 180.0 else p.bounds.east
-        val cell = ((east - p.bounds.west) / 12.0).coerceAtLeast(1e-9)
-        val perCell = if (p.zoom <= 13) 3 else 6
+    companion object {
+        fun cellSizeDeg(zoom: Int): Double = 45.0 / (1 shl zoom.coerceIn(0, 20))
 
-        val cond = conditions(p, east)
+        const val MAX_CELLS_PER_AXIS = 45
 
-        val lng = DSL.field("ST_X({0})", Double::class.java, EVENTS.LOCATION).`as`("lng")
-        val lat = DSL.field("ST_Y({0})", Double::class.java, EVENTS.LOCATION).`as`("lat")
-        val cellField = DSL.field(
-            "ST_SnapToGrid({0}, {1}, {2})",
-            Any::class.java, EVENTS.LOCATION, DSL.`val`(cell), DSL.`val`(cell),
-        ).`as`("cell")
-
-        val candidates = DSL.select(
-            EVENTS.ID, EVENTS.TYPE, EVENTS.TITLE, EVENTS.APPLYABLE, EVENTS.SCORE,
-            EVENTS.APPLICATION_COUNT, EVENTS.EXPIRES_AT, EVENTS.CREATED_AT,
-            lng, lat, cellField,
-        ).from(EVENTS).where(cond).asTable("candidates")
-
-        val cellRank = DSL.rowNumber().over(
-            DSL.partitionBy(candidates.field("cell"))
-                .orderBy(candidates.field(EVENTS.SCORE)!!.desc(), candidates.field(EVENTS.CREATED_AT)!!.desc())
-        ).`as`("cell_rank")
-
-        val ranked = DSL.select(candidates.asterisk(), cellRank).from(candidates).asTable("ranked")
-
-        val idF = ranked.field(EVENTS.ID)!!
-        val typeF = ranked.field(EVENTS.TYPE)!!
-        val titleF = ranked.field(EVENTS.TITLE)!!
-        val applyableF = ranked.field(EVENTS.APPLYABLE)!!
-        val scoreF = ranked.field(EVENTS.SCORE)!!
-        val appCountF = ranked.field(EVENTS.APPLICATION_COUNT)!!
-        val expiresF = ranked.field(EVENTS.EXPIRES_AT)!!
-        val createdF = ranked.field(EVENTS.CREATED_AT)!!
-        val lngF = ranked.field("lng", Double::class.java)!!
-        val latF = ranked.field("lat", Double::class.java)!!
-
-        val items = dsl.select(idF, typeF, titleF, applyableF, scoreF, appCountF, expiresF, createdF, lngF, latF)
-            .from(ranked)
-            .where(ranked.field("cell_rank", Int::class.java)!!.le(perCell))
-            .orderBy(scoreF.desc(), createdF.desc())
-            .limit(p.limit)
-            .fetch { r ->
-                EventPin(
-                    id = r[idF]!!,
-                    type = EventType.fromKey(r[typeF]!!.literal)!!,
-                    title = r[titleF]!!,
-                    location = LatLng(r[lngF]!!, r[latF]!!),
-                    applyable = r[applyableF]!!,
-                    score = r[scoreF]!!,
-                    applicationCount = r[appCountF]!!,
-                    expiresAt = r[expiresF]!!.toInstant(),
-                    createdAt = r[createdF]!!.toInstant(),
-                )
-            }
-
-        val total = dsl.fetchCount(DSL.selectOne().from(EVENTS).where(cond).limit(500))
-        return ViewportResponse(items, total, truncated)
+        private val LNG = DSL.field("ST_X({0})", Double::class.java, EVENTS.LOCATION)
+        private val LAT = DSL.field("ST_Y({0})", Double::class.java, EVENTS.LOCATION)
     }
 
-    private fun conditions(p: Params, east: Double): Condition {
-        val now = OffsetDateTime.now(clock)
-        var cond = DSL.condition(
-            "{0} && ST_MakeEnvelope({1}, {2}, {3}, {4}, 4326)",
-            EVENTS.LOCATION, DSL.`val`(p.bounds.west), DSL.`val`(p.bounds.south),
-            DSL.`val`(east), DSL.`val`(p.bounds.north),
+    fun run(p: Params): ViewportResponse {
+        if (!p.clustered) {
+            return unclustered(p)
+        }
+
+        val wrapped = p.bounds.west > p.bounds.east
+        val lngSpan = if (wrapped) (180.0 - p.bounds.west) + (p.bounds.east + 180.0) else p.bounds.east - p.bounds.west
+        val latSpan = p.bounds.north - p.bounds.south
+        var zoom = p.zoom.coerceIn(0, 20)
+        while (zoom > 0 &&
+            (lngSpan / cellSizeDeg(zoom) > MAX_CELLS_PER_AXIS || latSpan / cellSizeDeg(zoom) > MAX_CELLS_PER_AXIS)
+        ) {
+            zoom--
+        }
+        val cell = cellSizeDeg(zoom)
+        val cond = conditions(p, cell)
+
+        val cellX = DSL.field("floor(ST_X({0}) / {1})", Double::class.java, EVENTS.LOCATION, DSL.`val`(cell))
+        val cellY = DSL.field("floor(ST_Y({0}) / {1})", Double::class.java, EVENTS.LOCATION, DSL.`val`(cell))
+        val n = DSL.count()
+        val avgLng = DSL.avg(LNG)
+        val avgLat = DSL.avg(LAT)
+        val minLng = DSL.min(LNG)
+        val maxLng = DSL.max(LNG)
+        val minLat = DSL.min(LAT)
+        val maxLat = DSL.max(LAT)
+        val anyId = DSL.field("min({0}::text)", String::class.java, EVENTS.ID)
+
+        val cells = dsl.select(n, avgLng, avgLat, minLng, maxLng, minLat, maxLat, anyId)
+            .from(EVENTS)
+            .where(cond)
+            .groupBy(cellX, cellY)
+            .fetch()
+
+        val total = cells.sumOf { it[n]!! }
+        val singleIds = cells.filter { it[n] == 1 }.map { UUID.fromString(it[anyId]!!) }
+        val clusters = cells.filter { it[n]!! > 1 }
+            .map { r ->
+                ClusterPin(
+                    count = r[n]!!,
+                    location = LatLng(r[avgLng]!!.toDouble(), r[avgLat]!!.toDouble()),
+                    bounds = ClusterBounds(
+                        west = r[minLng]!!,
+                        south = r[minLat]!!,
+                        east = r[maxLng]!!,
+                        north = r[maxLat]!!,
+                    ),
+                )
+            }
+            .sortedByDescending { it.count }
+
+        return ViewportResponse(fetchPins(singleIds, null), clusters, total)
+    }
+
+    private fun unclustered(p: Params): ViewportResponse {
+        val cond = conditions(p, cell = null)
+        val items = fetchPins(null, cond, p.limit)
+        val total = dsl.fetchCount(DSL.selectOne().from(EVENTS).where(cond).limit(500))
+        return ViewportResponse(items, emptyList(), total)
+    }
+
+    private fun fetchPins(ids: List<UUID>?, cond: Condition?, limit: Int? = null): List<EventPin> {
+        if (ids != null && ids.isEmpty()) return emptyList()
+        val where = cond ?: EVENTS.ID.`in`(ids)
+        val step = dsl.select(
+            EVENTS.ID, EVENTS.TYPE, EVENTS.TITLE, EVENTS.APPLYABLE, EVENTS.SCORE,
+            EVENTS.APPLICATION_COUNT, EVENTS.EXPIRES_AT, EVENTS.CREATED_AT, LNG, LAT,
         )
+            .from(EVENTS)
+            .where(where)
+            .orderBy(EVENTS.SCORE.desc(), EVENTS.CREATED_AT.desc())
+        return (limit?.let { step.limit(it) } ?: step).fetch { r ->
+            EventPin(
+                id = r[EVENTS.ID]!!,
+                type = EventType.fromKey(r[EVENTS.TYPE]!!.literal)!!,
+                title = r[EVENTS.TITLE]!!,
+                location = LatLng(r[LNG]!!, r[LAT]!!),
+                applyable = r[EVENTS.APPLYABLE]!!,
+                score = r[EVENTS.SCORE]!!,
+                applicationCount = r[EVENTS.APPLICATION_COUNT]!!,
+                expiresAt = r[EVENTS.EXPIRES_AT]!!.toInstant(),
+                createdAt = r[EVENTS.CREATED_AT]!!.toInstant(),
+            )
+        }
+    }
+
+    private fun envelope(west: Double, south: Double, east: Double, north: Double): Condition =
+        DSL.condition(
+            "{0} && ST_MakeEnvelope({1}, {2}, {3}, {4}, 4326)",
+            EVENTS.LOCATION, DSL.`val`(west), DSL.`val`(south),
+            DSL.`val`(east), DSL.`val`(north),
+        )
+
+    private fun bboxCondition(bounds: Bounds, cell: Double?): Condition {
+        val snapDown = { v: Double -> if (cell == null) v else floor(v / cell) * cell }
+        val snapUp = { v: Double -> if (cell == null) v else ceil(v / cell) * cell }
+        val south = snapDown(bounds.south).coerceAtLeast(-85.05)
+        val north = snapUp(bounds.north).coerceAtMost(85.05)
+        val wrapped = bounds.west > bounds.east
+        if (!wrapped) {
+            return envelope(snapDown(bounds.west).coerceAtLeast(-180.0), south, snapUp(bounds.east).coerceAtMost(180.0), north)
+        }
+        return envelope(snapDown(bounds.west), south, 180.0, north)
+            .or(envelope(-180.0, south, snapUp(bounds.east), north))
+    }
+
+    private fun conditions(p: Params, cell: Double?): Condition {
+        val now = OffsetDateTime.now(clock)
+        var cond = bboxCondition(p.bounds, cell)
             .and(
                 EVENTS.STATUS.eq(DbEventStatus.active).and(EVENTS.EXPIRES_AT.gt(now))
                     .or(

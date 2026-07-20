@@ -42,7 +42,7 @@ export function useInvalidateMe() {
 const round = (n: number) => Math.round(n * 10_000) / 10_000;
 
 export function useViewportEvents(viewport: Viewport | null, filters: Filters) {
-  const zoomBand = viewport && viewport.zoom <= 13 ? "low" : "high";
+  const zoomInt = viewport ? Math.floor(viewport.zoom) : null;
   const bbox = viewport
     ? [viewport.bbox.west, viewport.bbox.south, viewport.bbox.east, viewport.bbox.north]
         .map(round)
@@ -50,14 +50,14 @@ export function useViewportEvents(viewport: Viewport | null, filters: Filters) {
     : null;
 
   return useQuery({
-    queryKey: ["events", bbox, zoomBand, filters],
+    queryKey: ["events", bbox, zoomInt, filters],
     enabled: bbox !== null,
     placeholderData: keepPreviousData,
     queryFn: () =>
       api.get<ViewportResponse>(
         `/api/v1/events${query({
           bbox: bbox!,
-          zoom: Math.round(viewport!.zoom),
+          zoom: zoomInt!,
           types: filters.types.join(","),
           tags: filters.tags.join(","),
           applyable: filters.applyableOnly ? true : undefined,

@@ -673,6 +673,22 @@ export interface components {
         HealthResponse: {
             status: string;
         };
+        ClusterBounds: {
+            /** Format: double */
+            west: number;
+            /** Format: double */
+            south: number;
+            /** Format: double */
+            east: number;
+            /** Format: double */
+            north: number;
+        };
+        ClusterPin: {
+            /** Format: int32 */
+            count: number;
+            location: components["schemas"]["LatLng"];
+            bounds: components["schemas"]["ClusterBounds"];
+        };
         EventPin: {
             /** Format: uuid */
             id: string;
@@ -692,9 +708,9 @@ export interface components {
         };
         ViewportResponse: {
             items: components["schemas"]["EventPin"][];
+            clusters: components["schemas"]["ClusterPin"][];
             /** Format: int32 */
             total: number;
-            truncated: boolean;
         };
         ConversationListResponse: {
             items: components["schemas"]["ConversationSummary"][];
@@ -760,6 +776,7 @@ export interface operations {
                 applyable?: boolean;
                 q?: string;
                 limit?: number;
+                clustered?: boolean;
             };
             header?: never;
             path?: never;

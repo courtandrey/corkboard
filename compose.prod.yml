@@ -1,6 +1,7 @@
 services:
   db:
     image: postgis/postgis:16-3.4-alpine
+    command: postgres -c work_mem=32MB
     environment:
       POSTGRES_DB: corkboard
       POSTGRES_USER: corkboard

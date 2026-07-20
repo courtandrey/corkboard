@@ -37,17 +37,19 @@ class EventController(
         @RequestParam(required = false) applyable: Boolean?,
         @RequestParam(required = false) q: String?,
         @RequestParam(defaultValue = "60") limit: Int,
+        @RequestParam(defaultValue = "true") clustered: Boolean,
         principal: Principal?,
     ): ViewportResponse = viewport.run(
         ViewportQuery.Params(
             bounds = Bounds.parse(bbox)!!,
-            zoom = zoom.coerceIn(1, 22),
+            zoom = zoom.coerceIn(0, 22),
             types = types?.let(::parseTypes),
             tagSlugs = tags?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() },
             applyable = applyable,
             q = q,
             viewerId = viewerId(principal),
             limit = limit.coerceIn(1, 100),
+            clustered = clustered,
         )
     )
 
