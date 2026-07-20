@@ -40,12 +40,15 @@ test("nearby notes render as one merged pin and split on click", async ({ page }
   await expect.poll(() => renderedPinCount(page)).toBe(0);
   await page.screenshot({ path: `${SHOTS}/cluster-merged.png` });
 
-  const clusterCoord = await page.evaluate(() => {
-    const map = (window as unknown as {
-      __corkboardMap: { queryRenderedFeatures(o: { layers: string[] }): { geometry: { coordinates: [number, number] } }[] };
-    }).__corkboardMap;
-    return map.queryRenderedFeatures({ layers: ["clusters"] })[0].geometry.coordinates;
-  });
+  const readClusterCoord = () =>
+    page.evaluate(() => {
+      const map = (window as unknown as {
+        __corkboardMap: { queryRenderedFeatures(o: { layers: string[] }): { geometry: { coordinates: [number, number] } }[] };
+      }).__corkboardMap;
+      return map.queryRenderedFeatures({ layers: ["clusters"] })[0]?.geometry.coordinates ?? null;
+    });
+  await expect.poll(readClusterCoord).not.toBeNull();
+  const clusterCoord = (await readClusterCoord())!;
   const zoomBefore = await page.evaluate(
     () => (window as unknown as { __corkboardMap: { getZoom(): number } }).__corkboardMap.getZoom(),
   );

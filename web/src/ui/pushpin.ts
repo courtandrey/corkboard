@@ -5,15 +5,20 @@ function shade(hex: string, factor: number): string {
   return `#${((channel(16) << 16) | (channel(8) << 8) | channel(0)).toString(16).padStart(6, "0")}`;
 }
 
+const HALO = "#ffffff";
+
 export function pushpinSvg(color: string, pressed = false): string {
   const uid = `p${color.replace("#", "")}${pressed ? "x" : ""}`;
   const rim = shade(color, 0.72);
   const glow = shade(color, 1.18);
   const headY = pressed ? 13.5 : 9;
   const headR = pressed ? 7.4 : 8;
-  const needle = pressed
-    ? `<path d="M11.2 20.4 L12.8 20.4 L12.4 24.5 L11.6 24.5 Z" fill="#8a8f97"/>`
-    : `<path d="M11.1 16.2 L12.9 16.2 L12.35 29.4 L11.65 29.4 Z" fill="#8a8f97"/>
+  const needlePath = pressed
+    ? "M11.2 20.4 L12.8 20.4 L12.4 24.5 L11.6 24.5 Z"
+    : "M11.1 16.2 L12.9 16.2 L12.35 29.4 L11.65 29.4 Z";
+  const needleFill = pressed
+    ? `<path d="${needlePath}" fill="#8a8f97"/>`
+    : `<path d="${needlePath}" fill="#8a8f97"/>
        <path d="M11.1 16.2 L12 16.2 L11.75 29.2 L11.65 29.2 Z" fill="#c9cdd3"/>`;
   const shadow = pressed
     ? `<ellipse cx="12.6" cy="24.6" rx="6.2" ry="1.6" fill="rgba(46,32,14,0.30)"/>`
@@ -27,7 +32,9 @@ export function pushpinSvg(color: string, pressed = false): string {
     </radialGradient>
   </defs>
   ${shadow}
-  ${needle}
+  <path d="${needlePath}" fill="none" stroke="${HALO}" stroke-width="1.8" stroke-linejoin="round"/>
+  ${needleFill}
+  <circle cx="12" cy="${headY}" r="${headR + 1.3}" fill="${HALO}"/>
   <circle cx="12" cy="${headY}" r="${headR}" fill="url(#${uid})"/>
   <circle cx="12" cy="${headY}" r="${headR}" fill="none" stroke="${rim}" stroke-width="0.6" opacity="0.7"/>
   <ellipse cx="${pressed ? 9.6 : 9.4}" cy="${headY - headR * 0.42}" rx="2.4" ry="1.5"
@@ -39,8 +46,6 @@ export function pushpinDataUri(color: string, pressed = false): string {
   return `data:image/svg+xml,${encodeURIComponent(pushpinSvg(color, pressed))}`;
 }
 
-// Merged pin: wider head with the member count baked into the sprite, so no
-// map-font glyphs are needed to label it.
 export function clusterPushpinSvg(label: string): string {
   const color = "#3b5998";
   const rim = shade(color, 0.72);
@@ -55,7 +60,9 @@ export function clusterPushpinSvg(label: string): string {
     </radialGradient>
   </defs>
   <ellipse cx="17.6" cy="37.4" rx="7" ry="2" fill="rgba(46,32,14,0.28)"/>
+  <path d="M14.8 24.5 L17.2 24.5 L16.45 37 L15.55 37 Z" fill="none" stroke="${HALO}" stroke-width="1.8" stroke-linejoin="round"/>
   <path d="M14.8 24.5 L17.2 24.5 L16.45 37 L15.55 37 Z" fill="#8a8f97"/>
+  <circle cx="16" cy="13" r="13.5" fill="${HALO}"/>
   <circle cx="16" cy="13" r="12" fill="url(#c${label})"/>
   <circle cx="16" cy="13" r="12" fill="none" stroke="${rim}" stroke-width="0.8" opacity="0.7"/>
   <ellipse cx="12" cy="8" rx="3.4" ry="2.1" transform="rotate(-28 12 8)" fill="rgba(255,255,255,0.6)"/>

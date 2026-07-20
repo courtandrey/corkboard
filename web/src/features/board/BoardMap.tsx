@@ -88,6 +88,46 @@ function loadImage(map: maplibregl.Map, name: string, uri: string, size: [number
   });
 }
 
+const BUILDING_SOURCE_LAYER = "building";
+
+function flattenBaseMap(map: maplibregl.Map): void {
+  const layers = map.getStyle().layers ?? [];
+  let hasBuildings = false;
+  for (const layer of layers) {
+    const sourceLayer = (layer as { "source-layer"?: string })["source-layer"];
+    if (layer.type === "fill-extrusion" || sourceLayer === "poi") {
+      map.setLayoutProperty(layer.id, "visibility", "none");
+    } else if (sourceLayer === BUILDING_SOURCE_LAYER && layer.type === "fill") {
+      hasBuildings = true;
+      const minzoom = (layer as { minzoom?: number }).minzoom ?? 13;
+      map.setLayerZoomRange(layer.id, minzoom, 24);
+      map.setPaintProperty(layer.id, "fill-color", "hsl(36,10%,79%)");
+      map.setPaintProperty(layer.id, "fill-outline-color", "hsl(36,15%,64%)");
+    }
+  }
+
+  if (hasBuildings && map.getSource("openmaptiles") && !map.getLayer("housenumbers")) {
+    map.addLayer({
+      id: "housenumbers",
+      type: "symbol",
+      source: "openmaptiles",
+      "source-layer": "housenumber",
+      minzoom: 17.5,
+      layout: {
+        "text-field": ["get", "housenumber"],
+        "text-font": ["Noto Sans Regular"],
+        "text-size": 9.5,
+        "text-padding": 4,
+      },
+      paint: {
+        "text-color": "hsl(35,14%,52%)",
+        "text-halo-color": "rgba(253,251,242,0.85)",
+        "text-halo-width": 1,
+      },
+    });
+  }
+}
+
 async function registerPushpins(map: maplibregl.Map, meta: MetaResponse): Promise<void> {
   await Promise.all(
     meta.types.flatMap((t) => [
@@ -163,6 +203,7 @@ export function BoardMap() {
     });
 
     map.on("load", () => {
+      flattenBaseMap(map);
       map.addSource("events", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
