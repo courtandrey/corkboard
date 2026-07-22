@@ -5,6 +5,7 @@ import { api } from "../../api/client";
 import type { NotificationResponse } from "../../api/client";
 import { useNotifications } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
+import { BellIcon } from "../../ui/icons";
 
 const s = strings.notificationsUi;
 
@@ -58,31 +59,37 @@ export function NotificationsBell() {
 
   return (
     <div className="bell-wrap">
-      <button type="button" onClick={() => setOpen(!open)} aria-label={s.title}>
-        🔔{unread > 0 && <span className="badge">{unread}</span>}
+      <button type="button" className="icon-btn" onClick={() => setOpen(!open)} aria-label={s.title}>
+        <BellIcon size={19} />
+        {unread > 0 && <span className="badge">{unread}</span>}
       </button>
       {open && (
         <div className="bell-panel">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div className="bell-head">
             <strong>{s.title}</strong>
             {unread > 0 && (
-              <button type="button" onClick={markAllRead}>
+              <button type="button" className="quiet sm" onClick={markAllRead}>
                 {s.markAllRead}
               </button>
             )}
           </div>
-          {!data?.items.length && <p className="meta-row">{s.empty}</p>}
-          {data?.items.map((n) => (
-            <button
-              key={n.id}
-              type="button"
-              className={`bell-item${n.readAt ? "" : " unread"}`}
-              onClick={() => openNotification(n)}
-            >
-              {label(n)}
-              <span className="meta-row">{new Date(n.createdAt).toLocaleString()}</span>
-            </button>
-          ))}
+          <div className="bell-list">
+            {!data?.items.length && <p className="empty-state">{s.empty}</p>}
+            {data?.items.map((n) => (
+              <button
+                key={n.id}
+                type="button"
+                className={`bell-item${n.readAt ? " read" : " unread"}`}
+                onClick={() => openNotification(n)}
+              >
+                <span className="unread-dot" />
+                <span className="bell-text">
+                  {label(n)}
+                  <span className="bell-time">{new Date(n.createdAt).toLocaleString()}</span>
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

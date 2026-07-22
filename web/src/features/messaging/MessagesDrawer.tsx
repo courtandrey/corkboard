@@ -6,20 +6,22 @@ import { api } from "../../api/client";
 import type { ConversationSummary, MessageResponse } from "../../api/client";
 import { useConversations, useMe, useMessages } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
+import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
+import { SendIcon } from "../../ui/icons";
 
 const s = strings.messagesUi;
 
 function ConversationRow({ conversation, active }: { conversation: ConversationSummary; active: boolean }) {
   return (
     <Link to={`/messages/${conversation.id}`} className={`conv-row${active ? " active" : ""}`}>
-      <PixelAvatar seed={conversation.otherParty.avatarSeed} size={18} />{" "}
-      <strong>{conversation.otherParty.displayName}</strong>
-      {conversation.unreadCount > 0 && <span className="badge">{conversation.unreadCount}</span>}
-      <div className="meta-row">{conversation.event.title}</div>
-      {conversation.lastMessageBody && (
-        <div className="conv-snippet">{conversation.lastMessageBody}</div>
-      )}
+      <span className="conv-name">
+        <PixelAvatar seed={conversation.otherParty.avatarSeed} size={18} />
+        {conversation.otherParty.displayName}
+        {conversation.unreadCount > 0 && <span className="badge">{conversation.unreadCount}</span>}
+      </span>
+      <div className="conv-event">{conversation.event.title}</div>
+      {conversation.lastMessageBody && <div className="conv-snippet">{conversation.lastMessageBody}</div>}
     </Link>
   );
 }
@@ -56,23 +58,24 @@ function Thread({ conversation }: { conversation: ConversationSummary }) {
   return (
     <div className="thread">
       <div className="thread-header">
-        <span className="meta-row">{s.aboutNote}</span>{" "}
+        {s.aboutNote}{" "}
         <Link to={`/events/${conversation.event.id}`}>{conversation.event.title}</Link>
-        <span className="meta-row"> · {s.statusLabel(conversation.applicationStatus)}</span>
+        {" · "}
+        {s.statusLabel(conversation.applicationStatus)}
       </div>
       <div className="thread-messages">
         {messages?.items.map((m) => (
           <div key={m.id} className={`bubble${m.senderId === me?.id ? " mine" : ""}`}>
             {m.body}
-            <div className="meta-row">{new Date(m.createdAt).toLocaleTimeString()}</div>
+            <span className="bubble-time">{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
           </div>
         ))}
         <div ref={bottomRef} />
       </div>
       <form className="thread-input" onSubmit={send}>
         <input name="body" placeholder={s.inputPlaceholder} maxLength={2000} autoComplete="off" />
-        <button type="submit" className="primary">
-          {s.send}
+        <button type="submit" className="primary" aria-label={s.send}>
+          <SendIcon size={16} />
         </button>
       </form>
     </div>
@@ -89,30 +92,32 @@ export function MessagesDrawer() {
 
   if (!me && !isLoading) {
     return (
-      <section className="drawer">
-        <button type="button" className="close" onClick={() => navigate("/")}>
-          {strings.event.close}
-        </button>
-        <p>{strings.auth.signInToPin}</p>
-      </section>
+      <Modal onClose={() => navigate("/")} size="sm">
+        <p className="empty-state">{strings.auth.signInToPin}</p>
+      </Modal>
     );
   }
 
   return (
-    <section className="drawer wide">
-      <button type="button" className="close" onClick={() => navigate("/")}>
-        {strings.event.close}
-      </button>
-      <h2>{s.title}</h2>
+    <Modal onClose={() => navigate("/")} size="wide">
+      <div className="modal-head" style={{ paddingBottom: 12, borderBottom: "1px solid var(--paper-edge)" }}>
+        <h2>{s.title}</h2>
+      </div>
       <div className="messages-panes">
         <div className="conv-list">
-          {data && data.items.length === 0 && <p className="meta-row">{s.empty}</p>}
+          {data && data.items.length === 0 && <p className="empty-state">{s.empty}</p>}
           {data?.items.map((c) => (
             <ConversationRow key={c.id} conversation={c} active={c.id === conversationId} />
           ))}
         </div>
-        {selected && <Thread conversation={selected} />}
+        {selected ? (
+          <Thread conversation={selected} />
+        ) : (
+          <div className="thread thread-empty">
+            <p className="empty-state">{s.emptyThread}</p>
+          </div>
+        )}
       </div>
-    </section>
+    </Modal>
   );
 }

@@ -8,6 +8,7 @@ import { api, query } from "../../api/client";
 import type { MetaResponse, ViewportResponse } from "../../api/client";
 import { strings } from "../../i18n/strings";
 import { clusterPushpinDataUri, pushpinDataUri } from "../../ui/pushpin";
+import { PinIcon } from "../../ui/icons";
 import { loadSavedPosition, savePosition, useBoardStore } from "../../stores/boardStore";
 
 const FALLBACK_ZOOM = 13;
@@ -453,7 +454,7 @@ export function BoardMap() {
     <div className="map-wrap">
       <div ref={containerRef} className={`map${crosshair ? " crosshair" : ""}`} />
       <button type="button" className="locate-btn" onClick={locateMe} title={strings.board.useMyLocation}>
-        📍 {strings.board.useMyLocation}
+        <PinIcon size={15} /> {strings.board.useMyLocation}
       </button>
       {data && (
         <div className="status-line" role="status">

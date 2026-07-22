@@ -2,6 +2,7 @@ import { useNavigate } from "react-router";
 import { useMeta, useTagSearch } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
 import { useBoardStore } from "../../stores/boardStore";
+import { PlusIcon } from "../../ui/icons";
 
 export function FilterSidebar() {
   const { data: meta } = useMeta();
@@ -23,8 +24,8 @@ export function FilterSidebar() {
 
   return (
     <aside className={`sidebar${sidebarOpen ? " open" : ""}`}>
-      <button type="button" className="primary" onClick={() => navigate("/new")}>
-        {strings.board.pinANote}
+      <button type="button" className="primary pin-cta" onClick={() => navigate("/new")}>
+        <PlusIcon size={17} /> {strings.board.pinANote}
       </button>
       <div className="panel">
         <h3>{strings.board.filtersTitle}</h3>
@@ -45,7 +46,7 @@ export function FilterSidebar() {
             {t.label}
           </label>
         ))}
-        <label className="type-row" style={{ marginTop: 8 }}>
+        <label className="type-row applyable-row">
           <input
             type="checkbox"
             checked={filters.applyableOnly}

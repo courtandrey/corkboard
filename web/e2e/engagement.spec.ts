@@ -14,12 +14,12 @@ test("vote, hide, and report from the drawer", async ({ browser }) => {
   await page.goto("/");
   await registerViaApi(page, "Engagement Voter");
   await page.goto(`/events/${note.id}`);
-  await expect(page.locator(".drawer .note-title-large")).toHaveText(note.title);
-  await expect(page.locator(".drawer")).toContainText("0 points");
+  await expect(page.locator(".modal-card .ev-title")).toHaveText(note.title);
+  await expect(page.locator(".vote .vote-count")).toHaveText("0");
 
   await page.getByRole("button", { name: "Give a point" }).click();
   await expect(page.getByRole("button", { name: "Take your point back" })).toBeVisible();
-  await expect(page.locator(".drawer")).toContainText("1 point");
+  await expect(page.locator(".vote .vote-count")).toHaveText("1");
 
   await page.getByRole("button", { name: "Hide from my board" }).click();
   await expect(page.getByRole("button", { name: "Put back on my board" })).toBeVisible();
@@ -28,9 +28,9 @@ test("vote, hide, and report from the drawer", async ({ browser }) => {
 
   await page.getByRole("button", { name: "Report this note" }).click();
   await page.getByLabel("What’s wrong with it?").selectOption("scam");
-  await page.getByLabel("Anything else we should know? (optional)").fill("Regression-suite report.");
+  await page.getByPlaceholder("Anything else we should know? (optional)").fill("Regression-suite report.");
   await page.getByRole("button", { name: "Send report" }).click();
-  await expect(page.getByText("Thanks — the board keepers will take a look.")).toBeVisible();
+  await expect(page.getByText("Report sent — the board keepers will take a look.")).toBeVisible();
   await voterCtx.close();
 });
 
@@ -49,11 +49,11 @@ test("apply opens a conversation; replies arrive live over the websocket", async
   await applicantPage.goto("/");
   await registerViaApi(applicantPage, "WS Applicant");
   await applicantPage.goto(`/events/${note.id}`);
-  await applicantPage.getByRole("button", { name: "✋ Respond to this note" }).click();
+  await applicantPage.getByRole("button", { name: "Respond to this note" }).click();
   await applicantPage
     .getByPlaceholder("Write a short note back — who you are, why you’re writing…")
     .fill("Hello from the regression suite!");
-  await applicantPage.getByRole("button", { name: "Send", exact: true }).click();
+  await applicantPage.getByRole("button", { name: "Send response" }).click();
   await expect(applicantPage.getByText("Your note is on its way — replies land in Messages.")).toBeVisible();
   await applicantPage.getByRole("link", { name: "Open the conversation" }).click();
   await expect(applicantPage.locator(".bubble")).toContainText("Hello from the regression suite!");

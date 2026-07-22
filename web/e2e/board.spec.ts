@@ -47,9 +47,9 @@ test("search narrows the board; pin click opens popup then drawer", async ({ pag
   await page.screenshot({ path: `${SHOTS}/popup.png` });
 
   await popup.getByText("read more").click();
-  await expect(page.locator(".drawer .note-title-large")).toContainText("Pirozhok");
-  await expect(page.locator(".drawer .stamp")).toHaveText("Resolved");
-  await expect(page.locator(".drawer")).toContainText("Pinned by Demo Resident");
+  await expect(page.locator(".modal-card .ev-title")).toContainText("Pirozhok");
+  await expect(page.locator(".modal-card .stamp")).toHaveText("Resolved");
+  await expect(page.locator(".modal-card")).toContainText("Demo Resident");
   await expect(page).toHaveURL(/\/events\//);
   await page.screenshot({ path: `${SHOTS}/drawer.png` });
 });
@@ -68,7 +68,7 @@ test("filters narrow by type and tag", async ({ page }) => {
   await expect(page).toHaveURL(/tags=chess/);
 });
 
-test("mobile: sidebar collapses behind the filter button, drawer is a sheet", async ({ page }) => {
+test("mobile: sidebar collapses behind the filter button, modal is a bottom sheet", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 700 });
   await gotoBoard(page);
 
@@ -78,9 +78,9 @@ test("mobile: sidebar collapses behind the filter button, drawer is a sheet", as
   await page.getByRole("button", { name: "Filters" }).click();
 
   await page.goto("/login");
-  const drawer = page.locator(".drawer");
-  await expect(drawer).toBeVisible();
-  const box = await drawer.boundingBox();
+  const card = page.locator(".modal-card");
+  await expect(card).toBeVisible();
+  const box = await card.boundingBox();
   expect(box!.width).toBeGreaterThan(370);
   expect(box!.y).toBeGreaterThan(100);
   await page.screenshot({ path: `${SHOTS}/mobile-login.png` });

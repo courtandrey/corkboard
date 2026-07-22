@@ -8,6 +8,7 @@ import { strings } from "../i18n/strings";
 import { useBoardStore } from "../stores/boardStore";
 import { PixelAvatar } from "../ui/PixelAvatar";
 import { pushpinDataUri } from "../ui/pushpin";
+import { ChatIcon, PinIcon, SearchIcon } from "../ui/icons";
 
 const logoPin = pushpinDataUri("#C94C4C");
 
@@ -39,7 +40,8 @@ export function TopBar() {
         <img className="logo-pin" src={logoPin} alt="o" />
         <span>{after}</span>
       </Link>
-      <form onSubmit={onSearch}>
+      <form className="search" onSubmit={onSearch}>
+        <SearchIcon size={15} className="search-icon" />
         <input
           type="search"
           name="q"
@@ -51,19 +53,25 @@ export function TopBar() {
       <span className="spacer" />
       {me ? (
         <>
-          <Link to="/me/pins">{strings.myPins.title}</Link>
-          <Link to="/messages">{strings.messagesUi.title}</Link>
+          <Link to="/me/pins" className="nav-link">
+            <PinIcon size={16} /> {strings.myPins.title}
+          </Link>
+          <Link to="/messages" className="nav-link">
+            <ChatIcon size={16} /> {strings.messagesUi.title}
+          </Link>
           <NotificationsBell />
           <span className="whoami">
             <PixelAvatar seed={me.avatarSeed} size={22} />
             {me.displayName}
           </span>
-          <button type="button" onClick={signOut}>
+          <button type="button" className="signout sm" onClick={signOut}>
             {strings.auth.signOut}
           </button>
         </>
       ) : (
-        <Link to="/login">{strings.auth.signIn}</Link>
+        <Link to="/login" className="nav-link">
+          {strings.auth.signIn}
+        </Link>
       )}
     </header>
   );

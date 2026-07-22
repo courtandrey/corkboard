@@ -86,5 +86,5 @@ test("a fully merged pin lists its members for selection", async ({ page }) => {
   await page.screenshot({ path: `${SHOTS}/cluster-list.png` });
 
   await page.locator(".cluster-list-row", { hasText: "Same-spot beta" }).click();
-  await expect(page.locator(".drawer .note-title-large")).toHaveText("Same-spot beta");
+  await expect(page.locator(".modal-card .ev-title")).toHaveText("Same-spot beta");
 });

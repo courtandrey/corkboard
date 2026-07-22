@@ -12,6 +12,8 @@ import { MyPins } from "./features/events/MyPins";
 import { useSocket } from "./features/realtime/useSocket";
 import { strings } from "./i18n/strings";
 import { filtersToSearch, useBoardStore } from "./stores/boardStore";
+import { Toaster } from "./ui/toast";
+import { FiltersIcon } from "./ui/icons";
 
 export function App() {
   const filters = useBoardStore((s) => s.filters);
@@ -30,7 +32,7 @@ export function App() {
       <div className="board">
         <FilterSidebar />
         <button type="button" className="filters-toggle" onClick={toggleSidebar}>
-          {strings.board.filtersToggle}
+          <FiltersIcon size={16} /> {strings.board.filtersToggle}
         </button>
         <BoardMap />
         <Routes>
@@ -44,6 +46,7 @@ export function App() {
           <Route path="*" element={null} />
         </Routes>
       </div>
+      <Toaster />
     </div>
   );
 }

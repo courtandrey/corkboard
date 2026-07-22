@@ -1,21 +1,38 @@
 :root {
   --fb-blue: #3b5998;
   --fb-blue-dark: #2f477a;
-  --fb-blue-pale: #d8dfea;
+  --fb-blue-bright: #4a6bb3;
+  --fb-blue-pale: #dbe2ef;
+  --fb-blue-wash: #eef1f8;
   --fb-border: #bdc7d8;
   --page-bg: #edeff4;
 
   /* materials */
   --cork: #c89f6e;
+  --cork-dark: #b98d58;
   --paper: #fdfbf2;
   --paper-edge: #e4dfc8;
   --sticky: #fef6a9;
   --ink: #2b2b2b;
   --ink-soft: #6b6b6b;
+  --ink-faint: #9a948a;
   --stamp-red: #b3352c;
+  --stamp-red-soft: #c85a50;
+  --good: #2e7d46;
 
   --radius: 3px;
+  --radius-md: 5px;
+
+  /* elevation */
   --shadow-paper: 1px 2px 4px rgba(60, 45, 20, 0.25);
+  --shadow-1: 0 1px 2px rgba(60, 45, 20, 0.16), 0 1px 1px rgba(60, 45, 20, 0.1);
+  --shadow-2: 0 4px 12px rgba(46, 32, 14, 0.18), 0 1px 3px rgba(46, 32, 14, 0.12);
+  --shadow-lift: 0 18px 48px rgba(31, 22, 8, 0.34), 0 4px 12px rgba(31, 22, 8, 0.22);
+  --scrim: rgba(38, 27, 12, 0.42);
+
+  --dur-fast: 110ms;
+  --dur: 180ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
 
   --font-ui: "Lucida Grande", "Lucida Sans Unicode", Tahoma, Verdana, sans-serif;
 }

@@ -48,7 +48,7 @@ export function AuthPanel({ onSignedIn }: { onSignedIn?: () => void }) {
   }
 
   if (me) {
-    return <p>{s.signedInAs(me.displayName)}</p>;
+    return <p className="meta-row" style={{ margin: 0 }}>{s.signedInAs(me.displayName)}</p>;
   }
 
   return (
@@ -74,27 +74,28 @@ export function AuthPanel({ onSignedIn }: { onSignedIn?: () => void }) {
             autoComplete={mode === "register" ? "new-password" : "current-password"}
           />
         </label>
-        <button type="submit" className="primary" disabled={busy}>
+        {error && (
+          <p className="error-note" role="alert">
+            {error}
+          </p>
+        )}
+        <button type="submit" className="primary block lg" disabled={busy}>
           {mode === "signIn" ? s.signIn : s.register}
         </button>
       </form>
       {meta?.googleAuth && (
-        <p>
-          <a href="/api/v1/auth/google">{s.googleSignIn}</a>
-        </p>
+        <a href="/api/v1/auth/google" className="google-btn" role="button">
+          {s.googleSignIn}
+        </a>
       )}
       <button
         type="button"
+        className="quiet block"
         onClick={() => setMode(mode === "signIn" ? "register" : "signIn")}
-        style={{ marginTop: 8 }}
+        style={{ marginTop: 10 }}
       >
         {mode === "signIn" ? s.switchToRegister : s.switchToSignIn}
       </button>
-      {error && (
-        <p className="error-note" role="alert">
-          {error}
-        </p>
-      )}
     </section>
   );
 }

@@ -18,7 +18,7 @@ test("my pins: resolve stamps the note, delete takes it down", async ({ page }) 
   await expect(page.getByRole("heading", { name: "Resolved" })).toBeVisible();
 
   await page.getByRole("link", { name: keeper.title }).click();
-  await expect(page.locator(".drawer .stamp")).toHaveText("Resolved");
+  await expect(page.locator(".modal-card .stamp")).toHaveText("Resolved");
   await page.goBack();
 
   page.on("dialog", (dialog) => void dialog.accept());

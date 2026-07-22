@@ -21,7 +21,7 @@ test("register via UI, pin a note through the crosshair flow, sign out", async (
   await page.getByRole("button", { name: "Looks right — write the note" }).click();
 
   const title = `Crosshair-made note ${Date.now()}`;
-  await page.locator(".drawer .type-pick").getByText("Free Stuff").click();
+  await page.locator(".modal-card .type-pick").getByText("Free Stuff").click();
   await page.getByLabel("Title").fill(title);
   await page.getByLabel("The note itself").fill("Placed with the crosshair by the regression suite.");
   await page.getByPlaceholder("type to find or add tags…").fill("e2e-made");
@@ -29,9 +29,9 @@ test("register via UI, pin a note through the crosshair flow, sign out", async (
   await page.screenshot({ path: `${SHOTS}/create-form.png` });
   await page.getByRole("button", { name: "Pin it" }).click();
 
-  await expect(page.locator(".drawer .note-title-large")).toHaveText(title);
+  await expect(page.locator(".modal-card .ev-title")).toHaveText(title);
   await expect(page).toHaveURL(/\/events\//);
-  await expect(page.locator(".drawer .tag-chip")).toContainText("e2e-made");
+  await expect(page.locator(".modal-card .tag-chip")).toContainText("e2e-made");
 
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
