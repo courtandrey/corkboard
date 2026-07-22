@@ -359,6 +359,9 @@ textarea {
   line-height: 1.15;
   margin: 2px 0 6px;
   font-weight: 700;
+  /* keep the first line clear of the popup's × close button (top-right) */
+  padding-right: 20px;
+  overflow-wrap: anywhere;
 }
 
 .note-title-large {
@@ -396,8 +399,25 @@ textarea {
 .note-popup .maplibregl-popup-close-button {
   right: 4px;
   top: 2px;
-  font-size: 14px;
+  padding: 0 3px;
+  font-size: 18px;
+  line-height: 1;
   color: var(--ink-soft);
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.note-popup .maplibregl-popup-close-button:hover {
+  color: var(--ink);
+  background: none;
+}
+
+.note-popup .maplibregl-popup-close-button:active {
+  background: none;
+  box-shadow: none;
 }
 
 /* ── drawer: a sheet of paper over the board ──────────────────── */
