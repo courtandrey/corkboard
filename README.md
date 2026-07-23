@@ -2,8 +2,6 @@
 
 A map-first community noticeboard — the corkboard by the lamppost, rebuilt for the browser with the warmth of the 2007 internet. Pin a note to a real spot in your neighborhood: a missing cat, a five-a-side game short four players, a free bookshelf, a water shutoff. Neighbors find it by wandering the map, respond privately, and the board quietly does its job.
 
-Built as a portfolio project, milestone by milestone, from a [full technical specification](spec.md). The spec's internal codename is **Corkboard**; lamppostal is the face it wears.
-
 <!-- screenshot: the seeded NYC board — docs/board.png -->
 
 ## Quickstart

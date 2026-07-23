@@ -104,6 +104,19 @@ class NotificationService(
             .execute()
     }
 
+    fun clearForConversation(userId: UUID, conversationId: UUID) {
+        dsl.deleteFrom(NOTIFICATIONS)
+            .where(
+                NOTIFICATIONS.USER_ID.eq(userId),
+                DSL.condition(
+                    "{0}->>'conversationId' = {1}",
+                    NOTIFICATIONS.PAYLOAD,
+                    DSL.`val`(conversationId.toString()),
+                ),
+            )
+            .execute()
+    }
+
     private fun toResponse(record: NotificationsRecord): NotificationResponse =
         NotificationResponse(
             id = record.id!!,

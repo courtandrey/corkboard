@@ -18,6 +18,35 @@ class Spec4MessagingTest : ApiTestBase() {
     }
 
     @Test
+    fun `reading a conversation clears its notifications for the reader`() {
+        val author = registerUser("Clear Author")
+        val applicant = registerUser("Clear Applicant")
+        val eventId = createEvent(author, 37.3, 67.1, title = "Clear my notifications")
+        val (applicationId, conversationId) = applyTo(eventId, applicant, "I can help.")
+
+        val before = json(getJson("/api/v1/notifications", author.headers))
+        assertThat(before["items"].map { it["payload"]["conversationId"].asText() }).contains(conversationId)
+        assertThat(before["unreadCount"].asInt()).isEqualTo(1)
+
+        sendJson(HttpMethod.POST, "/api/v1/conversations/$conversationId/read", null, author.headers)
+
+        val afterRead = json(getJson("/api/v1/notifications", author.headers))
+        assertThat(afterRead["items"].map { it["payload"]["conversationId"].asText() }).doesNotContain(conversationId)
+        assertThat(afterRead["unreadCount"].asInt()).isEqualTo(0)
+
+        sendJson(
+            HttpMethod.PATCH, "/api/v1/applications/$applicationId",
+            mapOf("status" to "accepted"), author.headers,
+        )
+        val applicantBefore = json(getJson("/api/v1/notifications", applicant.headers))
+        assertThat(applicantBefore["items"].map { it["payload"]["conversationId"].asText() }).contains(conversationId)
+
+        sendJson(HttpMethod.POST, "/api/v1/conversations/$conversationId/read", null, applicant.headers)
+        val applicantAfter = json(getJson("/api/v1/notifications", applicant.headers))
+        assertThat(applicantAfter["items"].map { it["payload"]["conversationId"].asText() }).doesNotContain(conversationId)
+    }
+
+    @Test
     fun `accept notifies the applicant and the thread carries messages both ways with unread counts`() {
         val author = registerUser("Msg Author")
         val applicant = registerUser("Msg Applicant")

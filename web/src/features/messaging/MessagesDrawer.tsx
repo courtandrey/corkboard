@@ -36,6 +36,7 @@ function Thread({ conversation }: { conversation: ConversationSummary }) {
     if (conversation.unreadCount > 0) {
       void api.post(`/api/v1/conversations/${conversation.id}/read`).then(() => {
         void queryClient.invalidateQueries({ queryKey: ["conversations"] });
+        void queryClient.invalidateQueries({ queryKey: ["notifications"] });
       });
     }
   }, [conversation.id, conversation.unreadCount, queryClient]);
@@ -99,7 +100,7 @@ export function MessagesDrawer() {
   }
 
   return (
-    <Modal onClose={() => navigate("/")} size="wide">
+    <Modal onClose={() => navigate("/")} size="lg" className="modal-messages">
       <div className="modal-head" style={{ paddingBottom: 12, borderBottom: "1px solid var(--paper-edge)" }}>
         <h2>{s.title}</h2>
       </div>

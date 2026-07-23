@@ -644,6 +644,13 @@ textarea:focus {
   }
 }
 
+.modal-shell {
+  position: relative;
+  display: flex;
+  width: 100%;
+  animation: card-in var(--dur) var(--ease);
+}
+
 .modal-card {
   position: relative;
   width: 100%;
@@ -657,7 +664,6 @@ textarea:focus {
   flex-direction: column;
   overflow: hidden;
   outline: none;
-  animation: card-in var(--dur) var(--ease);
 }
 
 @keyframes card-in {
@@ -685,17 +691,22 @@ textarea:focus {
   max-width: 720px;
 }
 
-.modal-wide {
-  max-width: 940px;
-  max-height: min(88vh, 840px);
+.modal-messages {
+  width: 800px;
+  max-width: 92vw;
+}
+
+.modal-messages .modal-card {
+  height: 596px;
+  max-height: 86vh;
 }
 
 .modal-pin {
   position: absolute;
-  top: -12px;
+  top: -13px;
   left: 50%;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   transform: translateX(-50%);
   z-index: 3;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='%23c0392b'/%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%238c2820' stroke-width='1'/%3E%3Cellipse cx='8.6' cy='8.2' rx='3' ry='1.9' transform='rotate(-28 8.6 8.2)' fill='rgba(255,255,255,.72)'/%3E%3C/svg%3E")
@@ -1556,7 +1567,7 @@ label.inline input[type="checkbox"] {
 
 @media (prefers-reduced-motion: reduce) {
   .modal-scrim,
-  .modal-card,
+  .modal-shell,
   .creator-bar,
   .toast-slip,
   .bell-panel,
@@ -1599,16 +1610,24 @@ label.inline input[type="checkbox"] {
     align-items: flex-end;
   }
 
-  .modal-card,
+  .modal-shell,
   .modal-sm,
   .modal-md,
   .modal-lg,
-  .modal-wide {
+  .modal-messages {
     max-width: 100%;
-    max-height: 90vh;
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    width: 100%;
     transform: none;
     animation: sheet-in var(--dur) var(--ease);
+  }
+
+  .modal-card {
+    max-height: 90vh;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+  }
+
+  .modal-messages .modal-card {
+    height: 88vh;
   }
 
   @keyframes sheet-in {

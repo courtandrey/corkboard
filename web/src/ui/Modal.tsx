@@ -38,19 +38,16 @@ export function Modal({
   return (
     <div className="modal-scrim" onMouseDown={onClose}>
       <div
-        ref={cardRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={labelledBy}
-        tabIndex={-1}
-        className={`modal-card modal-${size} ${className}`}
+        className={`modal-shell modal-${size} ${className}`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <span className="modal-pin" aria-hidden="true" />
-        <button type="button" className="icon-btn modal-close" onClick={onClose} aria-label={strings.event.close}>
-          <CloseIcon size={18} />
-        </button>
-        {children}
+        <div ref={cardRef} role="dialog" aria-modal="true" aria-labelledby={labelledBy} tabIndex={-1} className="modal-card">
+          <button type="button" className="icon-btn modal-close" onClick={onClose} aria-label={strings.event.close}>
+            <CloseIcon size={18} />
+          </button>
+          {children}
+        </div>
       </div>
     </div>
   );

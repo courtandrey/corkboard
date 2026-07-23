@@ -31,6 +31,7 @@ data class Participants(val ownerId: UUID, val applicantId: UUID) {
 class ConversationService(
     private val dsl: DSLContext,
     private val publisher: ApplicationEventPublisher,
+    private val notifications: app.corkboard.notifications.NotificationService,
     private val clock: Clock,
 ) {
 
@@ -174,6 +175,7 @@ class ConversationService(
                 MESSAGES.READ_AT.isNull,
             )
             .execute()
+        notifications.clearForConversation(readerId, conversationId)
         if (updated > 0) {
             publisher.publishEvent(ConversationRead(participants.otherThan(readerId), conversationId))
         }
