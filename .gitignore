@@ -13,6 +13,7 @@ server/generated/
 node_modules/
 web/node_modules/
 web/dist/
+web/*mjs
 
 # IDE
 .idea/

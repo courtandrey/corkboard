@@ -2,7 +2,7 @@ import { useNavigate } from "react-router";
 import { useMeta, useTagSearch } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
 import { useBoardStore } from "../../stores/boardStore";
-import { PlusIcon } from "../../ui/icons";
+import { CloseIcon, PlusIcon } from "../../ui/icons";
 
 export function FilterSidebar() {
   const { data: meta } = useMeta();
@@ -21,10 +21,24 @@ export function FilterSidebar() {
   }
 
   const sidebarOpen = useBoardStore((s) => s.sidebarOpen);
+  const toggleSidebar = useBoardStore((s) => s.toggleSidebar);
 
   return (
     <aside className={`sidebar${sidebarOpen ? " open" : ""}`}>
-      <button type="button" className="primary pin-cta" onClick={() => navigate("/new")}>
+      <div className="sidebar-head">
+        <h2>{strings.board.filtersToggle}</h2>
+        <button type="button" className="icon-btn" onClick={toggleSidebar} aria-label={strings.event.close}>
+          <CloseIcon size={18} />
+        </button>
+      </div>
+      <button
+        type="button"
+        className="primary pin-cta"
+        onClick={() => {
+          if (sidebarOpen) toggleSidebar();
+          navigate("/new");
+        }}
+      >
         <PlusIcon size={17} /> {strings.board.pinANote}
       </button>
       <div className="panel">
@@ -72,6 +86,9 @@ export function FilterSidebar() {
           </div>
         </div>
       )}
+      <button type="button" className="primary block sidebar-done" onClick={toggleSidebar}>
+        {strings.board.filtersDone}
+      </button>
     </aside>
   );
 }

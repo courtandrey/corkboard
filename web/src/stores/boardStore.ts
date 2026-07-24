@@ -26,12 +26,14 @@ interface BoardState {
   filters: Filters;
   crosshair: boolean;
   draftLocation: LatLng | null;
+  draftPinEl: HTMLElement | null;
   sidebarOpen: boolean;
   setViewport: (viewport: Viewport) => void;
   setFilters: (patch: Partial<Filters>) => void;
   toggleType: (key: string) => void;
   setCrosshair: (on: boolean) => void;
   setDraftLocation: (location: LatLng | null) => void;
+  setDraftPinEl: (element: HTMLElement | null) => void;
   toggleSidebar: () => void;
 }
 
@@ -82,6 +84,7 @@ export const useBoardStore = create<BoardState>((set) => ({
   filters: initialFilters(new URLSearchParams(window.location.search)),
   crosshair: false,
   draftLocation: null,
+  draftPinEl: null,
   setViewport: (viewport) => set({ viewport }),
   setFilters: (patch) => set((s) => ({ filters: { ...s.filters, ...patch } })),
   toggleType: (key) =>
@@ -95,6 +98,7 @@ export const useBoardStore = create<BoardState>((set) => ({
     })),
   setCrosshair: (on) => set({ crosshair: on, draftLocation: null }),
   setDraftLocation: (location) => set({ draftLocation: location }),
+  setDraftPinEl: (element) => set({ draftPinEl: element }),
   sidebarOpen: false,
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
 }));

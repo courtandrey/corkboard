@@ -33,6 +33,7 @@ test("register via UI, pin a note through the crosshair flow, sign out", async (
   await expect(page).toHaveURL(/\/events\//);
   await expect(page.locator(".modal-card .tag-chip")).toContainText("e2e-made");
 
-  await page.getByRole("button", { name: "Sign out" }).click();
+  await page.getByRole("button", { name: "Your account" }).click();
+  await page.getByRole("menuitem", { name: "Sign out" }).click();
   await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
 });

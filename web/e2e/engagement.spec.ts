@@ -60,6 +60,11 @@ test("apply opens a conversation; replies arrive live over the websocket", async
 
   await authorPage.goto("/");
   await expect(authorPage.locator(".badge").first()).toHaveText("1");
+
+  await authorPage.getByRole("button", { name: "Notifications" }).click();
+  await authorPage.locator(".bell-open").first().click();
+  await expect(authorPage.locator(".topbar .badge")).toHaveCount(0);
+
   await authorPage.getByRole("link", { name: "Messages" }).click();
   await authorPage.getByText("WS Applicant").click();
   await expect(authorPage.locator(".bubble")).toContainText("Hello from the regression suite!");

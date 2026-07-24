@@ -111,7 +111,10 @@ class EventService(
         body?.let { update.set(EVENTS.BODY, it) }
         req.location?.let { update.set(EVENTS.LOCATION, point(it)) }
         req.applyable?.let { update.set(EVENTS.APPLYABLE, it) }
-        req.expiresAt?.let { update.set(EVENTS.EXPIRES_AT, it.atOffset(ZoneOffset.UTC)) }
+        req.expiresAt?.let {
+            update.set(EVENTS.EXPIRES_AT, it.atOffset(ZoneOffset.UTC))
+            update.setNull(EVENTS.EXPIRING_NOTIFIED_AT)
+        }
         update.where(EVENTS.ID.eq(id)).execute()
 
         req.tags?.let { tags.replaceEventTags(id, it) }
@@ -142,6 +145,7 @@ class EventService(
         dsl.update(EVENTS)
             .set(EVENTS.STATUS, DbEventStatus.active)
             .set(EVENTS.EXPIRES_AT, expiresAt.atOffset(ZoneOffset.UTC))
+            .setNull(EVENTS.EXPIRING_NOTIFIED_AT)
             .where(EVENTS.ID.eq(id))
             .execute()
         return detail(id, viewerId)

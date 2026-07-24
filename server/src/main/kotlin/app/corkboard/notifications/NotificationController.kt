@@ -29,7 +29,7 @@ class NotificationController(private val notifications: NotificationService) {
         @RequestBody(required = false) req: MarkReadRequest?,
         auth: SessionAuthentication,
     ): ResponseEntity<Void> {
-        notifications.markRead(auth.user.userId, req?.ids)
+        notifications.dismiss(auth.user.userId, req?.ids)
         return ResponseEntity.noContent().build()
     }
 }

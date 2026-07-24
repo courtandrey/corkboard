@@ -42,22 +42,26 @@ class ExpirationSweep(
                 EVENTS.STATUS.eq(DbEventStatus.active),
                 EVENTS.EXPIRES_AT.gt(now),
                 EVENTS.EXPIRES_AT.le(now.plusHours(72)),
+                EVENTS.EXPIRING_NOTIFIED_AT.isNull,
             )
             .fetch()
         for (row in expiring) {
             val eventId = row[EVENTS.ID]!!
-            val authorId = row[EVENTS.AUTHOR_ID]!!
-            if (!notifications.existsForEvent(authorId, NotificationKind.EVENT_EXPIRING, eventId)) {
-                notifications.create(
-                    authorId,
-                    NotificationKind.EVENT_EXPIRING,
-                    mapOf(
-                        "eventId" to eventId.toString(),
-                        "eventTitle" to row[EVENTS.TITLE],
-                        "expiresAt" to row[EVENTS.EXPIRES_AT]!!.toInstant().toString(),
-                    ),
-                )
-            }
+            notifications.create(
+                row[EVENTS.AUTHOR_ID]!!,
+                NotificationKind.EVENT_EXPIRING,
+                mapOf(
+                    "eventId" to eventId.toString(),
+                    "eventTitle" to row[EVENTS.TITLE],
+                    "expiresAt" to row[EVENTS.EXPIRES_AT]!!.toInstant().toString(),
+                ),
+            )
+        }
+        if (expiring.isNotEmpty()) {
+            dsl.update(EVENTS)
+                .set(EVENTS.EXPIRING_NOTIFIED_AT, now)
+                .where(EVENTS.ID.`in`(expiring.map { it[EVENTS.ID] }))
+                .execute()
         }
     }
 }

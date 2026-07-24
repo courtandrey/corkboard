@@ -1,3 +1,4 @@
+import { useCallback, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,7 +9,8 @@ import { strings } from "../i18n/strings";
 import { useBoardStore } from "../stores/boardStore";
 import { PixelAvatar } from "../ui/PixelAvatar";
 import { pushpinDataUri } from "../ui/pushpin";
-import { ChatIcon, PinIcon, SearchIcon } from "../ui/icons";
+import { useDismiss } from "../ui/useDismiss";
+import { ChatIcon, ChevronDownIcon, PinIcon, SearchIcon } from "../ui/icons";
 
 const logoPin = pushpinDataUri("#C94C4C");
 
@@ -18,6 +20,9 @@ export function TopBar() {
   const setFilters = useBoardStore((s) => s.setFilters);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const menuRef = useDismiss<HTMLDivElement>(menuOpen, closeMenu);
 
   function onSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -26,6 +31,7 @@ export function TopBar() {
   }
 
   async function signOut() {
+    setMenuOpen(false);
     await api.post("/api/v1/auth/logout");
     await queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
     navigate("/");
@@ -53,20 +59,42 @@ export function TopBar() {
       <span className="spacer" />
       {me ? (
         <>
-          <Link to="/me/pins" className="nav-link">
-            <PinIcon size={16} /> {strings.myPins.title}
-          </Link>
-          <Link to="/messages" className="nav-link">
-            <ChatIcon size={16} /> {strings.messagesUi.title}
-          </Link>
+          <nav className="topbar-links">
+            <Link to="/me/pins" className="nav-link">
+              <PinIcon size={16} /> {strings.myPins.title}
+            </Link>
+            <Link to="/messages" className="nav-link">
+              <ChatIcon size={16} /> {strings.messagesUi.title}
+            </Link>
+          </nav>
           <NotificationsBell />
-          <span className="whoami">
-            <PixelAvatar seed={me.avatarSeed} size={22} />
-            {me.displayName}
-          </span>
-          <button type="button" className="signout sm" onClick={signOut}>
-            {strings.auth.signOut}
-          </button>
+          <div className="user-menu" ref={menuRef}>
+            <button
+              type="button"
+              className="whoami"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              aria-label={strings.auth.accountMenu}
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              <PixelAvatar seed={me.avatarSeed} size={22} />
+              <span className="whoami-name">{me.displayName}</span>
+              <ChevronDownIcon size={13} />
+            </button>
+            {menuOpen && (
+              <div className="menu-panel" role="menu">
+                <Link to="/me/pins" className="menu-item on-phone" role="menuitem" onClick={closeMenu}>
+                  <PinIcon size={15} /> {strings.myPins.title}
+                </Link>
+                <Link to="/messages" className="menu-item on-phone" role="menuitem" onClick={closeMenu}>
+                  <ChatIcon size={15} /> {strings.messagesUi.title}
+                </Link>
+                <button type="button" className="menu-item" role="menuitem" onClick={signOut}>
+                  {strings.auth.signOut}
+                </button>
+              </div>
+            )}
+          </div>
         </>
       ) : (
         <Link to="/login" className="nav-link">

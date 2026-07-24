@@ -68,20 +68,25 @@ test("filters narrow by type and tag", async ({ page }) => {
   await expect(page).toHaveURL(/tags=chess/);
 });
 
-test("mobile: sidebar collapses behind the filter button, modal is a bottom sheet", async ({ page }) => {
+test("mobile: filters take the whole board, modals take the whole screen", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 700 });
   await gotoBoard(page);
 
   await expect(page.locator(".sidebar")).toBeHidden();
   await page.getByRole("button", { name: "Filters" }).click();
-  await expect(page.locator(".sidebar")).toBeVisible();
-  await page.getByRole("button", { name: "Filters" }).click();
+  const sidebar = page.locator(".sidebar");
+  await expect(sidebar).toBeVisible();
+  const sheet = await sidebar.boundingBox();
+  expect(sheet!.width).toBeGreaterThan(370);
+  await page.screenshot({ path: `${SHOTS}/mobile-filters.png` });
+  await page.getByRole("button", { name: "Show the board" }).click();
+  await expect(sidebar).toBeHidden();
 
   await page.goto("/login");
   const card = page.locator(".modal-card");
   await expect(card).toBeVisible();
   const box = await card.boundingBox();
   expect(box!.width).toBeGreaterThan(370);
-  expect(box!.y).toBeGreaterThan(100);
+  expect(box!.height).toBeGreaterThan(600);
   await page.screenshot({ path: `${SHOTS}/mobile-login.png` });
 });

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
@@ -7,7 +8,8 @@ import { strings } from "../../i18n/strings";
 import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
 import { toast } from "../../ui/toast";
-import { CheckIcon, RenewIcon, TrashIcon } from "../../ui/icons";
+import { useIsPhone } from "../../ui/useMediaQuery";
+import { CheckIcon, ChevronDownIcon, RenewIcon, TrashIcon } from "../../ui/icons";
 
 const s = strings.myPins;
 
@@ -57,9 +59,13 @@ function PinRow({ pin }: { pin: MyEventItem }) {
   const { data: meta } = useMeta();
   const { data: received } = useReceivedApplications(pin.applicationCount > 0);
   const queryClient = useQueryClient();
+  const isPhone = useIsPhone();
+  const [expanded, setExpanded] = useState(false);
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
 
   const type = meta?.types.find((t) => t.key === pin.type);
   const applications = received?.items.find((g) => g.event.id === pin.id)?.applications ?? [];
+  const showDetails = !isPhone || expanded;
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["myEvents"] });
@@ -80,7 +86,7 @@ function PinRow({ pin }: { pin: MyEventItem }) {
   }
 
   async function remove() {
-    if (!window.confirm(s.removeConfirm)) return;
+    setConfirmingRemove(false);
     await api.del(`/api/v1/events/${pin.id}`);
     toast(strings.toasts.removed);
     await refresh();
@@ -99,25 +105,49 @@ function PinRow({ pin }: { pin: MyEventItem }) {
             {s.until(new Date(pin.expiresAt).toLocaleDateString())}
           </div>
         </div>
-        <div className="pin-actions">
-          {pin.status === "active" && (
-            <button type="button" className="ghost sm" onClick={resolve}>
-              <CheckIcon size={14} /> {s.resolve}
-            </button>
-          )}
-          {(pin.status === "active" || pin.status === "expired") && (
-            <button type="button" className="ghost sm" onClick={renew}>
-              <RenewIcon size={14} /> {s.renew}
-            </button>
-          )}
-          {pin.status !== "removed" && (
-            <button type="button" className="danger sm" onClick={remove}>
-              <TrashIcon size={14} /> {s.remove}
-            </button>
-          )}
-        </div>
+        {isPhone && (
+          <button
+            type="button"
+            className={`quiet sm pin-expand${expanded ? " open" : ""}`}
+            onClick={() => setExpanded(!expanded)}
+            aria-expanded={expanded}
+          >
+            {expanded ? s.hideDetails : s.showDetails}
+            <ChevronDownIcon size={13} />
+          </button>
+        )}
+        {showDetails && !confirmingRemove && (
+          <div className="pin-actions">
+            {pin.status === "active" && (
+              <button type="button" className="ghost sm" onClick={resolve}>
+                <CheckIcon size={14} /> {s.resolve}
+              </button>
+            )}
+            {(pin.status === "active" || pin.status === "expired") && (
+              <button type="button" className="ghost sm" onClick={renew}>
+                <RenewIcon size={14} /> {s.renew}
+              </button>
+            )}
+            {pin.status !== "removed" && (
+              <button type="button" className="danger sm" onClick={() => setConfirmingRemove(true)}>
+                <TrashIcon size={14} /> {s.remove}
+              </button>
+            )}
+          </div>
+        )}
       </div>
-      {applications.length > 0 && (
+      {confirmingRemove && (
+        <div className="confirm-slip" role="alert">
+          <span className="grow">{s.removeConfirm}</span>
+          <button type="button" className="danger sm" onClick={remove}>
+            <TrashIcon size={14} /> {s.removeYes}
+          </button>
+          <button type="button" className="ghost sm" onClick={() => setConfirmingRemove(false)}>
+            {s.removeNo}
+          </button>
+        </div>
+      )}
+      {showDetails && applications.length > 0 && (
         <div className="pin-applications">
           {applications.map((a) => (
             <ApplicationRow key={a.id} application={a} />

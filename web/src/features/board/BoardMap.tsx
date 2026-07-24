@@ -9,6 +9,7 @@ import type { MetaResponse, ViewportResponse } from "../../api/client";
 import { strings } from "../../i18n/strings";
 import { clusterPushpinDataUri, pushpinDataUri } from "../../ui/pushpin";
 import { PinIcon } from "../../ui/icons";
+import { useIsPhone } from "../../ui/useMediaQuery";
 import { loadSavedPosition, savePosition, useBoardStore } from "../../stores/boardStore";
 
 const FALLBACK_ZOOM = 13;
@@ -22,6 +23,13 @@ function defaultCenter(): [number, number] {
 
 function countLabel(count: number): string {
   return count > 99 ? "99+" : String(count);
+}
+
+function statusText(total: number, short: boolean): string {
+  if (total === 0) {
+    return short ? strings.board.emptyViewportShort : strings.board.emptyViewport;
+  }
+  return short ? strings.board.notesHereShort(total) : strings.board.notesHere(total);
 }
 
 function wrapLng(value: number): number {
@@ -160,6 +168,8 @@ export function BoardMap() {
   const crosshair = useBoardStore((s) => s.crosshair);
   const draftLocation = useBoardStore((s) => s.draftLocation);
   const setDraftLocation = useBoardStore((s) => s.setDraftLocation);
+  const setDraftPinEl = useBoardStore((s) => s.setDraftPinEl);
+  const isPhone = useIsPhone();
   const navigate = useNavigate();
   const selectedMatch = useMatch("/events/:id");
   const selectedId = selectedMatch?.params.id;
@@ -205,6 +215,12 @@ export function BoardMap() {
 
     map.on("load", () => {
       flattenBaseMap(map);
+      // maplibre opens the compact attribution on load, where it covers the bottom of a phone
+      if (map.getCanvasContainer().offsetWidth <= 640) {
+        map.getContainer()
+          .querySelector(".maplibregl-ctrl-attrib")
+          ?.classList.remove("maplibregl-compact-show");
+      }
       map.addSource("events", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
@@ -325,6 +341,7 @@ export function BoardMap() {
       metaRow.append(chip, ` · ${strings.board.points(props.score)}`);
 
       const more = document.createElement("button");
+      more.className = "primary sm note-open";
       more.textContent = strings.board.readMore;
       more.addEventListener("click", () => {
         popupRef.current?.remove();
@@ -420,12 +437,21 @@ export function BoardMap() {
     const map = mapRef.current;
     if (!map) return;
     if (draftLocation && !draftMarkerRef.current) {
-      const element = document.createElement("img");
-      element.className = "draft-pin";
-      element.alt = "";
-      element.width = 30;
-      element.height = 40;
-      element.src = pushpinDataUri("#B3352C");
+      const element = document.createElement("div");
+      element.className = "draft-pin-wrap";
+      const image = document.createElement("img");
+      image.className = "draft-pin";
+      image.alt = "";
+      image.width = 30;
+      image.height = 40;
+      image.src = pushpinDataUri("#B3352C");
+      const host = document.createElement("div");
+      host.className = "draft-callout-host";
+      // the marker drags on pointer-down anywhere in its element — the callout must not
+      for (const type of ["mousedown", "touchstart", "pointerdown"]) {
+        host.addEventListener(type, (event) => event.stopPropagation());
+      }
+      element.append(image, host);
       const marker = new maplibregl.Marker({ element, draggable: true, anchor: "bottom" })
         .setLngLat([draftLocation.lng, draftLocation.lat])
         .addTo(map);
@@ -434,13 +460,15 @@ export function BoardMap() {
         setDraftLocation({ lng: pos.lng, lat: pos.lat });
       });
       draftMarkerRef.current = marker;
+      setDraftPinEl(host);
     } else if (draftLocation && draftMarkerRef.current) {
       draftMarkerRef.current.setLngLat([draftLocation.lng, draftLocation.lat]);
     } else if (!draftLocation && draftMarkerRef.current) {
       draftMarkerRef.current.remove();
       draftMarkerRef.current = null;
+      setDraftPinEl(null);
     }
-  }, [draftLocation, setDraftLocation]);
+  }, [draftLocation, setDraftLocation, setDraftPinEl]);
 
   function locateMe() {
     navigator.geolocation?.getCurrentPosition(
@@ -453,12 +481,19 @@ export function BoardMap() {
   return (
     <div className="map-wrap">
       <div ref={containerRef} className={`map${crosshair ? " crosshair" : ""}`} />
-      <button type="button" className="locate-btn" onClick={locateMe} title={strings.board.useMyLocation}>
-        <PinIcon size={15} /> {strings.board.useMyLocation}
+      <button
+        type="button"
+        className="locate-btn"
+        onClick={locateMe}
+        title={strings.board.useMyLocation}
+        aria-label={strings.board.useMyLocation}
+      >
+        <PinIcon size={15} />
+        <span className="locate-label">{strings.board.useMyLocation}</span>
       </button>
       {data && (
         <div className="status-line" role="status">
-          {data.total === 0 ? strings.board.emptyViewport : strings.board.notesHere(data.total)}
+          {statusText(data.total, isPhone)}
         </div>
       )}
     </div>

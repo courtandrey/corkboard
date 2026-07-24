@@ -22,10 +22,11 @@ class ReportService(
 
     @Transactional
     fun report(eventId: UUID, reporterId: UUID, req: ReportRequest) {
-        val event = dsl.select(EVENTS.AUTHOR_ID, EVENTS.TITLE)
+        val event = dsl.select(EVENTS.AUTHOR_ID, EVENTS.TITLE, EVENTS.STATUS)
             .from(EVENTS).where(EVENTS.ID.eq(eventId)).fetchOne()
             ?: throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
         val authorId = event[EVENTS.AUTHOR_ID]!!
+        val statusBefore = event[EVENTS.STATUS]
         if (authorId == reporterId) {
             throw ApiException(HttpStatus.CONFLICT, ProblemCode.OWN_EVENT)
         }
@@ -38,11 +39,9 @@ class ReportService(
             .onConflictDoNothing()
             .execute()
 
-        val status = dsl.select(EVENTS.STATUS).from(EVENTS)
+        val statusAfter = dsl.select(EVENTS.STATUS).from(EVENTS)
             .where(EVENTS.ID.eq(eventId)).fetchOne(EVENTS.STATUS)
-        if (status == DbEventStatus.under_review &&
-            !notifications.existsForEvent(authorId, NotificationKind.EVENT_UNDER_REVIEW, eventId)
-        ) {
+        if (statusAfter == DbEventStatus.under_review && statusBefore != DbEventStatus.under_review) {
             notifications.create(
                 authorId,
                 NotificationKind.EVENT_UNDER_REVIEW,

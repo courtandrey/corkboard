@@ -21,9 +21,10 @@ test("my pins: resolve stamps the note, delete takes it down", async ({ page }) 
   await expect(page.locator(".modal-card .stamp")).toHaveText("Resolved");
   await page.goBack();
 
-  page.on("dialog", (dialog) => void dialog.accept());
   const gonerRow = page.locator(".pin-row", { hasText: goner.title });
   await gonerRow.getByRole("button", { name: "Take down" }).click();
+  await expect(gonerRow.locator(".confirm-slip")).toBeVisible();
+  await gonerRow.getByRole("button", { name: "Yes, take it down" }).click();
   await expect(page.getByRole("heading", { name: "Taken down" })).toBeVisible();
 
   const anonymous = await page.context().browser()!.newContext();

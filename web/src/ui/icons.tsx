@@ -136,3 +136,9 @@ export const BackIcon = (p: IconProps) => (
     <path d="M15 5l-7 7 7 7" />
   </Base>
 );
+
+export const ChevronDownIcon = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M6 9.5l6 6 6-6" />
+  </Base>
+);

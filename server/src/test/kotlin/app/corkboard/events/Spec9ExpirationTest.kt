@@ -56,6 +56,12 @@ class Spec9ExpirationTest : ApiTestBase() {
             .filter { it["kind"].asText() == "event_expiring" }
         assertThat(afterSecond).describedAs("expiring warning fires once per event").hasSize(1)
 
+        sendJson(HttpMethod.POST, "/api/v1/notifications/read", null, author.headers)
+        sweep.sweep()
+        assertThat(json(getJson("/api/v1/notifications", author.headers))["items"])
+            .describedAs("a warning that was read does not come back")
+            .isEmpty()
+
         clock.advance(Duration.ofDays(3))
         sweep.sweep()
 

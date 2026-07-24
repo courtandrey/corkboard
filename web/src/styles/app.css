@@ -235,8 +235,8 @@ textarea:focus {
 }
 
 .topbar {
-  height: 54px;
-  flex: 0 0 54px;
+  height: var(--topbar-h);
+  flex: 0 0 var(--topbar-h);
   background: linear-gradient(var(--fb-blue-bright), var(--fb-blue));
   border-bottom: 1px solid var(--fb-blue-dark);
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
@@ -320,24 +320,83 @@ textarea:focus {
   color: #fff;
 }
 
+.topbar-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.user-menu {
+  position: relative;
+}
+
 .topbar .whoami {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   font-weight: 600;
-  padding-left: 4px;
-}
-
-.topbar .signout {
+  padding: 5px 8px;
   background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.28);
   color: #fff;
   box-shadow: none;
+  max-width: 190px;
 }
 
-.topbar .signout:hover {
+.topbar .whoami:hover {
   background: rgba(255, 255, 255, 0.24);
   border-color: rgba(255, 255, 255, 0.5);
+}
+
+.whoami-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-panel {
+  position: absolute;
+  right: 0;
+  top: 42px;
+  min-width: 190px;
+  padding: 5px;
+  background: var(--paper);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lift);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: card-in var(--dur) var(--ease);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: var(--radius);
+  background: none;
+  box-shadow: none;
+  text-shadow: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: left;
+}
+
+.menu-item:hover {
+  background: var(--fb-blue-wash);
+  border-color: transparent;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.menu-item.on-phone {
+  display: none;
 }
 
 .board {
@@ -358,6 +417,11 @@ textarea:focus {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.sidebar-head,
+.sidebar-done {
+  display: none;
 }
 
 .sidebar .pin-cta {
@@ -479,6 +543,7 @@ textarea:focus {
   position: absolute;
   left: 12px;
   bottom: 12px;
+  max-width: calc(100% - 200px);
   background: var(--paper);
   border: 1px solid var(--paper-edge);
   border-radius: var(--radius);
@@ -490,6 +555,58 @@ textarea:focus {
 
 .draft-pin {
   animation: pin-drop 300ms cubic-bezier(0.2, 0.7, 0.3, 1.2);
+}
+
+.draft-pin-wrap {
+  position: relative;
+  width: 30px;
+  height: 40px;
+}
+
+.draft-callout-host {
+  position: absolute;
+  left: 50%;
+  bottom: 48px;
+  transform: translateX(-50%);
+  cursor: default;
+}
+
+.pin-callout {
+  position: relative;
+  width: 208px;
+  padding: 11px 12px 12px;
+  background: var(--paper);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
+  text-align: center;
+  animation: card-in var(--dur) var(--ease);
+}
+
+.pin-callout::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  transform: translateX(-50%) rotate(45deg);
+  background: var(--paper);
+  border-right: 1px solid var(--paper-edge);
+  border-bottom: 1px solid var(--paper-edge);
+}
+
+.pin-callout .creator-msg {
+  margin: 0 0 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.pin-callout .creator-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 @keyframes pin-drop {
@@ -569,6 +686,11 @@ textarea:focus {
   line-height: 1.1;
   margin: 6px 0 4px;
   font-weight: 700;
+}
+
+.paper-note .note-open {
+  width: 100%;
+  margin-top: 10px;
 }
 
 .cluster-list {
@@ -728,6 +850,11 @@ textarea:focus {
 .modal-head h2 {
   margin: 0;
   font-size: 17px;
+}
+
+.modal-head-ruled {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--paper-edge);
 }
 
 .modal-body {
@@ -1137,7 +1264,7 @@ button.tag-chip.active {
 .form-hint {
   font-size: 12px;
   color: var(--ink-soft);
-  margin: -8px 0 0;
+  margin: 4px 0 0;
 }
 
 .form-grid .inline,
@@ -1157,6 +1284,35 @@ label.inline input[type="checkbox"] {
   width: 16px;
   height: 16px;
   box-shadow: none;
+}
+
+.tag-input {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.tag-input-chips,
+.tag-suggestions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 20px;
+}
+
+/* one fixed line, scrolled sideways — the modal must not resize as you type */
+.tag-suggestions {
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: thin;
+}
+
+.tag-input-chips {
+  flex-wrap: wrap;
+}
+
+.tag-suggestions .tag-chip {
+  flex: 0 0 auto;
 }
 
 .type-pick {
@@ -1293,19 +1449,10 @@ label.inline input[type="checkbox"] {
 
 .bell-item {
   display: flex;
-  gap: 9px;
+  gap: 4px;
   align-items: flex-start;
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
   border-top: 1px solid var(--paper-edge);
-  border-radius: 0;
-  padding: 11px 14px;
-  box-shadow: none;
-  text-shadow: none;
-  cursor: pointer;
-  font-weight: 400;
+  padding: 4px 8px 4px 4px;
 }
 
 .bell-item:first-of-type {
@@ -1316,29 +1463,32 @@ label.inline input[type="checkbox"] {
   background: var(--fb-blue-wash);
 }
 
-.bell-item.unread {
-  background: rgba(254, 246, 169, 0.32);
-}
-
-.bell-item .unread-dot {
-  flex: 0 0 auto;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-top: 3px;
-  background: var(--fb-blue);
-}
-
-.bell-item.read .unread-dot {
-  background: transparent;
-}
-
-.bell-item .bell-text {
+.bell-open {
   flex: 1;
   min-width: 0;
+  display: block;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  box-shadow: none;
+  text-shadow: none;
   font-size: 12.5px;
+  font-weight: 400;
   line-height: 1.35;
   color: var(--ink);
+}
+
+.bell-open:hover {
+  background: transparent;
+  border-color: transparent;
+}
+
+.bell-dismiss {
+  flex: 0 0 auto;
+  align-self: center;
+  color: var(--ink-soft);
 }
 
 .bell-item .bell-time {
@@ -1428,6 +1578,15 @@ label.inline input[type="checkbox"] {
 
 .thread-header a {
   font-weight: 600;
+}
+
+.thread-back {
+  margin: -2px 0 6px -6px;
+}
+
+.load-older {
+  align-self: center;
+  margin-bottom: 4px;
 }
 
 .thread-messages {
@@ -1536,6 +1695,36 @@ label.inline input[type="checkbox"] {
   flex-wrap: wrap;
 }
 
+.pin-expand {
+  flex: 0 0 auto;
+  align-self: flex-start;
+}
+
+.pin-expand svg {
+  transition: transform var(--dur-fast) var(--ease);
+}
+
+.pin-expand.open svg {
+  transform: rotate(180deg);
+}
+
+.confirm-slip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 9px 11px;
+  background: rgba(179, 53, 44, 0.06);
+  border: 1px solid #e3c3bf;
+  border-radius: var(--radius-md);
+  font-size: 12.5px;
+}
+
+.confirm-slip .grow {
+  flex: 1;
+  min-width: 150px;
+}
+
 .pin-applications {
   margin: 2px 0 2px 6px;
   border-left: 2px solid var(--fb-blue-pale);
@@ -1584,30 +1773,136 @@ label.inline input[type="checkbox"] {
 /* ── small screens: sidebar behind a button, modals as bottom sheets ── */
 
 @media (max-width: 768px) {
+  .topbar {
+    gap: 6px;
+    padding: 0 8px;
+  }
+
+  .topbar .logo {
+    font-size: 18px;
+    margin-right: 0;
+  }
+
+  .topbar .spacer,
+  .topbar-links,
+  .whoami-name {
+    display: none;
+  }
+
+  .search {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .topbar input[type="search"] {
+    width: 100%;
+  }
+
+  .topbar .whoami {
+    padding: 5px 6px;
+  }
+
+  .menu-item.on-phone {
+    display: flex;
+  }
+
+  .bell-panel {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    top: calc(var(--topbar-h) + 4px);
+    width: auto;
+  }
+
+  /* the sidebar becomes the whole board: a half-width sheet is unusable on a phone */
   .sidebar {
     display: none;
     position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    z-index: 8;
+    inset: 0;
+    width: 100%;
+    flex: 1 1 auto;
+    z-index: 10;
+    padding: 12px 14px 16px;
+    gap: 14px;
   }
 
   .sidebar.open {
     display: flex;
   }
 
+  .sidebar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sidebar-head h2 {
+    margin: 0;
+    font-size: 16px;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(46, 32, 14, 0.55);
+  }
+
+  .sidebar-head .icon-btn {
+    color: #fff;
+  }
+
+  .sidebar-done {
+    display: block;
+    margin-top: auto;
+  }
+
   .filters-toggle {
     display: block;
+    left: 10px;
+    top: 10px;
   }
 
-  .topbar input[type="search"] {
-    width: 120px;
+  .sidebar.open ~ .filters-toggle {
+    display: none;
   }
 
+  .maplibregl-ctrl-top-right {
+    display: none;
+  }
+
+  .status-line {
+    left: auto;
+    right: 10px;
+    top: 10px;
+    bottom: auto;
+    max-width: 56%;
+    font-size: 12px;
+  }
+
+  .locate-btn {
+    bottom: 32px;
+    right: 8px;
+    padding: 8px;
+  }
+
+  .locate-label {
+    display: none;
+  }
+
+  .creator-bar {
+    left: 10px;
+    right: 10px;
+    bottom: 32px;
+    transform: none;
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .pin-callout {
+    width: 186px;
+  }
+
+  /* full-bleed sheets, but below the topbar so the sheet's own head and × stay reachable */
   .modal-scrim {
-    padding: 0;
-    align-items: flex-end;
+    padding: var(--topbar-h) 0 0;
+    align-items: stretch;
   }
 
   .modal-shell,
@@ -1621,13 +1916,17 @@ label.inline input[type="checkbox"] {
     animation: sheet-in var(--dur) var(--ease);
   }
 
-  .modal-card {
-    max-height: 90vh;
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
+  .modal-card,
+  .modal-messages .modal-card {
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
   }
 
-  .modal-messages .modal-card {
-    height: 88vh;
+  .modal-pin {
+    display: none;
   }
 
   @keyframes sheet-in {
@@ -1641,22 +1940,54 @@ label.inline input[type="checkbox"] {
     }
   }
 
+  .modal-head {
+    padding: 16px 46px 8px 16px;
+  }
+
+  .modal-body,
+  .ev-scroll {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .ev-head {
+    padding: 16px 46px 0 16px;
+  }
+
+  .ev-foot {
+    flex-wrap: wrap;
+    padding: 12px 16px 16px;
+  }
+
   .messages-panes {
     flex-direction: column;
   }
 
   .conv-list {
     width: 100%;
-    flex: 0 0 auto;
-    max-height: 34%;
+    flex: 1;
+    max-height: none;
     border-right: none;
-    border-bottom: 1px solid var(--paper-edge);
   }
 
-  .creator-bar {
-    left: 12px;
-    right: 12px;
-    transform: none;
-    border-radius: var(--radius-md);
+  .thread-messages {
+    padding: 12px;
+  }
+
+  .bubble {
+    max-width: 86%;
+  }
+
+  .pin-row-top {
+    flex-wrap: wrap;
+  }
+
+  .pin-actions {
+    width: 100%;
+  }
+
+  .pin-actions button {
+    flex: 1 1 auto;
+    white-space: nowrap;
   }
 }

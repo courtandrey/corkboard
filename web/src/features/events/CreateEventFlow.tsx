@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../../api/client";
@@ -26,6 +27,7 @@ export function CreateEventFlow() {
 
   const setCrosshair = useBoardStore((st) => st.setCrosshair);
   const draftLocation = useBoardStore((st) => st.draftLocation);
+  const draftPinEl = useBoardStore((st) => st.draftPinEl);
 
   const [placing, setPlacing] = useState(true);
   const [type, setType] = useState<string | null>(null);
@@ -100,22 +102,33 @@ export function CreateEventFlow() {
   }
 
   if (placing || !draftLocation) {
-    return (
-      <div className="creator-bar" role="dialog" aria-label={s.title}>
-        <PinIcon size={18} />
-        <span className="creator-msg">{draftLocation ? s.adjustHint : s.pickSpotHint}</span>
-        <div className="creator-actions">
-          {draftLocation && (
-            <button type="button" className="primary sm" onClick={() => setPlacing(false)}>
-              {s.continueToForm}
-            </button>
-          )}
+    if (!draftLocation) {
+      return (
+        <div className="creator-bar" role="dialog" aria-label={s.title}>
+          <PinIcon size={18} />
+          <span className="creator-msg">{s.pickSpotHint}</span>
           <button type="button" className="ghost sm" onClick={close}>
             {s.cancel}
           </button>
         </div>
-      </div>
-    );
+      );
+    }
+    return draftPinEl
+      ? createPortal(
+          <div className="pin-callout" role="dialog" aria-label={s.title}>
+            <p className="creator-msg">{s.adjustHint}</p>
+            <div className="creator-actions">
+              <button type="button" className="primary sm" onClick={() => setPlacing(false)}>
+                {s.continueToForm}
+              </button>
+              <button type="button" className="ghost sm" onClick={close}>
+                {s.cancel}
+              </button>
+            </div>
+          </div>,
+          draftPinEl,
+        )
+      : null;
   }
 
   const limits = meta?.limits;

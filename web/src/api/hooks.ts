@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, query } from "./client";
 import type {
   AuthResponse,
@@ -84,10 +84,15 @@ export function useConversations(enabled: boolean) {
 }
 
 export function useMessages(conversationId: string | undefined) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["messages", conversationId],
     enabled: !!conversationId,
-    queryFn: () => api.get<MessageListResponse>(`/api/v1/conversations/${conversationId}/messages`),
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam }) =>
+      api.get<MessageListResponse>(
+        `/api/v1/conversations/${conversationId}/messages${query({ cursor: pageParam ?? undefined })}`,
+      ),
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
   });
 }
 

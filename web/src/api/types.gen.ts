@@ -568,8 +568,6 @@ export interface components {
                 [key: string]: Record<string, never>;
             };
             /** Format: date-time */
-            readAt?: string;
-            /** Format: date-time */
             createdAt: string;
         };
         Limits: {

@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { NotificationResponse } from "../../api/client";
 import { useNotifications } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
-import { BellIcon } from "../../ui/icons";
+import { useDismiss } from "../../ui/useDismiss";
+import { BellIcon, CloseIcon } from "../../ui/icons";
 
 const s = strings.notificationsUi;
 
@@ -38,56 +39,64 @@ function target(notification: NotificationResponse): string {
 export function NotificationsBell() {
   const { data } = useNotifications(true);
   const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  const panelRef = useDismiss<HTMLDivElement>(open, close);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const unread = data?.unreadCount ?? 0;
+  const pending = data?.unreadCount ?? 0;
 
-  async function markAllRead() {
-    await api.post("/api/v1/notifications/read");
+  async function clear(ids?: string[]) {
+    await api.post("/api/v1/notifications/read", ids ? { ids } : undefined);
     await queryClient.invalidateQueries({ queryKey: ["notifications"] });
   }
 
   async function openNotification(notification: NotificationResponse) {
     setOpen(false);
-    if (!notification.readAt) {
-      await api.post("/api/v1/notifications/read", { ids: [notification.id] });
-      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    }
     navigate(target(notification));
+    await clear([notification.id]);
   }
 
   return (
-    <div className="bell-wrap">
-      <button type="button" className="icon-btn" onClick={() => setOpen(!open)} aria-label={s.title}>
+    <div className="bell-wrap" ref={panelRef}>
+      <button
+        type="button"
+        className="icon-btn"
+        onClick={() => setOpen(!open)}
+        aria-label={s.title}
+        aria-expanded={open}
+      >
         <BellIcon size={19} />
-        {unread > 0 && <span className="badge">{unread}</span>}
+        {pending > 0 && <span className="badge">{pending}</span>}
       </button>
       {open && (
         <div className="bell-panel">
           <div className="bell-head">
             <strong>{s.title}</strong>
-            {unread > 0 && (
-              <button type="button" className="quiet sm" onClick={markAllRead}>
-                {s.markAllRead}
+            {pending > 0 && (
+              <button type="button" className="quiet sm" onClick={() => clear()}>
+                {s.clearAll}
               </button>
             )}
           </div>
           <div className="bell-list">
             {!data?.items.length && <p className="empty-state">{s.empty}</p>}
             {data?.items.map((n) => (
-              <button
-                key={n.id}
-                type="button"
-                className={`bell-item${n.readAt ? " read" : " unread"}`}
-                onClick={() => openNotification(n)}
-              >
-                <span className="unread-dot" />
-                <span className="bell-text">
+              <div key={n.id} className="bell-item">
+                <button type="button" className="bell-open" onClick={() => openNotification(n)}>
                   {label(n)}
                   <span className="bell-time">{new Date(n.createdAt).toLocaleString()}</span>
-                </span>
-              </button>
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn bell-dismiss"
+                  onClick={() => clear([n.id])}
+                  aria-label={s.dismiss}
+                  title={s.dismiss}
+                >
+                  <CloseIcon size={14} />
+                </button>
+              </div>
             ))}
           </div>
         </div>

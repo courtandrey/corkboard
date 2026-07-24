@@ -77,7 +77,7 @@ class Spec3ApplyTest : ApiTestBase() {
     }
 
     @Test
-    fun `notifications mark-read clears the unread count`() {
+    fun `reading notifications takes them off the board`() {
         val author = registerUser()
         val applicant = registerUser()
         val eventId = createEvent(author, 34.7, 64.5)
@@ -90,6 +90,6 @@ class Spec3ApplyTest : ApiTestBase() {
         sendJson(HttpMethod.POST, "/api/v1/notifications/read", null, author.headers)
         val after = json(getJson("/api/v1/notifications", author.headers))
         assertThat(after["unreadCount"].asInt()).isEqualTo(0)
-        assertThat(after["items"][0]["readAt"].isNull).isFalse
+        assertThat(after["items"]).isEmpty()
     }
 }
