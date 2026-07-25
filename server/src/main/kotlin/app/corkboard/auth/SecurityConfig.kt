@@ -18,6 +18,31 @@ import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
+private val PUBLIC_READS = arrayOf(
+    "/api/v1/health",
+    "/api/v1/meta",
+    "/api/v1/openapi.json",
+    "/api/v1/openapi.json/**",
+    "/swagger-ui/**",
+    "/api/v1/auth/google",
+    "/api/v1/auth/google/callback",
+    "/api/v1/events",
+    "/api/v1/events/*",
+    "/api/v1/tags",
+    "/ws",
+    "/",
+    "/index.html",
+    "/assets/**",
+    "/fonts/**",
+    "/favicon.svg",
+    "/events/*",
+    "/new",
+    "/login",
+    "/me/pins",
+    "/messages",
+    "/messages/*",
+)
+
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
@@ -42,31 +67,8 @@ class SecurityConfig(
             .addFilterBefore(SessionAuthFilter(sessions), UsernamePasswordAuthenticationFilter::class.java)
             .addFilterBefore(OriginCheckFilter(props.webOrigin, problems), AuthorizationFilter::class.java)
             .authorizeHttpRequests {
-                it.requestMatchers(
-                    HttpMethod.GET,
-                    "/api/v1/health",
-                    "/api/v1/meta",
-                    "/api/v1/openapi.json",
-                    "/api/v1/openapi.json/**",
-                    "/swagger-ui/**",
-                    "/api/v1/auth/google",
-                    "/api/v1/auth/google/callback",
-                    "/api/v1/events",
-                    "/api/v1/events/*",
-                    "/api/v1/tags",
-                    "/ws",
-                    "/",
-                    "/index.html",
-                    "/assets/**",
-                    "/fonts/**",
-                    "/favicon.svg",
-                    "/events/*",
-                    "/new",
-                    "/login",
-                    "/me/pins",
-                    "/messages",
-                    "/messages/*",
-                ).permitAll()
+                it.requestMatchers(HttpMethod.GET, *PUBLIC_READS).permitAll()
+                    .requestMatchers(HttpMethod.HEAD, *PUBLIC_READS).permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()
                     .anyRequest().authenticated()
             }

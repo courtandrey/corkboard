@@ -57,13 +57,14 @@ PostgreSQL 16 + PostGIS 3.4 — GiST spatial index, triggers for denormalized co
 
 Ten numbered end-to-end specs from the specification (§14.1) run as `@SpringBootTest` against a disposable PostGIS container — from "register → pin → appears in the right viewport" to "five reports take it off the board" — with a mutable `Clock` so expiry tests control time. Frontend testing is smoke-level by design; the visual language is reviewed by eye against spec §10.
 
-## Production build
+## Deploying
 
 ```bash
-docker compose -f compose.prod.yml up --build
+cp .env.example .env      # set DOMAIN, ACME_EMAIL, WEB_ORIGIN, POSTGRES_PASSWORD
+./deploy/deploy.sh
 ```
 
-One container, one port: a multi-stage build compiles the SPA, bakes it into the Boot jar's static resources, and serves REST, WebSocket and the app from `:8080`. Run `./gradlew jooqCodegen` once on the host first (codegen needs Docker and can't run inside the build).
+Single server, HTTPS included: a multi-stage build compiles the SPA and bakes it into the Boot jar, which serves REST, WebSocket and the app from one port; Caddy (`Caddyfile`) sits in front, gets a Let's Encrypt certificate for `DOMAIN` and is the only thing on the network. The script preflights the environment, generates the jOOQ sources if they're missing, builds, starts and waits for `/api/v1/health` — or run `docker compose -f compose.prod.yml up -d --build` yourself. Backups, updates, an nginx-instead-of-Caddy variant and the troubleshooting table live in `deploy/DEPLOY.md`.
 
 ## Configuration
 

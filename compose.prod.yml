@@ -1,11 +1,21 @@
+name: corkboard-prod
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   db:
     image: postgis/postgis:16-3.4-alpine
     command: postgres -c work_mem=32MB
+    restart: unless-stopped
+    logging: *logging
     environment:
       POSTGRES_DB: corkboard
       POSTGRES_USER: corkboard
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-corkboard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U corkboard -d corkboard"]
       interval: 5s
@@ -21,12 +31,16 @@ services:
       args:
         MAP_STYLE_URL: ${MAP_STYLE_URL:-https://tiles.openfreemap.org/styles/liberty}
         DEFAULT_CENTER: ${DEFAULT_CENTER:--73.9857,40.7484}
+    restart: unless-stopped
+    logging: *logging
     environment:
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:--XX:MaxRAMPercentage=70}
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/corkboard
       SPRING_DATASOURCE_USERNAME: corkboard
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-corkboard}
-      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:8080}
-      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      FORWARD_HEADERS_STRATEGY: framework
+      WEB_ORIGIN: ${WEB_ORIGIN:?set WEB_ORIGIN in .env, e.g. https://board.example.com}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
       SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-30}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
@@ -34,11 +48,42 @@ services:
       REPORT_AUTO_HIDE_THRESHOLD: ${REPORT_AUTO_HIDE_THRESHOLD:-5}
       SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-}
       SEED_FORCE: ${SEED_FORCE:-false}
+    expose:
+      - "8080"
+    # loopback only: the reverse proxy reaches the api over the compose network.
+    # Kept published for host-side curl, type regeneration and a host nginx.
     ports:
-      - "${API_PORT:-8080}:8080"
+      - "127.0.0.1:${API_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
     depends_on:
       db:
         condition: service_healthy
 
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env, e.g. board.example.com}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   dbdata-prod:
+  caddy-data:
+  caddy-config:

@@ -8,16 +8,17 @@ ARG MAP_STYLE_URL
 ARG DEFAULT_CENTER
 RUN MAP_STYLE_URL=$MAP_STYLE_URL DEFAULT_CENTER=$DEFAULT_CENTER pnpm build
 
-# jOOQ sources must exist in server/generated (run ./gradlew jooqCodegen on the
-# host first — codegen needs Docker and cannot run inside this build).
 FROM eclipse-temurin:21-jdk AS server
 WORKDIR /build
 COPY server/ ./
 COPY --from=web /build/dist/ src/main/resources/static/
+RUN test -d generated/jooq || (echo "server/generated/jooq is missing — run ./gradlew jooqCodegen first" >&2; exit 1)
 RUN ./gradlew --no-daemon bootJar
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=server /build/build/libs/*.jar app.jar
+RUN useradd --system --uid 10001 --create-home corkboard
+COPY --from=server --chown=10001:10001 /build/build/libs/*.jar app.jar
+USER 10001
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

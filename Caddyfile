@@ -1,0 +1,46 @@
+{
+	email {$ACME_EMAIL:admin@localhost}
+	admin off
+}
+
+(upstream) {
+	# replace, never append: an appended X-Forwarded-For lets a client spoof
+	# the address the auth rate limiter buckets on
+	header_up X-Forwarded-For {http.request.remote.host}
+	header_up X-Real-IP {http.request.remote.host}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "DENY"
+		-Server
+	}
+
+	# Vite emits content-hashed filenames, so these can be cached forever.
+	# header_down replaces the framework's no-store — a second Cache-Control
+	# header would otherwise be merged in and win. index.html is deliberately
+	# left out so a new deploy is picked up at once.
+	@immutable path /assets/* /fonts/*
+	handle @immutable {
+		reverse_proxy api:8080 {
+			import upstream
+			header_down Cache-Control "public, max-age=31536000, immutable"
+		}
+	}
+
+	handle {
+		reverse_proxy api:8080 {
+			import upstream
+		}
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

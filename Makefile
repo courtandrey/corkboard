@@ -1,7 +1,8 @@
-.PHONY: up down seed types jooq check
+.PHONY: up down seed types jooq check deploy prod-logs prod-ps prod-down prod-seed backup
 
 -include .env
 API_PORT ?= 8080
+PROD := docker compose -f compose.prod.yml
 
 up:
 	docker compose up
@@ -24,3 +25,21 @@ seed:
 	docker compose stop api
 	docker compose run --rm api ./gradlew --no-daemon --project-cache-dir /root/.gradle/project-cache bootRun --args='--spring.profiles.active=seed'
 	docker compose start api
+
+deploy:
+	./deploy/deploy.sh
+
+prod-ps:
+	$(PROD) ps
+
+prod-logs:
+	$(PROD) logs -f
+
+prod-down:
+	$(PROD) down
+
+prod-seed:
+	$(PROD) run --rm -e SPRING_PROFILES_ACTIVE=seed api
+
+backup:
+	./deploy/backup.sh
