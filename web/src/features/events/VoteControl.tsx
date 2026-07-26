@@ -5,7 +5,15 @@ import type { EventDetail, VoteResponse } from "../../api/client";
 import { strings } from "../../i18n/strings";
 import { UpvoteIcon } from "../../ui/icons";
 
-export function VoteControl({ event, interactive }: { event: EventDetail; interactive: boolean }) {
+export function VoteControl({
+  event,
+  interactive,
+  hint,
+}: {
+  event: EventDetail;
+  interactive: boolean;
+  hint?: string;
+}) {
   const queryClient = useQueryClient();
   const key = ["event", event.id];
   const [bump, setBump] = useState(false);
@@ -59,7 +67,12 @@ export function VoteControl({ event, interactive }: { event: EventDetail; intera
 
   if (!interactive) {
     return (
-      <div ref={ref} className={cls} aria-label={strings.board.points(event.score)}>
+      <div
+        ref={ref}
+        className={cls}
+        title={hint}
+        aria-label={hint ? `${strings.board.points(event.score)} — ${hint}` : strings.board.points(event.score)}
+      >
         {content}
       </div>
     );

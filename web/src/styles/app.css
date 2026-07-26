@@ -374,6 +374,7 @@ textarea:focus {
 .menu-item {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
   width: 100%;
   padding: 9px 10px;
@@ -397,6 +398,15 @@ textarea:focus {
 
 .menu-item.on-phone {
   display: none;
+}
+
+.menu-item.signout {
+  color: var(--stamp-red);
+}
+
+.menu-item.signout:hover {
+  background: rgba(179, 53, 44, 0.08);
+  color: var(--stamp-red);
 }
 
 .board {
@@ -539,6 +549,27 @@ textarea:focus {
   z-index: 5;
 }
 
+.pin-fab {
+  display: none;
+  position: absolute;
+  left: 12px;
+  bottom: 32px;
+  z-index: 6;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border-radius: 50%;
+  background: linear-gradient(var(--fb-blue-bright), var(--fb-blue));
+  border: 1px solid var(--fb-blue-dark);
+  color: #fff;
+  box-shadow: var(--shadow-2);
+}
+
+.pin-fab:hover {
+  background: linear-gradient(#5a7cc4, #40619f);
+  border-color: var(--fb-blue-dark);
+}
+
 .status-line {
   position: absolute;
   left: 12px;
@@ -675,7 +706,6 @@ textarea:focus {
   line-height: 1.15;
   margin: 2px 0 6px;
   font-weight: 700;
-  /* keep the first line clear of the popup's × close button (top-right) */
   padding-right: 20px;
   overflow-wrap: anywhere;
 }
@@ -1005,14 +1035,23 @@ textarea:focus {
 .vote.static {
   cursor: default;
   box-shadow: none;
-  background: var(--fb-blue-wash);
+  background: rgba(43, 43, 43, 0.045);
   border-color: var(--paper-edge);
+  color: var(--ink-faint);
+}
+
+.vote.static svg {
+  opacity: 0.4;
+}
+
+.vote.static .vote-count {
+  color: var(--ink-soft);
 }
 
 .vote.static:hover {
   border-color: var(--paper-edge);
-  color: var(--ink-soft);
-  background: var(--fb-blue-wash);
+  color: var(--ink-faint);
+  background: rgba(43, 43, 43, 0.045);
 }
 
 .vote.bump {
@@ -1300,7 +1339,10 @@ label.inline input[type="checkbox"] {
   min-height: 20px;
 }
 
-/* one fixed line, scrolled sideways — the modal must not resize as you type */
+.tag-input-chips:empty {
+  display: none;
+}
+
 .tag-suggestions {
   overflow-x: auto;
   white-space: nowrap;
@@ -1512,6 +1554,12 @@ label.inline input[type="checkbox"] {
   overflow-y: auto;
   border-right: 1px solid var(--paper-edge);
   background: rgba(228, 223, 200, 0.16);
+  display: flex;
+  flex-direction: column;
+}
+
+.conv-list .empty-state {
+  margin: auto 0;
 }
 
 .conv-row {
@@ -1796,6 +1844,7 @@ label.inline input[type="checkbox"] {
 
   .topbar input[type="search"] {
     width: 100%;
+    padding-left: 10px;
   }
 
   .topbar .whoami {
@@ -1806,6 +1855,23 @@ label.inline input[type="checkbox"] {
     display: flex;
   }
 
+  .menu-item.signout {
+    margin-top: 5px;
+    padding-top: 11px;
+    border-top: 1px solid rgba(43, 43, 43, 0.16);
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+
+  .search .search-icon {
+    display: none;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
   .bell-panel {
     position: fixed;
     left: 8px;
@@ -1814,7 +1880,6 @@ label.inline input[type="checkbox"] {
     width: auto;
   }
 
-  /* the sidebar becomes the whole board: a half-width sheet is unusable on a phone */
   .sidebar {
     display: none;
     position: absolute;
@@ -1853,9 +1918,15 @@ label.inline input[type="checkbox"] {
   }
 
   .filters-toggle {
-    display: block;
+    display: inline-flex;
     left: 10px;
     top: 10px;
+  }
+
+  .pin-fab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .sidebar.open ~ .filters-toggle {
@@ -1876,8 +1947,8 @@ label.inline input[type="checkbox"] {
   }
 
   .locate-btn {
-    bottom: 32px;
-    right: 8px;
+    bottom: 46px;
+    right: 12px;
     padding: 8px;
   }
 
@@ -1899,7 +1970,6 @@ label.inline input[type="checkbox"] {
     width: 186px;
   }
 
-  /* full-bleed sheets, but below the topbar so the sheet's own head and × stay reachable */
   .modal-scrim {
     padding: var(--topbar-h) 0 0;
     align-items: stretch;

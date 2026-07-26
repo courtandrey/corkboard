@@ -26,6 +26,7 @@ export const strings = {
     filtersDone: "Show the board",
     pinANote: "Pin a note",
     useMyLocation: "Use my location",
+    locateFailed: "Couldn’t get your location",
     notesHere: (total: number) =>
       `${total} ${total === 1 ? "note" : "notes"} on this stretch of the board`,
     notesHereShort: (total: number) => `${total} ${total === 1 ? "note" : "notes"} here`,
@@ -39,6 +40,8 @@ export const strings = {
   engagement: {
     vote: "Give a point",
     unvote: "Take your point back",
+    voteSignedOut: "Sign in to give this note a point",
+    voteOwn: "You can’t give your own note a point",
     hide: "Hide from my board",
     unhide: "Put back on my board",
     report: "Report this note",

@@ -137,6 +137,20 @@ export const BackIcon = (p: IconProps) => (
   </Base>
 );
 
+export const PushpinIcon = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M9 3.5h6l-.8 5.4 3.3 3v1.6H6.5v-1.6l3.3-3z" />
+    <path d="M12 13.5V21" />
+  </Base>
+);
+
+export const SignOutIcon = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M14 20H6a1 1 0 01-1-1V5a1 1 0 011-1h8" />
+    <path d="M17 15l4-3-4-3M21 12H10" />
+  </Base>
+);
+
 export const ChevronDownIcon = (p: IconProps) => (
   <Base {...p}>
     <path d="M6 9.5l6 6 6-6" />

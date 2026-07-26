@@ -8,7 +8,8 @@ import { api, query } from "../../api/client";
 import type { MetaResponse, ViewportResponse } from "../../api/client";
 import { strings } from "../../i18n/strings";
 import { clusterPushpinDataUri, pushpinDataUri } from "../../ui/pushpin";
-import { PinIcon } from "../../ui/icons";
+import { PinIcon, PushpinIcon } from "../../ui/icons";
+import { toast } from "../../ui/toast";
 import { useIsPhone } from "../../ui/useMediaQuery";
 import { loadSavedPosition, savePosition, useBoardStore } from "../../stores/boardStore";
 
@@ -31,6 +32,12 @@ function statusText(total: number, short: boolean): string {
   }
   return short ? strings.board.notesHereShort(total) : strings.board.notesHere(total);
 }
+
+function reducedMotion(): boolean {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+const FLY_TO_ME = { zoom: 14, speed: 2.8, curve: 1.3 } as const;
 
 function wrapLng(value: number): number {
   return ((((value + 180) % 360) + 360) % 360) - 180;
@@ -160,6 +167,8 @@ export function BoardMap() {
   const draftMarkerRef = useRef<maplibregl.Marker | null>(null);
   const loadedRef = useRef(false);
   const easedToRef = useRef<string | null>(null);
+  const flightRef = useRef<[number, number] | null>(null);
+  const locatingRef = useRef(false);
 
   const { data: meta } = useMeta();
   const viewport = useBoardStore((s) => s.viewport);
@@ -215,7 +224,6 @@ export function BoardMap() {
 
     map.on("load", () => {
       flattenBaseMap(map);
-      // maplibre opens the compact attribution on load, where it covers the bottom of a phone
       if (map.getCanvasContainer().offsetWidth <= 640) {
         map.getContainer()
           .querySelector(".maplibregl-ctrl-attrib")
@@ -262,7 +270,7 @@ export function BoardMap() {
 
     if (!saved && "geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => map.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 14 }),
+        (pos) => map.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], ...FLY_TO_ME }),
         () => undefined,
         { timeout: 5000 },
       );
@@ -308,7 +316,7 @@ export function BoardMap() {
     map.easeTo({
       center: [pin.location.lng, pin.location.lat],
       offset: [-160, 0],
-      duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 450,
+      duration: reducedMotion() ? 0 : 240,
     });
   }, [data, selectedId]);
 
@@ -421,7 +429,7 @@ export function BoardMap() {
           {
             padding: 96,
             maxZoom: MAX_SPLIT_ZOOM,
-            duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 500,
+            duration: reducedMotion() ? 0 : 280,
           },
         );
       }
@@ -447,7 +455,6 @@ export function BoardMap() {
       image.src = pushpinDataUri("#B3352C");
       const host = document.createElement("div");
       host.className = "draft-callout-host";
-      // the marker drags on pointer-down anywhere in its element — the callout must not
       for (const type of ["mousedown", "touchstart", "pointerdown"]) {
         host.addEventListener(type, (event) => event.stopPropagation());
       }
@@ -471,10 +478,34 @@ export function BoardMap() {
   }, [draftLocation, setDraftLocation, setDraftPinEl]);
 
   function locateMe() {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const inFlight = flightRef.current;
+    if (inFlight) {
+      flightRef.current = null;
+      map.stop();
+      map.jumpTo({ center: inFlight, zoom: FLY_TO_ME.zoom });
+      return;
+    }
+    if (locatingRef.current) return;
+
+    locatingRef.current = true;
     navigator.geolocation?.getCurrentPosition(
-      (pos) => mapRef.current?.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 14 }),
-      () => undefined,
-      { timeout: 5000 },
+      (pos) => {
+        locatingRef.current = false;
+        const center: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+        flightRef.current = center;
+        map.once("moveend", () => {
+          flightRef.current = null;
+        });
+        map.flyTo({ center, ...FLY_TO_ME });
+      },
+      () => {
+        locatingRef.current = false;
+        toast(strings.board.locateFailed, "info");
+      },
+      { timeout: 5000, maximumAge: 60_000 },
     );
   }
 
@@ -491,6 +522,17 @@ export function BoardMap() {
         <PinIcon size={15} />
         <span className="locate-label">{strings.board.useMyLocation}</span>
       </button>
+      {!crosshair && (
+        <button
+          type="button"
+          className="pin-fab"
+          onClick={() => navigate("/new")}
+          title={strings.board.pinANote}
+          aria-label={strings.board.pinANote}
+        >
+          <PushpinIcon size={23} />
+        </button>
+      )}
       {data && (
         <div className="status-line" role="status">
           {statusText(data.total, isPhone)}

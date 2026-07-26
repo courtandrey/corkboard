@@ -135,7 +135,11 @@ export function EventDrawer() {
               </span>
             )}
             <span className="spacer" />
-            <VoteControl event={event} interactive={!!me && !event.viewerState.isAuthor} />
+            <VoteControl
+              event={event}
+              interactive={!!me && !event.viewerState.isAuthor}
+              hint={!me ? eng.voteSignedOut : event.viewerState.isAuthor ? eng.voteOwn : undefined}
+            />
           </div>
 
           <div className="ev-scroll">
