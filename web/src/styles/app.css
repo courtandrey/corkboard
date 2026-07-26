@@ -1917,6 +1917,10 @@ label.inline input[type="checkbox"] {
     margin-top: auto;
   }
 
+  .sidebar .pin-cta {
+    display: none;
+  }
+
   .filters-toggle {
     display: inline-flex;
     left: 10px;
