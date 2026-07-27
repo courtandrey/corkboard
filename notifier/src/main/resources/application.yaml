@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: corkboard-notifier
+  threads:
+    virtual:
+      enabled: true
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${MAIL_AUTH:true}
+      mail.smtp.starttls.enable: ${MAIL_STARTTLS:true}
+      mail.smtp.connectiontimeout: 8000
+      mail.smtp.timeout: 8000
+      mail.smtp.writetimeout: 8000
+
+server:
+  port: ${NOTIFIER_PORT:8080}
+  shutdown: graceful
+
+notifier:
+  api-key: ${NOTIFIER_API_KEY:dev-notifier-key}
+  transport: ${NOTIFIER_TRANSPORT:log}
+  from: ${MAIL_FROM:}
+  from-name: ${MAIL_FROM_NAME:Lamppostal}
+  reply-to: ${MAIL_REPLY_TO:}
+  max-attempts: ${MAIL_MAX_ATTEMPTS:3}
+
+logging:
+  level:
+    app.corkboard.notifier: INFO

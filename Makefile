@@ -18,6 +18,7 @@ jooq:
 
 check:
 	cd server && ./gradlew check
+	cd notifier && ./gradlew check
 	cd web && pnpm typecheck
 	cd web && pnpm test
 

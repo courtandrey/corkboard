@@ -5,9 +5,9 @@ backups/
 deploy/
 
 # server (Gradle / Kotlin)
-server/.gradle/
-server/.kotlin/
-server/build/
+.gradle/
+.kotlin/
+build/
 server/out/
 server/generated/
 */generated/

@@ -59,7 +59,39 @@ services:
     depends_on:
       - api
 
+  mailpit:
+    image: axllent/mailpit:latest
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+
+  notifier:
+    image: eclipse-temurin:21-jdk
+    working_dir: /app
+    command: ./gradlew --no-daemon --project-cache-dir /root/.gradle/project-cache bootRun
+    environment:
+      GRADLE_BUILD_DIR: /root/.gradle/corkboard-notifier-build
+      NOTIFIER_API_KEY: ${NOTIFIER_API_KEY:-dev-notifier-key}
+      NOTIFIER_TRANSPORT: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_AUTH: "false"
+      MAIL_STARTTLS: "false"
+      MAIL_FROM: ${MAIL_FROM:-board@lamppostal.local}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Lamppostal}
+      MAIL_REPLY_TO: ${MAIL_REPLY_TO:-}
+    volumes:
+      - ./notifier:/app
+      - notifier-gradle-cache:/root/.gradle
+    ports:
+      - "${NOTIFIER_PORT:-8082}:8080"
+    depends_on:
+      - mailpit
+
 volumes:
   dbdata:
   gradle-cache:
+  notifier-gradle-cache:
   web-node-modules:
