@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component
 enum class ProblemCode(@get:JsonValue val wire: String, val detail: String) {
     UNAUTHENTICATED("unauthenticated", "A valid X-Api-Key header is required."),
     VALIDATION_FAILED("validation_failed", "Some fields need attention."),
+    RATE_LIMITED("rate_limited", "The mail provider’s rate limit is saturated — try again shortly."),
     DELIVERY_FAILED("delivery_failed", "The message could not be handed to the mail server."),
     NOT_FOUND("not_found", "There’s nothing here."),
     INTERNAL("internal", "Something went wrong on our side."),

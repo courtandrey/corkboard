@@ -51,6 +51,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+    implementation("org.springframework.kafka:spring-kafka")
     implementation("org.bouncycastle:bcprov-jdk18on:1.80")
     implementation("com.bucket4j:bucket4j-core:8.10.1")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -62,7 +63,9 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:postgresql")
+    testImplementation("org.testcontainers:kafka")
     testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.springframework.kafka:spring-kafka-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

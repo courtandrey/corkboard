@@ -21,6 +21,7 @@ const val TEST_API_KEY = "test-key"
         "notifier.from-name=Lamppostal",
         "notifier.max-attempts=2",
         "notifier.retry-backoff-millis=10",
+        "notifier.kafka.enabled=false",
         "spring.mail.host=127.0.0.1",
         "spring.mail.port=3025",
         "spring.mail.properties.mail.smtp.auth=false",

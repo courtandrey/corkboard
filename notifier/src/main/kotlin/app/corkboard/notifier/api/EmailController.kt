@@ -1,6 +1,7 @@
 package app.corkboard.notifier.api
 
-import app.corkboard.notifier.mail.EmailService
+import app.corkboard.notifier.mail.EmailDispatcher
+import app.corkboard.notifier.mail.EmailRequest
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
@@ -25,19 +26,21 @@ data class SendEmailResponse(val id: String, val transport: String, val key: Str
 
 @RestController
 @RequestMapping("/api/v1/emails")
-class EmailController(private val emails: EmailService) {
+class EmailController(private val dispatcher: EmailDispatcher) {
 
     @PostMapping
     fun send(@Valid @RequestBody req: SendEmailRequest): ResponseEntity<SendEmailResponse> {
-        val id = emails.deliver(
-            to = req.to.trim(),
-            subject = req.subject.trim(),
-            text = req.text,
-            html = req.html,
-            replyTo = req.replyTo?.trim(),
-            key = req.key,
+        val id = dispatcher.dispatchNow(
+            EmailRequest(
+                to = req.to.trim(),
+                subject = req.subject.trim(),
+                text = req.text,
+                html = req.html,
+                replyTo = req.replyTo?.trim(),
+                key = req.key,
+            ),
         )
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-            .body(SendEmailResponse(id, emails.transport, req.key))
+            .body(SendEmailResponse(id, dispatcher.transport, req.key))
     }
 }

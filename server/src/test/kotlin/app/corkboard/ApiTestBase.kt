@@ -17,7 +17,10 @@ import org.testcontainers.utility.DockerImageName
 
 data class TestUser(val id: UUID, val email: String, val headers: HttpHeaders)
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = ["corkboard.notifications.enabled=false"],
+)
 abstract class ApiTestBase {
 
     companion object {

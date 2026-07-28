@@ -16,6 +16,23 @@ spring:
       mail.smtp.timeout: 8000
       mail.smtp.writetimeout: 8000
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      max-poll-records: ${NOTIFIER_KAFKA_MAX_POLL:50}
+      properties:
+        max.poll.interval.ms: 600000
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+    listener:
+      type: batch
+      ack-mode: batch
+      missing-topics-fatal: false
+
 server:
   port: ${NOTIFIER_PORT:8080}
   shutdown: graceful
@@ -27,6 +44,18 @@ notifier:
   from-name: ${MAIL_FROM_NAME:Lamppostal}
   reply-to: ${MAIL_REPLY_TO:}
   max-attempts: ${MAIL_MAX_ATTEMPTS:3}
+  send-concurrency: ${NOTIFIER_SEND_CONCURRENCY:8}
+  rate:
+    per-second: ${NOTIFIER_RATE_PER_SECOND:10}
+    burst: ${NOTIFIER_RATE_BURST:0}
+    http-max-wait-millis: ${NOTIFIER_RATE_HTTP_MAX_WAIT_MS:2000}
+  kafka:
+    enabled: ${NOTIFIER_KAFKA_ENABLED:true}
+    topic: ${NOTIFIER_TOPIC:corkboard.emails.v1}
+    group: ${NOTIFIER_KAFKA_GROUP:corkboard-notifier}
+    concurrency: ${NOTIFIER_KAFKA_CONCURRENCY:2}
+    partitions: ${NOTIFIER_KAFKA_PARTITIONS:3}
+    max-attempts: ${NOTIFIER_KAFKA_MAX_ATTEMPTS:4}
 
 logging:
   level:

@@ -1,4 +1,4 @@
-.PHONY: up down seed types jooq check deploy prod-logs prod-ps prod-down prod-seed backup
+.PHONY: up down seed types jooq check deploy prod-logs prod-ps prod-down prod-seed backup topics dlt
 
 -include .env
 API_PORT ?= 8080
@@ -26,6 +26,13 @@ seed:
 	docker compose stop api
 	docker compose run --rm api ./gradlew --no-daemon --project-cache-dir /root/.gradle/project-cache bootRun --args='--spring.profiles.active=seed'
 	docker compose start api
+
+topics:
+	docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+
+dlt:
+	docker compose exec kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 \
+		--topic corkboard.emails.v1.DLT --from-beginning --timeout-ms 5000
 
 deploy:
 	./deploy/deploy.sh

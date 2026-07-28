@@ -8,6 +8,15 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/corkboard}
     username: ${SPRING_DATASOURCE_USERNAME:corkboard}
     password: ${SPRING_DATASOURCE_PASSWORD:corkboard}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        delivery.timeout.ms: 15000
+        request.timeout.ms: 5000
+        max.block.ms: 5000
 
 springdoc:
   api-docs:
@@ -31,5 +40,8 @@ corkboard:
   auth-rate:
     per-ip: 5
     per-email: 5
+  notifications:
+    enabled: ${NOTIFICATIONS_ENABLED:true}
+    topic: ${NOTIFICATIONS_TOPIC:corkboard.emails.v1}
   seed-demo-password: ${SEED_DEMO_PASSWORD:}
   seed-force: ${SEED_FORCE:false}

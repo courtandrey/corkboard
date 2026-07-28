@@ -48,6 +48,8 @@ services:
       REPORT_AUTO_HIDE_THRESHOLD: ${REPORT_AUTO_HIDE_THRESHOLD:-5}
       SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-}
       SEED_FORCE: ${SEED_FORCE:-false}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      NOTIFICATIONS_ENABLED: ${NOTIFICATIONS_ENABLED:-true}
     expose:
       - "8080"
     ports:
@@ -61,6 +63,37 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  kafka:
+    image: apache/kafka:3.9.1
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_RETENTION_HOURS: ${KAFKA_RETENTION_HOURS:-168}
+      KAFKA_HEAP_OPTS: ${KAFKA_HEAP_OPTS:--Xmx512m -Xms256m}
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+    expose:
+      - "9092"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
 
   notifier:
     build:
@@ -68,7 +101,16 @@ services:
       network: host
     restart: unless-stopped
     logging: *logging
+    depends_on:
+      kafka:
+        condition: service_healthy
     environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      NOTIFIER_RATE_PER_SECOND: ${NOTIFIER_RATE_PER_SECOND:-10}
+      NOTIFIER_RATE_BURST: ${NOTIFIER_RATE_BURST:-0}
+      NOTIFIER_SEND_CONCURRENCY: ${NOTIFIER_SEND_CONCURRENCY:-8}
+      NOTIFIER_KAFKA_CONCURRENCY: ${NOTIFIER_KAFKA_CONCURRENCY:-2}
+      NOTIFIER_KAFKA_MAX_POLL: ${NOTIFIER_KAFKA_MAX_POLL:-50}
       JAVA_TOOL_OPTIONS: ${NOTIFIER_JAVA_TOOL_OPTIONS:--XX:MaxRAMPercentage=25}
       NOTIFIER_API_KEY: ${NOTIFIER_API_KEY:?set NOTIFIER_API_KEY in .env}
       NOTIFIER_TRANSPORT: ${NOTIFIER_TRANSPORT:-log}
@@ -109,5 +151,6 @@ services:
 
 volumes:
   dbdata-prod:
+  kafka-data:
   caddy-data:
   caddy-config:

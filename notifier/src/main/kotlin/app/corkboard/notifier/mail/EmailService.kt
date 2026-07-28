@@ -8,6 +8,15 @@ import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 
+data class EmailRequest(
+    val to: String,
+    val subject: String,
+    val text: String,
+    val html: String? = null,
+    val replyTo: String? = null,
+    val key: String? = null,
+)
+
 @Service
 class EmailService(
     private val sender: EmailSender,
@@ -19,19 +28,21 @@ class EmailService(
     val transport: String
         get() = sender.transport
 
-    fun deliver(
-        to: String,
-        subject: String,
-        text: String,
-        html: String?,
-        replyTo: String?,
-        key: String?,
-    ): String {
-        checkSize("subject", subject.length, props.limits.subjectMax)
-        checkSize("text", text.length, props.limits.textMax)
-        html?.let { checkSize("html", it.length, props.limits.htmlMax) }
+    fun validate(request: EmailRequest) {
+        checkSize("subject", request.subject.length, props.limits.subjectMax)
+        checkSize("text", request.text.length, props.limits.textMax)
+        request.html?.let { checkSize("html", it.length, props.limits.htmlMax) }
+    }
 
-        val email = OutgoingEmail(UUID.randomUUID().toString(), to, subject, text, html, replyTo)
+    fun send(request: EmailRequest): String {
+        val email = OutgoingEmail(
+            id = UUID.randomUUID().toString(),
+            to = request.to,
+            subject = request.subject,
+            text = request.text,
+            html = request.html,
+            replyTo = request.replyTo,
+        )
         val started = System.nanoTime()
 
         var attempt = 1
@@ -40,14 +51,14 @@ class EmailService(
                 sender.send(email)
                 log.info(
                     "sent {} to {} via {} in {}ms (attempt {}{})",
-                    email.id, mask(to), sender.transport,
+                    email.id, mask(email.to), sender.transport,
                     (System.nanoTime() - started) / 1_000_000, attempt,
-                    key?.let { ", key=$it" } ?: "",
+                    request.key?.let { ", key=$it" } ?: "",
                 )
                 return email.id
             } catch (failure: Exception) {
                 if (attempt >= props.maxAttempts) {
-                    log.error("giving up on {} to {} after {} attempts", email.id, mask(to), attempt, failure)
+                    log.error("giving up on {} to {} after {} attempts", email.id, mask(email.to), attempt, failure)
                     throw ApiException(HttpStatus.BAD_GATEWAY, ProblemCode.DELIVERY_FAILED, failure)
                 }
                 log.warn("attempt {} for {} failed: {}", attempt, email.id, failure.message)
@@ -59,7 +70,11 @@ class EmailService(
 
     private fun checkSize(field: String, length: Int, max: Int) {
         if (length > max) {
-            throw ApiException(HttpStatus.UNPROCESSABLE_ENTITY, ProblemCode.VALIDATION_FAILED, fields = mapOf(field to "must be at most $max characters"))
+            throw ApiException(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                ProblemCode.VALIDATION_FAILED,
+                fields = mapOf(field to "must be at most $max characters"),
+            )
         }
     }
 
