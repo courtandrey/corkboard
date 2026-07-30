@@ -1,6 +1,8 @@
 package app.corkboard.auth
 
 import app.corkboard.jooq.tables.references.USERS
+import java.time.Clock
+import java.time.OffsetDateTime
 import java.util.UUID
 import org.jooq.DSLContext
 import org.springframework.stereotype.Service
@@ -20,7 +22,7 @@ sealed interface GoogleIdentityResult {
 }
 
 @Service
-class GoogleIdentityService(private val dsl: DSLContext) {
+class GoogleIdentityService(private val dsl: DSLContext, private val clock: Clock) {
 
     @Transactional
     fun createOrLink(profile: GoogleProfile): GoogleIdentityResult {
@@ -36,6 +38,7 @@ class GoogleIdentityService(private val dsl: DSLContext) {
             if (!profile.emailVerified) return GoogleIdentityResult.EmailConflict
             dsl.update(USERS)
                 .set(USERS.GOOGLE_SUB, profile.sub)
+                .set(USERS.EMAIL_VERIFIED_AT, OffsetDateTime.now(clock))
                 .where(USERS.ID.eq(byEmail))
                 .execute()
             return GoogleIdentityResult.SignedIn(byEmail)
@@ -48,6 +51,7 @@ class GoogleIdentityService(private val dsl: DSLContext) {
             .set(USERS.DISPLAY_NAME, displayName)
             .set(USERS.GOOGLE_SUB, profile.sub)
             .set(USERS.AVATAR_SEED, UUID.randomUUID().toString())
+            .set(USERS.EMAIL_VERIFIED_AT, if (profile.emailVerified) OffsetDateTime.now(clock) else null)
             .returning(USERS.ID)
             .fetchOne(USERS.ID)!!
         return GoogleIdentityResult.SignedIn(id)

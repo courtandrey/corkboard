@@ -18,6 +18,7 @@ class AuthService(
     private val dsl: DSLContext,
     private val passwords: PasswordService,
     private val sessions: SessionService,
+    private val verifications: EmailVerificationService,
     props: CorkboardProperties,
 ) {
 
@@ -46,8 +47,10 @@ class AuthService(
             email = record.email!!,
             displayName = record.displayName!!,
             avatarSeed = record.avatarSeed!!,
+            emailVerified = false,
             createdAt = record.createdAt!!.toInstant(),
         )
+        verifications.issue(user.id, user.email, user.displayName)
         return AuthenticatedUser(user, sessions.create(user.id, userAgent))
     }
 
@@ -69,6 +72,7 @@ class AuthService(
             email = record.email!!,
             displayName = record.displayName!!,
             avatarSeed = record.avatarSeed!!,
+            emailVerified = record.emailVerifiedAt != null,
             createdAt = record.createdAt!!.toInstant(),
         )
         return AuthenticatedUser(user, sessions.create(user.id, userAgent))

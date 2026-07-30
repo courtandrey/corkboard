@@ -37,8 +37,10 @@ class WsGatewayTest : ApiTestBase() {
                 "transport" to "bearer",
             ),
         )
-        check(res.statusCode.value() == 201)
-        val token = json(res)["token"].asText()
+        check(res.statusCode.value() == 201) { "register failed: ${res.body}" }
+        val body = json(res)
+        markEmailVerified(UUID.fromString(body["user"]["id"].asText()))
+        val token = body["token"].asText()
         val headers = org.springframework.http.HttpHeaders().apply { setBearerAuth(token) }
         return token to headers
     }

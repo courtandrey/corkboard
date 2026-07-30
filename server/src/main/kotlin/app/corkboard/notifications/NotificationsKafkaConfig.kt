@@ -1,5 +1,6 @@
 package app.corkboard.notifications
 
+import app.corkboard.notifications.avro.NotificationRequested
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties
@@ -12,10 +13,11 @@ import org.springframework.kafka.core.KafkaTemplate
 class NotificationsKafkaConfig {
 
     @Bean
-    fun kafkaTemplate(properties: KafkaProperties): KafkaTemplate<String, String> {
+    fun kafkaTemplate(properties: KafkaProperties): KafkaTemplate<String, NotificationRequested> {
         val configs = properties.buildProducerProperties(null).toMutableMap()
         configs[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
-        configs[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
-        return KafkaTemplate(DefaultKafkaProducerFactory(configs))
+        return KafkaTemplate(
+            DefaultKafkaProducerFactory(configs, StringSerializer(), NotificationRequestedSerializer()),
+        )
     }
 }

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Route, Routes, useSearchParams } from "react-router";
 import { TopBar } from "./app/TopBar";
 import { useMe } from "./api/hooks";
@@ -7,20 +7,38 @@ import { BoardMap } from "./features/board/BoardMap";
 import { EventDrawer } from "./features/events/EventDrawer";
 import { CreateEventFlow } from "./features/events/CreateEventFlow";
 import { AuthDrawer } from "./features/auth/AuthDrawer";
+import { VerifyBanner } from "./features/auth/VerifyBanner";
 import { MessagesDrawer } from "./features/messaging/MessagesDrawer";
 import { MyPins } from "./features/events/MyPins";
 import { useSocket } from "./features/realtime/useSocket";
 import { strings } from "./i18n/strings";
 import { filtersToSearch, useBoardStore } from "./stores/boardStore";
-import { Toaster } from "./ui/toast";
+import { Toaster, toast } from "./ui/toast";
 import { FiltersIcon } from "./ui/icons";
+
+const VERIFIED_MESSAGES: Record<string, string> = {
+  "1": strings.verify.confirmed,
+  already: strings.verify.already,
+  expired: strings.verify.expired,
+  invalid: strings.verify.invalid,
+};
 
 export function App() {
   const filters = useBoardStore((s) => s.filters);
   const toggleSidebar = useBoardStore((s) => s.toggleSidebar);
   const [, setSearchParams] = useSearchParams();
-  const { data: me } = useMe();
+  const { data: me, refetch: refetchMe } = useMe();
   useSocket(!!me);
+
+  const [verified] = useState(() => new URLSearchParams(window.location.search).get("verified"));
+  const announced = useRef(false);
+
+  useEffect(() => {
+    if (!verified || announced.current) return;
+    announced.current = true;
+    toast(VERIFIED_MESSAGES[verified] ?? strings.verify.invalid, verified === "1" ? "ok" : "info");
+    if (verified === "1") void refetchMe();
+  }, [verified, refetchMe]);
 
   useEffect(() => {
     setSearchParams(filtersToSearch(filters), { replace: true });
@@ -29,6 +47,7 @@ export function App() {
   return (
     <div className="layout">
       <TopBar />
+      <VerifyBanner />
       <div className="board">
         <FilterSidebar />
         <button type="button" className="filters-toggle" onClick={toggleSidebar}>

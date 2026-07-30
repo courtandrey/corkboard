@@ -26,6 +26,7 @@ plugins {
     kotlin("plugin.spring") version "2.2.0"
     id("org.springframework.boot") version "3.5.3"
     id("io.spring.dependency-management") version "1.1.7"
+    id("com.github.davidmc24.gradle.plugin.avro") version "1.9.1"
 }
 
 group = "app.corkboard"
@@ -52,6 +53,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
     implementation("org.springframework.kafka:spring-kafka")
+    implementation("org.apache.avro:avro:1.12.0")
     implementation("org.bouncycastle:bcprov-jdk18on:1.80")
     implementation("com.bucket4j:bucket4j-core:8.10.1")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -72,11 +74,17 @@ dependencies {
 
 val jooqGeneratedDir = layout.projectDirectory.dir("generated/jooq")
 
+// the avro plugin generates Java records; Kotlin has to see them on its own source path
+val avroGenerated = layout.buildDirectory.dir("generated-main-avro-java")
+
+sourceSets["main"].java.srcDir(avroGenerated)
+
 kotlin {
     compilerOptions {
         freeCompilerArgs.addAll("-Xjsr305=strict")
     }
     sourceSets.getByName("main").kotlin.srcDir(jooqGeneratedDir)
+    sourceSets.getByName("main").kotlin.srcDir(avroGenerated)
 }
 
 tasks.register("jooqCodegen") {
@@ -133,6 +141,7 @@ tasks.register("jooqCodegen") {
 
 tasks.named("compileKotlin") {
     mustRunAfter("jooqCodegen")
+    dependsOn("generateAvroJava")
 }
 
 tasks.withType<Test> {

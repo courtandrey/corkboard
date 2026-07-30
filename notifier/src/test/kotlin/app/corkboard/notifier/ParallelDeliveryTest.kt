@@ -19,7 +19,7 @@ import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.kafka.KafkaContainer
 
-private const val TOPIC = "corkboard.emails.v1"
+private const val TOPIC = "corkboard.notifications.v1"
 private const val SEND_CONCURRENCY = 8
 private const val MESSAGES = 24
 private const val SEND_MILLIS = 300L
@@ -68,6 +68,7 @@ class ParallelDeliveryTest {
         @JvmStatic
         fun kafkaProperties(registry: DynamicPropertyRegistry) {
             registry.add("spring.kafka.bootstrap-servers") { kafka.bootstrapServers }
+            NotifierDatabase.register(registry)
         }
     }
 
@@ -79,7 +80,7 @@ class ParallelDeliveryTest {
     }
 
     @Autowired
-    lateinit var template: KafkaTemplate<String, String>
+    lateinit var template: KafkaTemplate<String, Any>
 
     @Autowired
     lateinit var sender: SlowSender
@@ -88,11 +89,7 @@ class ParallelDeliveryTest {
     fun `a batch goes out in parallel, bounded by send-concurrency, on virtual threads`() {
         val started = System.nanoTime()
         repeat(MESSAGES) { i ->
-            template.send(
-                TOPIC,
-                "load:$i",
-                """{"to":"resident@example.com","subject":"Load $i","text":"body $i","key":"load:$i"}""",
-            )
+            template.send(TOPIC, "load:$i", encode("load:$i"))
         }
         template.flush()
 

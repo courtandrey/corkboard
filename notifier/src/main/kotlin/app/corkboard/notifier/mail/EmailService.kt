@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service
 
 data class EmailRequest(
     val to: String,
+    val toName: String? = null,
     val subject: String,
     val text: String,
     val html: String? = null,
@@ -28,6 +29,9 @@ class EmailService(
     val transport: String
         get() = sender.transport
 
+    val deduplicates: Boolean
+        get() = sender.deduplicates
+
     fun validate(request: EmailRequest) {
         checkSize("subject", request.subject.length, props.limits.subjectMax)
         checkSize("text", request.text.length, props.limits.textMax)
@@ -37,7 +41,9 @@ class EmailService(
     fun send(request: EmailRequest): String {
         val email = OutgoingEmail(
             id = UUID.randomUUID().toString(),
+            idempotencyKey = request.key,
             to = request.to,
+            toName = request.toName,
             subject = request.subject,
             text = request.text,
             html = request.html,
@@ -57,6 +63,10 @@ class EmailService(
                 )
                 return email.id
             } catch (failure: Exception) {
+                if (failure is PermanentDeliveryException) {
+                    log.error("{} to {} was refused for good: {}", email.id, mask(email.to), failure.message)
+                    throw ApiException(HttpStatus.BAD_GATEWAY, ProblemCode.DELIVERY_FAILED, failure)
+                }
                 if (attempt >= props.maxAttempts) {
                     log.error("giving up on {} to {} after {} attempts", email.id, mask(email.to), attempt, failure)
                     throw ApiException(HttpStatus.BAD_GATEWAY, ProblemCode.DELIVERY_FAILED, failure)

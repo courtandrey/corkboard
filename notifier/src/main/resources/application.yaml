@@ -16,14 +16,22 @@ spring:
       mail.smtp.timeout: 8000
       mail.smtp.writetimeout: 8000
 
+  datasource:
+    url: ${NOTIFIER_DATASOURCE_URL:jdbc:postgresql://localhost:5432/notifier}
+    username: ${NOTIFIER_DATASOURCE_USERNAME:corkboard}
+    password: ${NOTIFIER_DATASOURCE_PASSWORD:corkboard}
+    hikari:
+      maximum-pool-size: ${NOTIFIER_DB_POOL:12}
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       auto-offset-reset: earliest
       enable-auto-commit: false
       max-poll-records: ${NOTIFIER_KAFKA_MAX_POLL:50}
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       properties:
         max.poll.interval.ms: 600000
+        spring.deserializer.value.delegate.class: app.corkboard.notifier.kafka.NotificationRequestedDeserializer
     producer:
       acks: all
       properties:
@@ -45,13 +53,16 @@ notifier:
   reply-to: ${MAIL_REPLY_TO:}
   max-attempts: ${MAIL_MAX_ATTEMPTS:3}
   send-concurrency: ${NOTIFIER_SEND_CONCURRENCY:8}
+  resend:
+    api-key: ${RESEND_API_KEY:}
+    base-url: ${RESEND_BASE_URL:https://api.resend.com}
   rate:
     per-second: ${NOTIFIER_RATE_PER_SECOND:10}
     burst: ${NOTIFIER_RATE_BURST:0}
     http-max-wait-millis: ${NOTIFIER_RATE_HTTP_MAX_WAIT_MS:2000}
   kafka:
     enabled: ${NOTIFIER_KAFKA_ENABLED:true}
-    topic: ${NOTIFIER_TOPIC:corkboard.emails.v1}
+    topic: ${NOTIFIER_TOPIC:corkboard.notifications.v1}
     group: ${NOTIFIER_KAFKA_GROUP:corkboard-notifier}
     concurrency: ${NOTIFIER_KAFKA_CONCURRENCY:2}
     partitions: ${NOTIFIER_KAFKA_PARTITIONS:3}

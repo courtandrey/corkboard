@@ -18,6 +18,21 @@ export const strings = {
     signInToPin: "Sign in to pin a note on the board.",
     accountMenu: "Your account",
   },
+  verify: {
+    banner: (email: string) =>
+      `The board is read-only until you confirm ${email} — we sent you a link.`,
+    resend: "Send it again",
+    resent: "Link sent — have a look in your inbox.",
+    resendFailed: "Not just yet — try again in a minute.",
+    confirmed: "Email confirmed. The board is yours.",
+    already: "That address was already confirmed.",
+    expired: "That link has expired. Ask for a new one below.",
+    invalid: "That link isn’t valid anymore.",
+    needsConfirmation: "Confirm your email first — the board is read-only until you do.",
+    gateTitle: "One step left",
+    gateBody: (email: string) =>
+      `Open the link we sent to ${email} and you can pin this note. Nothing on the board changes until you do.`,
+  },
   board: {
     searchPlaceholder: "search notes…",
     filtersTitle: "Show on the board",
@@ -42,6 +57,7 @@ export const strings = {
     unvote: "Take your point back",
     voteSignedOut: "Sign in to give this note a point",
     voteOwn: "You can’t give your own note a point",
+    voteUnverified: "Confirm your email to give points",
     hide: "Hide from my board",
     unhide: "Put back on my board",
     report: "Report this note",

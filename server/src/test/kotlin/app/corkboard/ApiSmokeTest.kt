@@ -2,14 +2,11 @@ package app.corkboard
 
 import app.corkboard.jooq.tables.references.USERS
 import org.assertj.core.api.Assertions.assertThat
-import org.jooq.DSLContext
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 
 class ApiSmokeTest : ApiTestBase() {
 
-    @Autowired
-    lateinit var dsl: DSLContext
 
     @Test
     fun `jooq generated schema queries the migrated database`() {

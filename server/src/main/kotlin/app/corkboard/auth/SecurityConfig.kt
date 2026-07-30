@@ -26,6 +26,7 @@ private val PUBLIC_READS = arrayOf(
     "/swagger-ui/**",
     "/api/v1/auth/google",
     "/api/v1/auth/google/callback",
+    "/api/v1/auth/verify",
     "/api/v1/events",
     "/api/v1/events/*",
     "/api/v1/tags",
@@ -66,6 +67,7 @@ class SecurityConfig(
             .requestCache { it.disable() }
             .addFilterBefore(SessionAuthFilter(sessions), UsernamePasswordAuthenticationFilter::class.java)
             .addFilterBefore(OriginCheckFilter(props.webOrigin, problems), AuthorizationFilter::class.java)
+            .addFilterBefore(EmailVerifiedFilter(problems), AuthorizationFilter::class.java)
             .authorizeHttpRequests {
                 it.requestMatchers(HttpMethod.GET, *PUBLIC_READS).permitAll()
                     .requestMatchers(HttpMethod.HEAD, *PUBLIC_READS).permitAll()

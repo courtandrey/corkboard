@@ -13,6 +13,8 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
 
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -31,6 +33,12 @@ import com.fasterxml.jackson.databind.ObjectMapper
     ],
 )
 class RateLimitedApiTest {
+
+    companion object {
+        @DynamicPropertySource
+        @JvmStatic
+        fun database(registry: DynamicPropertyRegistry) = NotifierDatabase.register(registry)
+    }
 
     @RegisterExtension
     val smtp: GreenMailExtension = GreenMailExtension(ServerSetupTest.SMTP)

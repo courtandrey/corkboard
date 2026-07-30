@@ -15,8 +15,16 @@ data class NotifierProperties(
     val limits: Limits = Limits(),
     val rate: Rate = Rate(),
     val kafka: Kafka = Kafka(),
+    val resend: Resend = Resend(),
 ) {
-    enum class Transport { LOG, SMTP }
+    enum class Transport { LOG, SMTP, RESEND }
+
+    data class Resend(
+        val apiKey: String = "",
+        val baseUrl: String = "https://api.resend.com",
+        val connectTimeoutMillis: Long = 5_000,
+        val readTimeoutMillis: Long = 15_000,
+    )
 
     data class Rate(
         val perSecond: Int = 10,

@@ -20,6 +20,7 @@ import app.corkboard.moderation.ReportReason
 import app.corkboard.moderation.ReportRequest
 import app.corkboard.moderation.ReportService
 import java.time.Instant
+import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import kotlin.random.Random
@@ -155,8 +156,14 @@ class SeedRunner(
         dsl.truncate(TAGS).restartIdentity().cascade().execute()
     }
 
-    private fun register(email: String, displayName: String, password: String): UUID =
-        auth.register(RegisterRequest(email, password, displayName), null).user.id
+    private fun register(email: String, displayName: String, password: String): UUID {
+        val id = auth.register(RegisterRequest(email, password, displayName), null).user.id
+        dsl.update(USERS)
+            .set(USERS.EMAIL_VERIFIED_AT, OffsetDateTime.now())
+            .where(USERS.ID.eq(id))
+            .execute()
+        return id
+    }
 
     private fun create(
         authorId: UUID,

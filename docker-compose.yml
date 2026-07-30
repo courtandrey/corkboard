@@ -15,6 +15,7 @@ services:
       retries: 20
     volumes:
       - dbdata:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d:ro
 
   api:
     image: eclipse-temurin:21-jdk
@@ -110,6 +111,9 @@ services:
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Lamppostal}
       MAIL_REPLY_TO: ${MAIL_REPLY_TO:-}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      NOTIFIER_DATASOURCE_URL: jdbc:postgresql://db:5432/notifier
+      NOTIFIER_DATASOURCE_USERNAME: corkboard
+      NOTIFIER_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-corkboard}
       NOTIFIER_RATE_PER_SECOND: ${NOTIFIER_RATE_PER_SECOND:-10}
       NOTIFIER_SEND_CONCURRENCY: ${NOTIFIER_SEND_CONCURRENCY:-8}
     volumes:
@@ -121,6 +125,8 @@ services:
       mailpit:
         condition: service_started
       kafka:
+        condition: service_healthy
+      db:
         condition: service_healthy
 
 volumes:

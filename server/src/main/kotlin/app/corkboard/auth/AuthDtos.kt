@@ -39,6 +39,7 @@ data class UserResponse(
     val email: String,
     val displayName: String,
     val avatarSeed: String,
+    val emailVerified: Boolean,
     val createdAt: Instant,
 )
 

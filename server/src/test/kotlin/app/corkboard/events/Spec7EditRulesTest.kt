@@ -7,15 +7,12 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import org.assertj.core.api.Assertions.assertThat
-import org.jooq.DSLContext
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpMethod
 
 class Spec7EditRulesTest : ApiTestBase() {
 
-    @Autowired
-    lateinit var dsl: DSLContext
 
     private fun createEvent(user: app.corkboard.TestUser): String {
         val res = sendJson(

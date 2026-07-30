@@ -9,15 +9,12 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import org.assertj.core.api.Assertions.assertThat
-import org.jooq.DSLContext
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpMethod
 
 class Spec6ReportTest : ApiTestBase() {
 
-    @Autowired
-    lateinit var dsl: DSLContext
 
     @Test
     fun `five distinct reports take the note off the board and notify the author`() {

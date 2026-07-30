@@ -1,16 +1,20 @@
 import { expect, test } from "@playwright/test";
-import { PASSWORD, SHOTS, gotoBoard, uniqueEmail } from "./helpers";
+import { PASSWORD, SHOTS, confirmEmail, gotoBoard, uniqueEmail } from "./helpers";
 
 test("register via UI, pin a note through the crosshair flow, sign out", async ({ page }) => {
   await gotoBoard(page);
 
+  const email = uniqueEmail("ui");
   await page.getByRole("link", { name: "Sign in" }).click();
   await page.getByRole("button", { name: "New here? Create an account" }).click();
-  await page.getByLabel("Email").fill(uniqueEmail("ui"));
+  await page.getByLabel("Email").fill(email);
   await page.getByLabel("Display name").fill("E2E Creator");
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Join the board" }).click();
   await expect(page.locator(".whoami")).toContainText("E2E Creator");
+
+  await confirmEmail(page, email);
+  await page.reload();
 
   await page.getByRole("button", { name: "Pin a note" }).click();
   await expect(page.getByText("Click the map where your note belongs.")).toBeVisible();

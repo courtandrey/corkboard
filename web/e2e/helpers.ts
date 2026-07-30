@@ -9,13 +9,47 @@ export function uniqueEmail(prefix: string): string {
 
 export const PASSWORD = "Pw-e2e-regression-1";
 
+export const MAILPIT = process.env.MAILPIT_URL ?? "http://localhost:8025";
+
 export async function registerViaApi(page: Page, displayName: string): Promise<string> {
+  const email = await registerUnverifiedViaApi(page, displayName);
+  await confirmEmail(page, email);
+  return email;
+}
+
+export async function registerUnverifiedViaApi(page: Page, displayName: string): Promise<string> {
   const email = uniqueEmail("e2e");
   const res = await page.request.post("/api/v1/auth/register", {
     data: { email, password: PASSWORD, displayName },
   });
   expect(res.status(), await res.text()).toBe(201);
   return email;
+}
+
+export async function confirmEmail(page: Page, email: string): Promise<void> {
+  const link = await verificationLink(page, email);
+  const opened = await page.request.get(link, { maxRedirects: 0 });
+  expect([302, 303]).toContain(opened.status());
+}
+
+export async function verificationLink(page: Page, email: string): Promise<string> {
+  const deadline = Date.now() + 20_000;
+  while (Date.now() < deadline) {
+    const search = await page.request.get(
+      `${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`,
+    );
+    if (search.ok()) {
+      const found = (await search.json()) as { messages: { ID: string }[] };
+      if (found.messages.length > 0) {
+        const message = await page.request.get(`${MAILPIT}/api/v1/message/${found.messages[0].ID}`);
+        const body = (await message.json()) as { HTML: string; Text: string };
+        const link = /https?:\/\/[^\s"<]+auth\/verify\?token=[^\s"<]+/.exec(body.HTML ?? body.Text);
+        if (link) return link[0];
+      }
+    }
+    await page.waitForTimeout(500);
+  }
+  throw new Error(`no verification mail for ${email} — is the notifier stack up?`);
 }
 
 export async function createEventViaApi(

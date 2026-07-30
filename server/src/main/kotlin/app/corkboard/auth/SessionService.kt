@@ -18,10 +18,11 @@ data class SessionUser(
     val email: String,
     val displayName: String,
     val avatarSeed: String,
+    val emailVerified: Boolean,
     val createdAt: OffsetDateTime,
 ) {
     fun toResponse(): UserResponse =
-        UserResponse(userId, email, displayName, avatarSeed, createdAt.toInstant())
+        UserResponse(userId, email, displayName, avatarSeed, emailVerified, createdAt.toInstant())
 }
 
 @Service
@@ -49,7 +50,7 @@ class SessionService(
         val now = OffsetDateTime.now(clock)
         val row = dsl.select(
             SESSIONS.ID, SESSIONS.LAST_SEEN_AT,
-            USERS.ID, USERS.EMAIL, USERS.DISPLAY_NAME, USERS.AVATAR_SEED, USERS.CREATED_AT,
+            USERS.ID, USERS.EMAIL, USERS.DISPLAY_NAME, USERS.AVATAR_SEED, USERS.EMAIL_VERIFIED_AT, USERS.CREATED_AT,
         )
             .from(SESSIONS)
             .join(USERS).on(SESSIONS.USER_ID.eq(USERS.ID))
@@ -70,6 +71,7 @@ class SessionService(
             email = row[USERS.EMAIL]!!,
             displayName = row[USERS.DISPLAY_NAME]!!,
             avatarSeed = row[USERS.AVATAR_SEED]!!,
+            emailVerified = row[USERS.EMAIL_VERIFIED_AT] != null,
             createdAt = row[USERS.CREATED_AT]!!,
         )
     }

@@ -28,10 +28,11 @@ class EmailDispatcher(
     val transport: String
         get() = emails.transport
 
-    fun dispatch(request: EmailRequest): CompletableFuture<String> {
-        emails.validate(request)
-        return limiter.acquire().thenApplyAsync({ withSlot { emails.send(request) } }, workers)
-    }
+    val deduplicates: Boolean
+        get() = emails.deduplicates
+
+    fun <T> dispatch(work: () -> T): CompletableFuture<T> =
+        limiter.acquire().thenApplyAsync({ withSlot(work) }, workers)
 
     fun dispatchNow(request: EmailRequest): String {
         emails.validate(request)

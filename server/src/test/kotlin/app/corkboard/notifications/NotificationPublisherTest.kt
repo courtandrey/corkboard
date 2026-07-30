@@ -1,8 +1,11 @@
 package app.corkboard.notifications
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import app.corkboard.notifications.avro.NotificationRequested
+import app.corkboard.notifications.avro.NotificationType
+import java.nio.ByteBuffer
 import java.time.Duration
 import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -17,7 +20,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.kafka.KafkaContainer
 import org.testcontainers.utility.DockerImageName
 
-private const val TOPIC = "corkboard.emails.v1"
+private const val TOPIC = "corkboard.notifications.v1"
 
 @SpringBootTest(
     properties = [
@@ -26,7 +29,7 @@ private const val TOPIC = "corkboard.emails.v1"
     ],
 )
 @Testcontainers
-class EmailRequestPublisherTest {
+class NotificationPublisherTest {
 
     companion object {
         @Container
@@ -50,42 +53,47 @@ class EmailRequestPublisherTest {
     }
 
     @Autowired
-    lateinit var publisher: EmailRequestPublisher
-
-    @Autowired
-    lateinit var objectMapper: ObjectMapper
+    lateinit var publisher: NotificationPublisher
 
     @Test
-    fun `an email request lands on the topic in the shape the notifier reads`() {
+    fun `a notification lands on the topic as the avro record the notifier reads`() {
         publisher.publish(
-            EmailRequested(
-                to = "resident@example.com",
-                subject = "Confirm your email",
-                text = "Open the link to confirm.",
-                html = "<p>Open the link to confirm.</p>",
-                key = "verify:7",
-            )
+            idempotencyId = "3f0b6f2e-verify",
+            type = NotificationType.EMAIL_VERIFICATION,
+            email = "resident@example.com",
+            name = "Marisol",
+            variables = mapOf(
+                "user_name" to "Marisol",
+                "verification_link" to "https://board.example.com/api/v1/auth/verify?token=abc",
+            ),
         )
 
         consumer().use { consumer ->
             consumer.subscribe(listOf(TOPIC))
             val record = KafkaTestUtils.getSingleRecord(consumer, TOPIC, Duration.ofSeconds(30))
-            assertThat(record.key()).isEqualTo("verify:7")
 
-            val payload = objectMapper.readTree(record.value())
-            assertThat(payload["to"].asText()).isEqualTo("resident@example.com")
-            assertThat(payload["subject"].asText()).isEqualTo("Confirm your email")
-            assertThat(payload["text"].asText()).isEqualTo("Open the link to confirm.")
-            assertThat(payload["html"].asText()).isEqualTo("<p>Open the link to confirm.</p>")
-            assertThat(payload["key"].asText()).isEqualTo("verify:7")
-            assertThat(payload.has("replyTo")).describedAs("absent fields stay off the wire").isFalse()
+            assertThat(record.key()).isEqualTo("3f0b6f2e-verify")
+
+            val event = NotificationRequested.fromByteBuffer(ByteBuffer.wrap(record.value()))
+
+            assertThat(event.idempotencyId.toString()).isEqualTo("3f0b6f2e-verify")
+            assertThat(event.type).isEqualTo(NotificationType.EMAIL_VERIFICATION)
+            assertThat(event.recipient.email.toString()).isEqualTo("resident@example.com")
+            assertThat(event.recipient.name.toString()).isEqualTo("Marisol")
+            assertThat(event.variables.mapKeys { it.key.toString() }.mapValues { it.value.toString() })
+                .containsExactlyInAnyOrderEntriesOf(
+                    mapOf(
+                        "user_name" to "Marisol",
+                        "verification_link" to "https://board.example.com/api/v1/auth/verify?token=abc",
+                    )
+                )
         }
     }
 
-    private fun consumer(): KafkaConsumer<String, String> {
+    private fun consumer(): KafkaConsumer<String, ByteArray> {
         val props = KafkaTestUtils.consumerProps(kafka.bootstrapServers, "publisher-check", "true")
         props["key.deserializer"] = StringDeserializer::class.java
-        props["value.deserializer"] = StringDeserializer::class.java
+        props["value.deserializer"] = ByteArrayDeserializer::class.java
         return KafkaConsumer(props)
     }
 }

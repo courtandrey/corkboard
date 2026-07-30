@@ -15,7 +15,7 @@ class SmtpEmailSender(
     override fun send(email: OutgoingEmail) {
         val message = mail.createMimeMessage()
         val helper = MimeMessageHelper(message, email.html != null, Charsets.UTF_8.name())
-        helper.setTo(email.to)
+        helper.setTo(InternetAddress(email.to, email.toName, Charsets.UTF_8.name()))
         helper.setSubject(email.subject)
         helper.setFrom(InternetAddress(props.sender, props.fromName.ifBlank { null }, Charsets.UTF_8.name()))
         if (email.html != null) helper.setText(email.text, email.html) else helper.setText(email.text)

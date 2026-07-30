@@ -137,8 +137,16 @@ export function EventDrawer() {
             <span className="spacer" />
             <VoteControl
               event={event}
-              interactive={!!me && !event.viewerState.isAuthor}
-              hint={!me ? eng.voteSignedOut : event.viewerState.isAuthor ? eng.voteOwn : undefined}
+              interactive={!!me && me.emailVerified && !event.viewerState.isAuthor}
+              hint={
+                !me
+                  ? eng.voteSignedOut
+                  : event.viewerState.isAuthor
+                    ? eng.voteOwn
+                    : !me.emailVerified
+                      ? eng.voteUnverified
+                      : undefined
+              }
             />
           </div>
 
@@ -238,7 +246,11 @@ export function EventDrawer() {
                     <button
                       type="button"
                       className="primary grow"
-                      onClick={() => (me ? setMode("respond") : navigate("/login"))}
+                      onClick={() => {
+                        if (!me) navigate("/login");
+                        else if (!me.emailVerified) toast(strings.verify.needsConfirmation, "info");
+                        else setMode("respond");
+                      }}
                     >
                       <ChatIcon size={16} /> {strings.apply.respond}
                     </button>

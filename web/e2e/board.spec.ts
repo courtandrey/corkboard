@@ -21,10 +21,10 @@ test("search narrows the board; pin click opens popup then drawer", async ({ pag
   await gotoBoard(page);
 
   const res = await page.request.get(
-    "/api/v1/events?bbox=-74.05,40.62,-73.85,40.85&zoom=13&q=Pirozhok",
+    "/api/v1/events?bbox=-74.05,40.62,-73.85,40.85&zoom=13&q=salsa",
   );
   const items = ((await res.json()) as { items: { id: string; location: { lng: number; lat: number } }[] }).items;
-  expect(items.length, "seeded Pirozhok note must be on the board (reseed with make seed)").toBe(1);
+  expect(items.length, "seeded salsa note must be on the board (reseed with make seed)").toBe(1);
   const pin = items[0];
 
   await page.evaluate(
@@ -34,7 +34,7 @@ test("search narrows the board; pin click opens popup then drawer", async ({ pag
     },
     [pin.location.lng, pin.location.lat],
   );
-  await page.getByLabel("search notes…").fill("Pirozhok");
+  await page.getByLabel("search notes…").fill("salsa");
   await page.getByLabel("search notes…").press("Enter");
   await expect(page.locator(".status-line")).toHaveText(/1 note on this stretch/);
 
@@ -43,13 +43,12 @@ test("search narrows the board; pin click opens popup then drawer", async ({ pag
     await clickPin(page, pin.location.lng, pin.location.lat);
     await expect(popup).toBeVisible({ timeout: 1500 });
   }).toPass({ timeout: 20_000 });
-  await expect(popup.locator(".note-title")).toContainText("Pirozhok");
+  await expect(popup.locator(".note-title")).toContainText("salsa");
   await page.screenshot({ path: `${SHOTS}/popup.png` });
 
   await popup.getByText("read more").click();
-  await expect(page.locator(".modal-card .ev-title")).toContainText("Pirozhok");
-  await expect(page.locator(".modal-card .stamp")).toHaveText("Resolved");
-  await expect(page.locator(".modal-card")).toContainText("Demo Resident");
+  await expect(page.locator(".modal-card .ev-title")).toContainText("salsa");
+  await expect(page.locator(".modal-card")).toContainText("Rosa Almeida");
   await expect(page).toHaveURL(/\/events\//);
   await page.screenshot({ path: `${SHOTS}/drawer.png` });
 });

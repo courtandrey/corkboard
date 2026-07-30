@@ -409,6 +409,25 @@ textarea:focus {
   color: var(--stamp-red);
 }
 
+.verify-banner {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  background: var(--sticky);
+  border-bottom: 1px solid var(--paper-edge);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  z-index: 40;
+}
+
+.verify-banner .verify-text {
+  flex: 1;
+  min-width: 0;
+}
+
 .board {
   display: flex;
   flex: 1;
@@ -1939,6 +1958,12 @@ label.inline input[type="checkbox"] {
 
   .maplibregl-ctrl-top-right {
     display: none;
+  }
+
+  .verify-banner {
+    padding: 7px 10px;
+    gap: 8px;
+    font-size: 12px;
   }
 
   .status-line {

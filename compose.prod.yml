@@ -23,6 +23,7 @@ services:
       retries: 20
     volumes:
       - dbdata-prod:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d:ro
 
   api:
     build:
@@ -104,8 +105,13 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+      db:
+        condition: service_healthy
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      NOTIFIER_DATASOURCE_URL: jdbc:postgresql://db:5432/notifier
+      NOTIFIER_DATASOURCE_USERNAME: corkboard
+      NOTIFIER_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       NOTIFIER_RATE_PER_SECOND: ${NOTIFIER_RATE_PER_SECOND:-10}
       NOTIFIER_RATE_BURST: ${NOTIFIER_RATE_BURST:-0}
       NOTIFIER_SEND_CONCURRENCY: ${NOTIFIER_SEND_CONCURRENCY:-8}
@@ -121,6 +127,7 @@ services:
       MAIL_FROM: ${MAIL_FROM:-}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Lamppostal}
       MAIL_REPLY_TO: ${MAIL_REPLY_TO:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
     expose:
       - "8080"
     healthcheck:

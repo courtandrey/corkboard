@@ -4,7 +4,6 @@ import app.corkboard.ApiTestBase
 import app.corkboard.jooq.tables.references.USERS
 import java.util.UUID
 import org.assertj.core.api.Assertions.assertThat
-import org.jooq.DSLContext
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 
@@ -13,8 +12,6 @@ class GoogleIdentityServiceTest : ApiTestBase() {
     @Autowired
     lateinit var identity: GoogleIdentityService
 
-    @Autowired
-    lateinit var dsl: DSLContext
 
     private fun uniqueEmail() = "google-${UUID.randomUUID()}@example.com"
 

@@ -15,6 +15,7 @@ types:
 
 jooq:
 	cd server && ./gradlew jooqCodegen
+	cd notifier && ./gradlew jooqCodegen
 
 check:
 	cd server && ./gradlew check

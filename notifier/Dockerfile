@@ -1,6 +1,7 @@
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /build
 COPY . .
+RUN test -d generated/jooq || (echo "notifier/generated/jooq is missing — run ./gradlew jooqCodegen first (see deploy/DEPLOY.md)" >&2; exit 1)
 RUN ./gradlew --no-daemon bootJar
 
 FROM eclipse-temurin:21-jre

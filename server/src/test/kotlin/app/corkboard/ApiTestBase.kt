@@ -1,8 +1,11 @@
 package app.corkboard
 
+import app.corkboard.jooq.tables.references.USERS
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import java.time.OffsetDateTime
 import java.util.UUID
+import org.jooq.DSLContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.client.TestRestTemplate
@@ -37,6 +40,9 @@ abstract class ApiTestBase {
 
     @Autowired
     lateinit var mapper: ObjectMapper
+
+    @Autowired
+    lateinit var dsl: DSLContext
 
     protected fun json(res: ResponseEntity<String>): JsonNode = mapper.readTree(res.body)
 
@@ -78,7 +84,17 @@ abstract class ApiTestBase {
         return json(res)["id"].asText()
     }
 
-    protected fun registerUser(displayName: String = "Resident"): TestUser {
+    protected fun registerUser(displayName: String = "Resident"): TestUser =
+        registerUnverifiedUser(displayName).also { markEmailVerified(it.id) }
+
+    protected fun markEmailVerified(userId: UUID) {
+        dsl.update(USERS)
+            .set(USERS.EMAIL_VERIFIED_AT, OffsetDateTime.now())
+            .where(USERS.ID.eq(userId))
+            .execute()
+    }
+
+    protected fun registerUnverifiedUser(displayName: String = "Resident"): TestUser {
         val email = "u-${UUID.randomUUID()}@example.com"
         val res = sendJson(
             HttpMethod.POST,

@@ -1,0 +1,40 @@
+{
+  "namespace": "app.corkboard.notifications.avro",
+  "type": "record",
+  "name": "NotificationRequested",
+  "doc": "A request for one notification. Carries no copy: the notifier owns the templates and renders from the variables. Kept byte-identical in server/ and notifier/ — the topic is the contract, not a shared library.",
+  "fields": [
+    {
+      "name": "idempotencyId",
+      "type": "string",
+      "doc": "Stable for the life of the request: a redelivery of the same notification repeats it."
+    },
+    {
+      "name": "type",
+      "type": {
+        "type": "enum",
+        "name": "NotificationType",
+        "symbols": ["UNKNOWN", "EMAIL_VERIFICATION"],
+        "default": "UNKNOWN",
+        "doc": "UNKNOWN is the enum default so a notifier running an older schema reads a newer symbol as UNKNOWN and dead-letters it, instead of failing to decode."
+      }
+    },
+    {
+      "name": "recipient",
+      "type": {
+        "type": "record",
+        "name": "Recipient",
+        "fields": [
+          {"name": "email", "type": "string"},
+          {"name": "name", "type": ["null", "string"], "default": null}
+        ]
+      }
+    },
+    {
+      "name": "variables",
+      "type": {"type": "map", "values": "string"},
+      "default": {},
+      "doc": "Values for the template's declared placeholders, e.g. user_name and verification_link."
+    }
+  ]
+}

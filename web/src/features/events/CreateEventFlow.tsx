@@ -39,11 +39,13 @@ export function CreateEventFlow() {
   const signedIn = !!me;
   const close = () => navigate("/");
 
+  const confirmed = me?.emailVerified ?? false;
+
   useEffect(() => {
-    if (!signedIn) return;
+    if (!signedIn || !confirmed) return;
     setCrosshair(true);
     return () => setCrosshair(false);
-  }, [signedIn, setCrosshair]);
+  }, [signedIn, confirmed, setCrosshair]);
 
   useEffect(() => {
     if (meta && type === null) {
@@ -65,6 +67,19 @@ export function CreateEventFlow() {
             {strings.auth.signInToPin}
           </p>
           <AuthPanel />
+        </div>
+      </Modal>
+    );
+  }
+
+  if (!confirmed) {
+    return (
+      <Modal onClose={close} size="sm">
+        <div className="modal-head">
+          <h2>{strings.verify.gateTitle}</h2>
+        </div>
+        <div className="modal-body" style={{ paddingBottom: 18 }}>
+          <p className="form-hint">{strings.verify.gateBody(me.email)}</p>
         </div>
       </Modal>
     );
