@@ -14,6 +14,8 @@ import { useIsPhone } from "../../ui/useMediaQuery";
 import { loadSavedPosition, savePosition, useBoardStore } from "../../stores/boardStore";
 
 const FALLBACK_ZOOM = 13;
+const CALLOUT_GAP = 8;
+const ARROW_INSET = 18;
 const MAX_SPLIT_ZOOM = 18;
 const SPLIT_EPS = 45 / 2 ** MAX_SPLIT_ZOOM;
 
@@ -178,6 +180,7 @@ export function BoardMap() {
   const draftLocation = useBoardStore((s) => s.draftLocation);
   const setDraftLocation = useBoardStore((s) => s.setDraftLocation);
   const setDraftPinEl = useBoardStore((s) => s.setDraftPinEl);
+  const draftPinEl = useBoardStore((s) => s.draftPinEl);
   const isPhone = useIsPhone();
   const navigate = useNavigate();
   const selectedMatch = useMatch("/events/:id");
@@ -476,6 +479,54 @@ export function BoardMap() {
       setDraftPinEl(null);
     }
   }, [draftLocation, setDraftLocation, setDraftPinEl]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const marker = draftMarkerRef.current;
+    const host = draftPinEl;
+    if (!map || !marker || !host) return;
+
+    const wrap = marker.getElement();
+    const place = () => {
+      const callout = host.firstElementChild as HTMLElement | null;
+      if (!callout) return;
+      const bounds = map.getContainer().getBoundingClientRect();
+      const pin = wrap.getBoundingClientRect();
+      const height = callout.offsetHeight;
+      const needed = height + CALLOUT_GAP;
+
+      const roomAbove = pin.top - bounds.top;
+      const roomBelow = bounds.bottom - pin.bottom;
+      const below = roomAbove < needed && roomBelow > roomAbove;
+      host.classList.toggle("is-below", below);
+
+      const half = callout.offsetWidth / 2;
+      const centre = pin.left + pin.width / 2;
+      const pastLeft = Math.max(0, bounds.left + CALLOUT_GAP - (centre - half));
+      const pastRight = Math.max(0, centre + half - (bounds.right - CALLOUT_GAP));
+      const shift = pastLeft - pastRight;
+      host.style.setProperty("--callout-shift", `${shift}px`);
+
+      const reach = Math.max(0, half - ARROW_INSET);
+      host.style.setProperty("--callout-arrow-shift", `${Math.min(reach, Math.max(-reach, shift))}px`);
+
+      const top = below ? pin.bottom + CALLOUT_GAP : pin.top - CALLOUT_GAP - height;
+      const pastTop = Math.max(0, bounds.top + CALLOUT_GAP - top);
+      const pastBottom = Math.max(0, top + height - (bounds.bottom - CALLOUT_GAP));
+      host.style.setProperty("--callout-lift", `${pastTop - pastBottom}px`);
+    };
+
+    place();
+    map.on("move", place);
+    map.on("resize", place);
+    const resizes = new ResizeObserver(place);
+    resizes.observe(host);
+    return () => {
+      map.off("move", place);
+      map.off("resize", place);
+      resizes.disconnect();
+    };
+  }, [draftLocation, draftPinEl]);
 
   function locateMe() {
     const map = mapRef.current;

@@ -546,6 +546,9 @@ textarea:focus {
   flex: 1;
   position: relative;
   min-width: 0;
+  /* map overlays must never grow the page: a scrollbar would reflow what they are measured against */
+  overflow: hidden;
+  overflow: clip;
 }
 
 .map-wrap .map {
@@ -617,8 +620,14 @@ textarea:focus {
   position: absolute;
   left: 50%;
   bottom: 48px;
-  transform: translateX(-50%);
+  transform: translate(calc(-50% + var(--callout-shift, 0px)), var(--callout-lift, 0px));
   cursor: default;
+}
+
+/* flipped by BoardMap when the pin sits too close to the top of the map */
+.draft-callout-host.is-below {
+  bottom: auto;
+  top: calc(100% + 8px);
 }
 
 .pin-callout {
@@ -636,7 +645,7 @@ textarea:focus {
 .pin-callout::after {
   content: "";
   position: absolute;
-  left: 50%;
+  left: calc(50% - var(--callout-arrow-shift, 0px));
   bottom: -7px;
   width: 12px;
   height: 12px;
@@ -644,6 +653,15 @@ textarea:focus {
   background: var(--paper);
   border-right: 1px solid var(--paper-edge);
   border-bottom: 1px solid var(--paper-edge);
+}
+
+.is-below .pin-callout::after {
+  bottom: auto;
+  top: -7px;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 1px solid var(--paper-edge);
+  border-top: 1px solid var(--paper-edge);
 }
 
 .pin-callout .creator-msg {
