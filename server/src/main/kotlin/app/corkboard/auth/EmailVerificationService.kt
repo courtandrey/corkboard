@@ -15,10 +15,13 @@ import java.util.Base64
 import java.util.UUID
 import org.jooq.DSLContext
 import org.slf4j.LoggerFactory
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 enum class VerificationOutcome { VERIFIED, ALREADY_VERIFIED, EXPIRED, INVALID }
+
+data class EmailVerified(val userId: UUID)
 
 @Service
 class EmailVerificationService(
@@ -26,6 +29,7 @@ class EmailVerificationService(
     private val notifications: NotificationPublisher,
     private val props: CorkboardProperties,
     private val clock: Clock,
+    private val publisher: ApplicationEventPublisher,
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -80,6 +84,7 @@ class EmailVerificationService(
             .execute()
 
         log.info("verified email for user {}", row[EMAIL_VERIFICATIONS.USER_ID])
+        publisher.publishEvent(EmailVerified(row[EMAIL_VERIFICATIONS.USER_ID]!!))
         return VerificationOutcome.VERIFIED
     }
 

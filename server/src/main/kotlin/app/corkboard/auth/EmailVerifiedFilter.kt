@@ -13,6 +13,8 @@ class EmailVerifiedFilter(private val problems: Problems) : OncePerRequestFilter
 
     private val safeMethods = setOf("GET", "HEAD", "OPTIONS")
 
+    private val personalView = Regex("^/api/v1/events/[^/]+/hide$")
+
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
@@ -22,7 +24,8 @@ class EmailVerifiedFilter(private val problems: Problems) : OncePerRequestFilter
         val restricted = auth != null &&
             !auth.user.emailVerified &&
             request.method !in safeMethods &&
-            !request.requestURI.startsWith("/api/v1/auth/")
+            !request.requestURI.startsWith("/api/v1/auth/") &&
+            !personalView.matches(request.requestURI)
 
         if (restricted) {
             problems.write(response, HttpStatus.FORBIDDEN, ProblemCode.EMAIL_UNVERIFIED)

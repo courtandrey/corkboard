@@ -10,6 +10,7 @@ import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
 import { toast } from "../../ui/toast";
 import { ChatIcon, ClockIcon, FlagIcon, HideIcon, SendIcon, ShowIcon } from "../../ui/icons";
+import { useVerifyGate } from "../auth/verifyGate";
 import { VoteControl } from "./VoteControl";
 import { EventEditForm } from "./EventEditForm";
 
@@ -44,6 +45,7 @@ export function EventDrawer() {
   const [mode, setMode] = useState<Mode>("view");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const { verified, guard, block } = useVerifyGate();
 
   const close = () => navigate("/");
   const type = meta?.types.find((t) => t.key === event?.type);
@@ -137,16 +139,15 @@ export function EventDrawer() {
             <span className="spacer" />
             <VoteControl
               event={event}
-              interactive={!!me && me.emailVerified && !event.viewerState.isAuthor}
+              interactive={!!me && !event.viewerState.isAuthor}
               hint={
-                !me
-                  ? eng.voteSignedOut
-                  : event.viewerState.isAuthor
-                    ? eng.voteOwn
-                    : !me.emailVerified
-                      ? eng.voteUnverified
-                      : undefined
+                !me ? eng.voteSignedOut : event.viewerState.isAuthor ? eng.voteOwn : undefined
               }
+              intercept={() => {
+                if (verified) return false;
+                block("vote");
+                return true;
+              }}
             />
           </div>
 
@@ -248,8 +249,7 @@ export function EventDrawer() {
                       className="primary grow"
                       onClick={() => {
                         if (!me) navigate("/login");
-                        else if (!me.emailVerified) toast(strings.verify.needsConfirmation, "info");
-                        else setMode("respond");
+                        else guard("respond", () => setMode("respond"))();
                       }}
                     >
                       <ChatIcon size={16} /> {strings.apply.respond}
@@ -272,7 +272,7 @@ export function EventDrawer() {
                       <button
                         type="button"
                         className="icon-btn"
-                        onClick={() => setMode("report")}
+                        onClick={guard("report", () => setMode("report"))}
                         aria-label={eng.report}
                         title={eng.report}
                       >

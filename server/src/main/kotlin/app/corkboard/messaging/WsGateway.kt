@@ -1,5 +1,6 @@
 package app.corkboard.messaging
 
+import app.corkboard.auth.EmailVerified
 import app.corkboard.notifications.NotificationCreated
 import com.fasterxml.jackson.databind.ObjectMapper
 import java.util.UUID
@@ -51,6 +52,11 @@ class WsGateway(private val objectMapper: ObjectMapper) : TextWebSocketHandler()
     @TransactionalEventListener(fallbackExecution = true)
     fun onConversationRead(event: ConversationRead) {
         push(event.recipientId, "conversation:read", mapOf("conversationId" to event.conversationId))
+    }
+
+    @TransactionalEventListener(fallbackExecution = true)
+    fun onEmailVerified(event: EmailVerified) {
+        push(event.userId, "account:verified", emptyMap<String, Any>())
     }
 
     @Scheduled(fixedRate = 30_000)

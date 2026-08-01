@@ -1,12 +1,15 @@
 package app.corkboard.messaging
 
 import app.corkboard.ApiTestBase
+import app.corkboard.auth.EmailVerificationService
+import app.corkboard.auth.VerificationOutcome
 import java.net.URI
 import java.util.UUID
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.http.HttpMethod
 import org.springframework.web.socket.CloseStatus
@@ -19,6 +22,9 @@ class WsGatewayTest : ApiTestBase() {
 
     @LocalServerPort
     var port: Int = 0
+
+    @Autowired
+    lateinit var verifications: EmailVerificationService
 
     private class CollectingHandler : TextWebSocketHandler() {
         val frames = LinkedBlockingQueue<String>()
@@ -86,6 +92,39 @@ class WsGatewayTest : ApiTestBase() {
             val notification = frames.first { mapper.readTree(it)["type"].asText() == "notification:new" }
             assertThat(mapper.readTree(notification)["payload"]["notification"]["kind"].asText())
                 .isEqualTo("application_received")
+        } finally {
+            session.close(CloseStatus.NORMAL)
+        }
+    }
+
+    @Test
+    fun `confirming the address reaches a socket that was already open`() {
+        val email = "ws-verify-${UUID.randomUUID()}@example.com"
+        val res = sendJson(
+            HttpMethod.POST, "/api/v1/auth/register",
+            mapOf(
+                "email" to email,
+                "password" to "Pw-${UUID.randomUUID()}",
+                "displayName" to "WS Unconfirmed",
+                "transport" to "bearer",
+            ),
+        )
+        check(res.statusCode.value() == 201) { "register failed: ${res.body}" }
+        val body = json(res)
+        val token = body["token"].asText()
+        val userId = UUID.fromString(body["user"]["id"].asText())
+
+        val handler = CollectingHandler()
+        val session = StandardWebSocketClient()
+            .execute(handler, "ws://localhost:$port/ws?token=$token")
+            .get(5, TimeUnit.SECONDS)
+        try {
+            val outcome = verifications.verify(verifications.issue(userId, email, "WS Unconfirmed"))
+            assertThat(outcome).isEqualTo(VerificationOutcome.VERIFIED)
+
+            val frame = handler.frames.poll(5, TimeUnit.SECONDS)
+            assertThat(frame).isNotNull
+            assertThat(mapper.readTree(frame)["type"].asText()).isEqualTo("account:verified")
         } finally {
             session.close(CloseStatus.NORMAL)
         }

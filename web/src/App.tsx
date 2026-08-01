@@ -8,6 +8,7 @@ import { EventDrawer } from "./features/events/EventDrawer";
 import { CreateEventFlow } from "./features/events/CreateEventFlow";
 import { AuthDrawer } from "./features/auth/AuthDrawer";
 import { VerifyBanner } from "./features/auth/VerifyBanner";
+import { VerifyGate } from "./features/auth/verifyGate";
 import { MessagesDrawer } from "./features/messaging/MessagesDrawer";
 import { MyPins } from "./features/events/MyPins";
 import { useSocket } from "./features/realtime/useSocket";
@@ -65,6 +66,7 @@ export function App() {
           <Route path="*" element={null} />
         </Routes>
       </div>
+      <VerifyGate />
       <Toaster />
     </div>
   );

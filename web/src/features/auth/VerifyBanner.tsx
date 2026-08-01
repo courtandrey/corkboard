@@ -3,13 +3,24 @@ import { api, ApiError } from "../../api/client";
 import { useMe } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
 import { toast } from "../../ui/toast";
-import { SendIcon } from "../../ui/icons";
+import { CloseIcon, SendIcon } from "../../ui/icons";
+
+const DISMISSED_KEY = "corkboard.verify-banner-dismissed";
+
+function dismissedFor(email: string): boolean {
+  try {
+    return localStorage.getItem(DISMISSED_KEY) === email;
+  } catch {
+    return false;
+  }
+}
 
 export function VerifyBanner() {
   const { data: me } = useMe();
   const [busy, setBusy] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
-  if (!me || me.emailVerified) return null;
+  if (!me || me.emailVerified || dismissed || dismissedFor(me.email)) return null;
 
   async function resend() {
     setBusy(true);
@@ -23,11 +34,29 @@ export function VerifyBanner() {
     }
   }
 
+  function dismiss() {
+    try {
+      localStorage.setItem(DISMISSED_KEY, me!.email);
+    } catch {
+      // a browser refusing storage simply gets the banner again next load
+    }
+    setDismissed(true);
+  }
+
   return (
     <div className="verify-banner" role="status">
       <span className="verify-text">{strings.verify.banner(me.email)}</span>
       <button type="button" className="sm" onClick={resend} disabled={busy}>
         <SendIcon size={14} /> {strings.verify.resend}
+      </button>
+      <button
+        type="button"
+        className="icon-btn verify-dismiss"
+        onClick={dismiss}
+        aria-label={strings.verify.dismiss}
+        title={strings.verify.dismiss}
+      >
+        <CloseIcon size={15} />
       </button>
     </div>
   );

@@ -85,6 +85,31 @@ class Spec11EmailVerificationTest : ApiTestBase() {
     }
 
     @Test
+    fun `an unconfirmed account may still tidy its own view of the board`() {
+        val author = registerUser("Pinning Resident")
+        val event = createEvent(author, 12.2, 55.7, title = "Visible to everyone")
+        val reader = registerUnverifiedUser("Browsing Resident")
+
+        assertThat(sendJson(HttpMethod.POST, "/api/v1/events/$event/hide", null, reader.headers).statusCode.value())
+            .describedAs("hiding changes nothing anyone else can see")
+            .isEqualTo(204)
+        assertThat(json(getJson("/api/v1/events/$event", reader.headers))["viewerState"]["hidden"].asBoolean()).isTrue()
+
+        assertThat(sendJson(HttpMethod.DELETE, "/api/v1/events/$event/hide", null, reader.headers).statusCode.value())
+            .isEqualTo(204)
+
+        assertThat(sendJson(HttpMethod.POST, "/api/v1/events/$event/vote", null, reader.headers).statusCode.value())
+            .describedAs("but a vote is a contribution, and still waits for the link")
+            .isEqualTo(403)
+        assertThat(
+            sendJson(
+                HttpMethod.POST, "/api/v1/events/$event/report",
+                mapOf("reason" to "spam"), reader.headers,
+            ).statusCode.value(),
+        ).isEqualTo(403)
+    }
+
+    @Test
     fun `opening the link confirms the account and hands the board back`() {
         val user = registerUnverifiedUser("Confirming Resident")
         val token = verifications.issue(user.id, user.email, "Confirming Resident")

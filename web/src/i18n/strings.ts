@@ -29,9 +29,18 @@ export const strings = {
     expired: "That link has expired. Ask for a new one below.",
     invalid: "That link isn’t valid anymore.",
     needsConfirmation: "Confirm your email first — the board is read-only until you do.",
+    dismiss: "Dismiss",
     gateTitle: "One step left",
     gateBody: (email: string) =>
-      `Open the link we sent to ${email} and you can pin this note. Nothing on the board changes until you do.`,
+      `Open the link we sent to ${email}, and the board is yours. Nothing changes until you do.`,
+    gateDismiss: "Not now",
+    gateReason: {
+      pin: "Pinning a note needs a confirmed email.",
+      vote: "Giving points needs a confirmed email.",
+      report: "Reporting a note needs a confirmed email.",
+      respond: "Responding to a note needs a confirmed email.",
+      message: "Sending a message needs a confirmed email.",
+    },
   },
   board: {
     searchPlaceholder: "search notes…",

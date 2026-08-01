@@ -79,6 +79,9 @@ export function CreateEventFlow() {
           <h2>{strings.verify.gateTitle}</h2>
         </div>
         <div className="modal-body" style={{ paddingBottom: 18 }}>
+          <p className="form-hint" style={{ marginBottom: 6 }}>
+            {strings.verify.gateReason.pin}
+          </p>
           <p className="form-hint">{strings.verify.gateBody(me.email)}</p>
         </div>
       </Modal>

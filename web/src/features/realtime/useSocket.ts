@@ -1,5 +1,8 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import type { AuthResponse } from "../../api/client";
+import { strings } from "../../i18n/strings";
+import { toast } from "../../ui/toast";
 
 interface Frame {
   type: string;
@@ -42,6 +45,16 @@ export function useSocket(enabled: boolean) {
               });
             }
             break;
+          case "account:verified": {
+            let announce = false;
+            queryClient.setQueryData<AuthResponse["user"] | null>(["auth", "me"], (me) => {
+              if (!me || me.emailVerified) return me;
+              announce = true;
+              return { ...me, emailVerified: true };
+            });
+            if (announce) toast(strings.verify.confirmed);
+            break;
+          }
           case "conversation:read":
             if (frame.payload.conversationId) {
               void queryClient.invalidateQueries({

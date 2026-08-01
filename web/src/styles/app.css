@@ -428,6 +428,11 @@ textarea:focus {
   min-width: 0;
 }
 
+.verify-banner .verify-dismiss {
+  flex: 0 0 auto;
+  margin-right: -4px;
+}
+
 .board {
   display: flex;
   flex: 1;

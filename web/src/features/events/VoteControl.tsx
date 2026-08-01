@@ -9,10 +9,12 @@ export function VoteControl({
   event,
   interactive,
   hint,
+  intercept,
 }: {
   event: EventDetail;
   interactive: boolean;
   hint?: string;
+  intercept?: () => boolean;
 }) {
   const queryClient = useQueryClient();
   const key = ["event", event.id];
@@ -82,7 +84,10 @@ export function VoteControl({
     <button
       type="button"
       className={cls}
-      onClick={() => vote.mutate()}
+      onClick={() => {
+        if (intercept?.()) return;
+        vote.mutate();
+      }}
       disabled={vote.isPending}
       aria-pressed={voted}
       aria-label={voted ? strings.engagement.unvote : strings.engagement.vote}

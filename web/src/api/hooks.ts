@@ -30,7 +30,7 @@ export function useMe() {
         (res) => res.user,
         () => null,
       ),
-    staleTime: 60_000,
+    staleTime: (query) => (query.state.data?.emailVerified ? Infinity : 60_000),
   });
 }
 

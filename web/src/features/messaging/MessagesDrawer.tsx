@@ -9,6 +9,7 @@ import { strings } from "../../i18n/strings";
 import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
 import { useIsPhone } from "../../ui/useMediaQuery";
+import { useVerifyGate } from "../auth/verifyGate";
 import { BackIcon, SendIcon } from "../../ui/icons";
 
 const s = strings.messagesUi;
@@ -29,6 +30,7 @@ function ConversationRow({ conversation, active }: { conversation: ConversationS
 
 function Thread({ conversation, onBack }: { conversation: ConversationSummary; onBack?: () => void }) {
   const { data: me } = useMe();
+  const { verified, block } = useVerifyGate();
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useMessages(conversation.id);
   const queryClient = useQueryClient();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -49,7 +51,6 @@ function Thread({ conversation, onBack }: { conversation: ConversationSummary; o
     }
   }, [conversation.id, conversation.unreadCount, queryClient]);
 
-  // older pages prepend above the viewport: keep the reader where they were reading
   useLayoutEffect(() => {
     const el = scrollRef.current;
     if (!el || messages.length === 0) return;
@@ -81,6 +82,10 @@ function Thread({ conversation, onBack }: { conversation: ConversationSummary; o
 
   async function send(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!verified) {
+      block("message");
+      return;
+    }
     const form = event.currentTarget;
     const body = String(new FormData(form).get("body") ?? "").trim();
     if (!body) return;

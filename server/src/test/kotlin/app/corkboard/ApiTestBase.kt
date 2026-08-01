@@ -22,7 +22,7 @@ data class TestUser(val id: UUID, val email: String, val headers: HttpHeaders)
 
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = ["corkboard.notifications.enabled=false"],
+    properties = ["corkboard.notifications.enabled=false", "corkboard.google-client-id="],
 )
 abstract class ApiTestBase {
 

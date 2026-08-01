@@ -8,7 +8,7 @@ test("board renders chrome, server-driven filters, and pins", async ({ page }) =
   await expect(page.getByText("Show on the board")).toBeVisible();
   for (const label of [
     "Lost & Found", "Sports & Activities", "Clubs & Hobbies", "Help Wanted / Offered",
-    "Free Stuff", "Local Happenings", "Notices",
+    "Free Stuff", "Local Happenings", "Notes & Thoughts",
   ]) {
     await expect(page.getByText(label, { exact: true })).toBeVisible();
   }
