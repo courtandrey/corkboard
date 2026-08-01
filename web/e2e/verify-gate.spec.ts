@@ -43,8 +43,18 @@ test("blocked actions explain themselves instead of doing nothing", async ({ pag
       await click();
       await expect(page.getByRole("heading", { name: "One step left" }), `${label} opens the gate`).toBeVisible();
     });
-    await expect(page.getByRole("dialog", { name: "One step left" })).toContainText(email);
-    if (label === "vote") await page.screenshot({ path: `${SHOTS}/verify-gate.png` });
+    const gate = page.getByRole("dialog", { name: "One step left" });
+    await expect(gate).toContainText(email);
+    if (label === "vote") {
+      const row = (await gate.locator(".modal-actions").boundingBox())!;
+      const primary = (await gate.getByRole("button", { name: "Send it again" }).boundingBox())!;
+      const ghost = (await gate.getByRole("button", { name: "Not now" }).boundingBox())!;
+      expect(primary.height, "the icon must not make one button taller").toBe(ghost.height);
+      expect(primary.y).toBe(ghost.y);
+      expect(primary.x, "the primary sits flush left").toBeCloseTo(row.x, 0);
+      expect(ghost.x + ghost.width, "the way out sits flush right").toBeCloseTo(row.x + row.width, 0);
+      await page.screenshot({ path: `${SHOTS}/verify-gate.png` });
+    }
     await page.getByRole("button", { name: "Not now" }).click();
     await expect(page.getByRole("heading", { name: "One step left" })).toHaveCount(0);
   }

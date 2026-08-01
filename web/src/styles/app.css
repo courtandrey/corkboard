@@ -551,7 +551,6 @@ textarea:focus {
   flex: 1;
   position: relative;
   min-width: 0;
-  /* map overlays must never grow the page: a scrollbar would reflow what they are measured against */
   overflow: hidden;
   overflow: clip;
 }
@@ -629,7 +628,6 @@ textarea:focus {
   cursor: default;
 }
 
-/* flipped by BoardMap when the pin sits too close to the top of the map */
 .draft-callout-host.is-below {
   bottom: auto;
   top: calc(100% + 8px);
@@ -937,6 +935,17 @@ textarea:focus {
 
 .modal-foot {
   padding: 14px 20px 18px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.modal-actions button {
+  min-height: 34px;
 }
 
 /* ── event card ───────────────────────────────────────────────── */
