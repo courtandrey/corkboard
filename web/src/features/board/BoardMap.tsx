@@ -10,6 +10,7 @@ import { strings } from "../../i18n/strings";
 import { clusterPushpinDataUri, pushpinDataUri } from "../../ui/pushpin";
 import { PinIcon, PushpinIcon } from "../../ui/icons";
 import { toast } from "../../ui/toast";
+import { loadNoteFont } from "../../ui/noteFont";
 import { useIsPhone } from "../../ui/useMediaQuery";
 import { loadSavedPosition, savePosition, useBoardStore } from "../../stores/boardStore";
 
@@ -327,8 +328,9 @@ export function BoardMap() {
     const map = mapRef.current;
     if (!map || !meta) return;
 
-    const openPinPopup = (feature: Feature) => {
+    const openPinPopup = async (feature: Feature) => {
       const props = feature.properties as { id: string; type: string; title: string; score: number };
+      await loadNoteFont(props.title);
       const type = meta.types.find((t) => t.key === props.type);
 
       const container = document.createElement("div");
@@ -381,12 +383,15 @@ export function BoardMap() {
         })}`,
       );
 
+      const heading = strings.board.clusterList(props.count);
+      await loadNoteFont(heading);
+
       const container = document.createElement("div");
       container.className = "paper-note cluster-list";
 
       const title = document.createElement("p");
       title.className = "note-title";
-      title.textContent = strings.board.clusterList(props.count);
+      title.textContent = heading;
       container.append(title);
 
       for (const pin of res.items) {
@@ -418,7 +423,7 @@ export function BoardMap() {
       const feature = map.queryRenderedFeatures(event.point, { layers: ["pins", "clusters"] })[0];
       if (!feature) return;
       if (feature.properties?.kind === "pin") {
-        openPinPopup(feature as unknown as Feature);
+        void openPinPopup(feature as unknown as Feature);
         return;
       }
       const props = feature.properties as { west: number; south: number; east: number; north: number };

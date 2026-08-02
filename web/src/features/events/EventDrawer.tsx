@@ -9,6 +9,7 @@ import { strings } from "../../i18n/strings";
 import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
 import { toast } from "../../ui/toast";
+import { useNoteFontReady } from "../../ui/noteFont";
 import { ChatIcon, ClockIcon, FlagIcon, HideIcon, SendIcon, ShowIcon } from "../../ui/icons";
 import { useVerifyGate } from "../auth/verifyGate";
 import { VoteControl } from "./VoteControl";
@@ -46,6 +47,7 @@ export function EventDrawer() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const { verified, guard, block } = useVerifyGate();
+  const titleReady = useNoteFontReady(event?.title);
 
   const close = () => navigate("/");
   const type = meta?.types.find((t) => t.key === event?.type);
@@ -104,9 +106,9 @@ export function EventDrawer() {
   return (
     <Modal onClose={close} size="md" labelledBy="ev-title">
       {error && <p className="empty-state error-note">{strings.event.notFound}</p>}
-      {!event && !error && <p className="empty-state">{strings.loading}</p>}
+      {(!event || !titleReady) && !error && <p className="empty-state">{strings.loading}</p>}
 
-      {event && mode === "edit" && (
+      {event && titleReady && mode === "edit" && (
         <>
           <div className="modal-head">
             <h2>{strings.eventEdit.edit}</h2>
@@ -123,7 +125,7 @@ export function EventDrawer() {
         </>
       )}
 
-      {event && mode !== "edit" && (
+      {event && titleReady && mode !== "edit" && (
         <>
           <div className="ev-head">
             {type && (
