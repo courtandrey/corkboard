@@ -21,10 +21,6 @@
 		-Server
 	}
 
-	# Vite emits content-hashed filenames, so these can be cached forever.
-	# header_down replaces the framework's no-store — a second Cache-Control
-	# header would otherwise be merged in and win. index.html is deliberately
-	# left out so a new deploy is picked up at once.
 	@immutable path /assets/* /fonts/*
 	handle @immutable {
 		reverse_proxy api:8080 {
@@ -38,6 +34,16 @@
 			import upstream
 		}
 	}
+
+	log {
+		output stdout
+		format console
+	}
+}
+
+{$DOMAIN_ALIASES:localhost} {
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	redir https://{$DOMAIN}{uri} permanent
 
 	log {
 		output stdout

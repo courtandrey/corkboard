@@ -143,6 +143,7 @@ services:
     logging: *logging
     environment:
       DOMAIN: ${DOMAIN:?set DOMAIN in .env, e.g. board.example.com}
+      DOMAIN_ALIASES: ${DOMAIN_ALIASES:-localhost}
       ACME_EMAIL: ${ACME_EMAIL:-}
     ports:
       - "80:80"
