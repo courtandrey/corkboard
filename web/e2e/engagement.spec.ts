@@ -79,3 +79,45 @@ test("apply opens a conversation; replies arrive live over the websocket", async
   await authorCtx.close();
   await applicantCtx.close();
 });
+
+test("a reply raises the bell live, for a recipient who is not in the thread", async ({ browser }) => {
+  const authorCtx = await browser.newContext();
+  const authorPage = await authorCtx.newPage();
+  await authorPage.goto("/");
+  await registerViaApi(authorPage, "Bell Author");
+  const note = await createEventViaApi(authorPage, {
+    title: `Ring the bell ${Date.now()}`,
+    applyable: true,
+  });
+
+  const applicantCtx = await browser.newContext();
+  const applicantPage = await applicantCtx.newPage();
+  await applicantPage.goto("/");
+  await registerViaApi(applicantPage, "Bell Applicant");
+  await applicantPage.goto(`/events/${note.id}`);
+  await applicantPage.getByRole("button", { name: "Respond to this note" }).click();
+  await applicantPage
+    .getByPlaceholder("Write a short note back — who you are, why you’re writing…")
+    .fill("First contact.");
+  await applicantPage.getByRole("button", { name: "Send response" }).click();
+  await applicantPage.getByRole("link", { name: "Open the conversation" }).click();
+  await expect(applicantPage.locator(".bubble")).toContainText("First contact.");
+
+  await authorPage.goto("/messages");
+  await authorPage.getByText("Bell Applicant").click();
+  await expect(authorPage.locator(".bubble")).toContainText("First contact.");
+  await authorPage.getByRole("link", { name: "lamppostal" }).click();
+  await expect(authorPage.locator(".status-line")).toBeVisible();
+  await expect(authorPage.locator(".topbar .badge")).toHaveCount(0);
+
+  await applicantPage.getByPlaceholder("Write a message…").fill("Are we still on for Sunday?");
+  await applicantPage.getByRole("button", { name: "Send", exact: true }).click();
+
+  await expect(authorPage.locator(".topbar .badge")).toHaveText("1", { timeout: 15_000 });
+  await authorPage.getByRole("button", { name: "Notifications" }).click();
+  await expect(authorPage.locator(".bell-item").first()).toContainText("New message about");
+  await authorPage.screenshot({ path: `${SHOTS}/message-alert.png` });
+
+  await authorCtx.close();
+  await applicantCtx.close();
+});

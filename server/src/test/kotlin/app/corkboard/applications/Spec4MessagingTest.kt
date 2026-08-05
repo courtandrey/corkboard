@@ -47,6 +47,50 @@ class Spec4MessagingTest : ApiTestBase() {
     }
 
     @Test
+    fun `a reply alerts the other side, once per thread until they look`() {
+        val author = registerUser("Reply Author")
+        val applicant = registerUser("Reply Applicant")
+        val eventId = createEvent(author, 38.3, 68.1, title = "Spare bicycle")
+        val (_, conversationId) = applyTo(eventId, applicant, "Still available?")
+
+        sendJson(HttpMethod.POST, "/api/v1/conversations/$conversationId/read", null, author.headers)
+        assertThat(json(getJson("/api/v1/notifications", author.headers))["unreadCount"].asInt()).isZero()
+
+        sendJson(
+            HttpMethod.POST, "/api/v1/conversations/$conversationId/messages",
+            mapOf("body" to "It is — when suits you?"), applicant.headers,
+        )
+
+        val alerted = json(getJson("/api/v1/notifications", author.headers))
+        assertThat(alerted["unreadCount"].asInt()).isEqualTo(1)
+        val alert = alerted["items"].first { it["payload"]["conversationId"].asText() == conversationId }
+        assertThat(alert["kind"].asText()).isEqualTo("message_received")
+        assertThat(alert["payload"]["eventTitle"].asText()).isEqualTo("Spare bicycle")
+        assertThat(alert["payload"]["eventId"].asText()).isEqualTo(eventId)
+
+        repeat(3) {
+            sendJson(
+                HttpMethod.POST, "/api/v1/conversations/$conversationId/messages",
+                mapOf("body" to "Message $it"), applicant.headers,
+            )
+        }
+        assertThat(json(getJson("/api/v1/notifications", author.headers))["unreadCount"].asInt())
+            .describedAs("a burst of replies is still one thing to look at")
+            .isEqualTo(1)
+
+        assertThat(json(getJson("/api/v1/notifications", applicant.headers))["items"].map { it["kind"].asText() })
+            .describedAs("nobody is alerted about their own messages")
+            .doesNotContain("message_received")
+
+        sendJson(HttpMethod.POST, "/api/v1/conversations/$conversationId/read", null, author.headers)
+        sendJson(
+            HttpMethod.POST, "/api/v1/conversations/$conversationId/messages",
+            mapOf("body" to "Are you there?"), applicant.headers,
+        )
+        assertThat(json(getJson("/api/v1/notifications", author.headers))["unreadCount"].asInt()).isEqualTo(1)
+    }
+
+    @Test
     fun `accept notifies the applicant and the thread carries messages both ways with unread counts`() {
         val author = registerUser("Msg Author")
         val applicant = registerUser("Msg Applicant")

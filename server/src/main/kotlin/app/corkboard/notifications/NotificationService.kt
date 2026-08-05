@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import java.time.Instant
 import java.util.UUID
 import org.jooq.DSLContext
+import org.jooq.Condition
 import org.jooq.JSONB
 import org.jooq.impl.DSL
 import org.springframework.context.ApplicationEventPublisher
@@ -84,18 +85,26 @@ class NotificationService(
         dsl.deleteFrom(NOTIFICATIONS).where(cond).execute()
     }
 
+    fun hasPendingForConversation(userId: UUID, conversationId: UUID): Boolean =
+        dsl.fetchExists(
+            NOTIFICATIONS,
+            NOTIFICATIONS.USER_ID.eq(userId),
+            NOTIFICATIONS.KIND.eq(DbNotificationKind.message_received),
+            conversationIs(conversationId),
+        )
+
     fun clearForConversation(userId: UUID, conversationId: UUID) {
         dsl.deleteFrom(NOTIFICATIONS)
-            .where(
-                NOTIFICATIONS.USER_ID.eq(userId),
-                DSL.condition(
-                    "{0}->>'conversationId' = {1}",
-                    NOTIFICATIONS.PAYLOAD,
-                    DSL.`val`(conversationId.toString()),
-                ),
-            )
+            .where(NOTIFICATIONS.USER_ID.eq(userId), conversationIs(conversationId))
             .execute()
     }
+
+    private fun conversationIs(conversationId: UUID): Condition =
+        DSL.condition(
+            "{0}->>'conversationId' = {1}",
+            NOTIFICATIONS.PAYLOAD,
+            DSL.`val`(conversationId.toString()),
+        )
 
     private fun toResponse(record: NotificationsRecord): NotificationResponse =
         NotificationResponse(

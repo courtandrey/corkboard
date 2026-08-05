@@ -12,6 +12,7 @@ import app.corkboard.jooq.tables.references.CONVERSATIONS
 import app.corkboard.jooq.tables.references.EVENTS
 import app.corkboard.jooq.tables.references.MESSAGES
 import app.corkboard.jooq.tables.references.USERS
+import app.corkboard.notifications.NotificationKind
 import java.time.Clock
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -146,8 +147,29 @@ class ConversationService(
             throw ApiException(HttpStatus.UNPROCESSABLE_ENTITY, ProblemCode.VALIDATION_FAILED)
         }
         val message = insertMessage(conversationId, senderId, trimmed)
-        publisher.publishEvent(MessageCreated(participants.otherThan(senderId), conversationId, message))
+        val recipient = participants.otherThan(senderId)
+        notifyRecipient(conversationId, recipient)
+        publisher.publishEvent(MessageCreated(recipient, conversationId, message))
         return message
+    }
+
+    private fun notifyRecipient(conversationId: UUID, recipient: UUID) {
+        if (notifications.hasPendingForConversation(recipient, conversationId)) return
+        val row = dsl.select(CONVERSATIONS.EVENT_ID, EVENTS.TITLE)
+            .from(CONVERSATIONS)
+            .join(EVENTS).on(EVENTS.ID.eq(CONVERSATIONS.EVENT_ID))
+            .where(CONVERSATIONS.ID.eq(conversationId))
+            .fetchOne()
+            ?: return
+        notifications.create(
+            recipient,
+            NotificationKind.MESSAGE_RECEIVED,
+            mapOf(
+                "conversationId" to conversationId.toString(),
+                "eventId" to row[CONVERSATIONS.EVENT_ID].toString(),
+                "eventTitle" to row[EVENTS.TITLE],
+            ),
+        )
     }
 
     fun insertMessage(conversationId: UUID, senderId: UUID, body: String): MessageResponse {
