@@ -102,7 +102,7 @@ function PinRow({ pin }: { pin: MyEventItem }) {
           </Link>
           <div className="meta-row" style={{ margin: "4px 0 0" }}>
             {strings.board.points(pin.score)} · {s.responses(pin.applicationCount)} ·{" "}
-            {s.until(new Date(pin.expiresAt).toLocaleDateString())}
+            {pin.expiresAt ? s.until(new Date(pin.expiresAt).toLocaleDateString()) : s.noEndDate}
           </div>
         </div>
         {isPhone && (
@@ -123,7 +123,8 @@ function PinRow({ pin }: { pin: MyEventItem }) {
                 <CheckIcon size={14} /> {s.resolve}
               </button>
             )}
-            {(pin.status === "active" || pin.status === "expired") && (
+            {/* nothing to extend on a note that has no end date */}
+            {pin.expiresAt && (pin.status === "active" || pin.status === "expired") && (
               <button type="button" className="ghost sm" onClick={renew}>
                 <RenewIcon size={14} /> {s.renew}
               </button>

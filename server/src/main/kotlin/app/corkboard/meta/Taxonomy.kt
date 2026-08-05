@@ -36,7 +36,6 @@ data class Limits(
     val messageMax: Int = 2000,
     val reportDetailMax: Int = 500,
     val expiryDefaultDays: Int = 30,
-    val expiryMaxDays: Int = 90,
     val viewportLimitDefault: Int = 60,
     val viewportLimitMax: Int = 100,
 )

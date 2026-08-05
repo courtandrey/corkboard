@@ -5,9 +5,13 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpMethod
 
 class Spec1ViewportTest : ApiTestBase() {
+
+    @Autowired
+    lateinit var sweep: app.corkboard.jobs.ExpirationSweep
 
     @Test
     fun `created note appears in its viewport and nowhere else`() {
@@ -39,22 +43,55 @@ class Spec1ViewportTest : ApiTestBase() {
     }
 
     @Test
-    fun `create enforces the 90-day expiry ceiling`() {
+    fun `an end date may be as far off as the author likes, but not in the past`() {
+        val user = registerUser()
+
+        fun pin(title: String, expiresAt: String?) = sendJson(
+            HttpMethod.POST, "/api/v1/events",
+            buildMap {
+                put("type", "notice")
+                put("title", title)
+                put("body", "How long it stays is the author's business.")
+                put("location", mapOf("lng" to -73.99, "lat" to 40.73))
+                put("applyable", false)
+                expiresAt?.let { put("expiresAt", it) }
+            },
+            user.headers,
+        )
+
+        val distant = pin("Ten years out", Instant.now().plus(3650, ChronoUnit.DAYS).toString())
+        assertThat(distant.statusCode.value()).describedAs("no ceiling any more").isEqualTo(201)
+
+        val past = pin("Already over", Instant.now().minus(1, ChronoUnit.DAYS).toString())
+        assertThat(past.statusCode.value()).describedAs("the past is still refused").isEqualTo(422)
+    }
+
+    @Test
+    fun `a note with no end date stays on the board and is never swept`() {
         val user = registerUser()
         val res = sendJson(
             HttpMethod.POST, "/api/v1/events",
             mapOf(
                 "type" to "notice",
-                "title" to "Too far in the future",
-                "body" to "This note wants to outlive the board.",
-                "location" to mapOf("lng" to -73.99, "lat" to 40.73),
+                "title" to "Here until I say otherwise",
+                "body" to "No end date at all.",
+                "location" to mapOf("lng" to 100.512, "lat" to 13.741),
                 "applyable" to false,
-                "expiresAt" to Instant.now().plus(120, ChronoUnit.DAYS).toString(),
             ),
             user.headers,
         )
-        assertThat(res.statusCode.value()).isEqualTo(422)
-        assertThat(json(res)["code"].asText()).isEqualTo("expiry_too_far")
+        assertThat(res.statusCode.value()).isEqualTo(201)
+        val id = json(res)["id"].asText()
+        assertThat(json(res)["expiresAt"].isNull).describedAs("the contract says so outright").isTrue()
+
+        val board = getJson("/api/v1/events?bbox=100.50,13.73,100.53,13.75&zoom=18")
+        assertThat(json(board)["items"].map { it["id"].asText() }).contains(id)
+
+        sweep.sweep()
+
+        assertThat(json(getJson("/api/v1/events/$id"))["status"].asText())
+            .describedAs("a comparison against NULL is never true, so the sweep passes it by")
+            .isEqualTo("active")
     }
 
     @Test

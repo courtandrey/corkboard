@@ -435,7 +435,7 @@ export interface components {
             location: components["schemas"]["LatLng"];
             applyable: boolean;
             /** Format: date-time */
-            expiresAt: string;
+            expiresAt?: string;
             tags: string[];
         };
         LatLng: {
@@ -469,7 +469,7 @@ export interface components {
             author: components["schemas"]["AuthorCard"];
             viewerState: components["schemas"]["ViewerState"];
             /** Format: date-time */
-            expiresAt: string;
+            expiresAt?: string;
             /** Format: date-time */
             resolvedAt?: string;
             /** Format: date-time */
@@ -571,6 +571,7 @@ export interface components {
             applyable?: boolean;
             /** Format: date-time */
             expiresAt?: string;
+            neverExpires?: boolean;
             tags?: string[];
         };
         UpdateApplicationRequest: {
@@ -629,8 +630,6 @@ export interface components {
             /** Format: int32 */
             expiryDefaultDays: number;
             /** Format: int32 */
-            expiryMaxDays: number;
-            /** Format: int32 */
             viewportLimitDefault: number;
             /** Format: int32 */
             viewportLimitMax: number;
@@ -663,7 +662,7 @@ export interface components {
             /** Format: int32 */
             applicationCount: number;
             /** Format: date-time */
-            expiresAt: string;
+            expiresAt?: string;
             /** Format: date-time */
             resolvedAt?: string;
             /** Format: date-time */
@@ -733,7 +732,7 @@ export interface components {
             /** Format: int32 */
             applicationCount: number;
             /** Format: date-time */
-            expiresAt: string;
+            expiresAt?: string;
             /** Format: date-time */
             createdAt: string;
         };

@@ -84,17 +84,16 @@ class Spec9ExpirationTest : ApiTestBase() {
     }
 
     @Test
-    fun `renew is rejected for removed notes and enforces the ceiling`() {
+    fun `renew reaches as far as the author likes but is rejected for removed notes`() {
         val author = registerUser()
         val id = createEvent(author, 38.5, 56.3, expiresInDays = 10, title = "Doomed note")
 
-        val tooFar = sendJson(
+        val distant = sendJson(
             HttpMethod.POST, "/api/v1/events/$id/renew",
-            mapOf("expiresAt" to clock.instant().plus(120, ChronoUnit.DAYS).toString()),
+            mapOf("expiresAt" to clock.instant().plus(365, ChronoUnit.DAYS).toString()),
             author.headers,
         )
-        assertThat(tooFar.statusCode.value()).isEqualTo(422)
-        assertThat(json(tooFar)["code"].asText()).isEqualTo("expiry_too_far")
+        assertThat(distant.statusCode.value()).isEqualTo(200)
 
         rest.exchange(
             "/api/v1/events/$id", HttpMethod.DELETE,

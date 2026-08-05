@@ -39,7 +39,7 @@ data class CreateEventRequest(
     val location: LatLng,
     val applyable: Boolean,
     @field:Future
-    val expiresAt: Instant,
+    val expiresAt: Instant? = null,
     @field:Size(max = 5)
     val tags: List<String> = emptyList(),
 )
@@ -55,6 +55,7 @@ data class UpdateEventRequest(
     val applyable: Boolean? = null,
     @field:Future
     val expiresAt: Instant? = null,
+    val neverExpires: Boolean? = null,
     @field:Size(max = 5)
     val tags: List<String>? = null,
 )
@@ -67,7 +68,7 @@ data class EventPin(
     val applyable: Boolean,
     val score: Int,
     val applicationCount: Int,
-    val expiresAt: Instant,
+    val expiresAt: Instant?,
     val createdAt: Instant,
 )
 
@@ -128,7 +129,7 @@ data class MyEventItem(
     val applyable: Boolean,
     val score: Int,
     val applicationCount: Int,
-    val expiresAt: Instant,
+    val expiresAt: Instant?,
     val resolvedAt: Instant?,
     val createdAt: Instant,
     val updatedAt: Instant,
@@ -152,7 +153,7 @@ data class EventDetail(
     val tags: List<TagRef>,
     val author: AuthorCard,
     val viewerState: ViewerState,
-    val expiresAt: Instant,
+    val expiresAt: Instant?,
     val resolvedAt: Instant?,
     val createdAt: Instant,
     val updatedAt: Instant,

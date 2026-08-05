@@ -12,7 +12,6 @@ import app.corkboard.jooq.tables.references.VOTES
 import app.corkboard.meta.EventType
 import app.corkboard.tags.TagService
 import java.time.Clock
-import java.time.Duration
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -33,7 +32,6 @@ class EventService(
 ) {
 
     companion object {
-        const val MAX_EXPIRY_DAYS = 90L
         private val HIDDEN_STATUSES = setOf(DbEventStatus.removed, DbEventStatus.under_review)
         private val LNG = DSL.field("ST_X({0})", Double::class.java, EVENTS.LOCATION)
         private val LAT = DSL.field("ST_Y({0})", Double::class.java, EVENTS.LOCATION)
@@ -51,7 +49,7 @@ class EventService(
         val applyable: Boolean,
         val score: Int,
         val applicationCount: Int,
-        val expiresAt: OffsetDateTime,
+        val expiresAt: OffsetDateTime?,
         val resolvedAt: OffsetDateTime?,
         val createdAt: OffsetDateTime,
         val updatedAt: OffsetDateTime,
@@ -64,8 +62,6 @@ class EventService(
         if (title.length < 3 || body.isEmpty()) {
             throw ApiException(HttpStatus.UNPROCESSABLE_ENTITY, ProblemCode.VALIDATION_FAILED)
         }
-        checkExpiry(req.expiresAt)
-
         val id = dsl.insertInto(EVENTS)
             .set(EVENTS.AUTHOR_ID, authorId)
             .set(EVENTS.TYPE, DbEventType.valueOf(req.type.key))
@@ -73,7 +69,7 @@ class EventService(
             .set(EVENTS.BODY, body)
             .set(EVENTS.LOCATION, point(req.location))
             .set(EVENTS.APPLYABLE, req.applyable)
-            .set(EVENTS.EXPIRES_AT, req.expiresAt.atOffset(ZoneOffset.UTC))
+            .set(EVENTS.EXPIRES_AT, req.expiresAt?.atOffset(ZoneOffset.UTC))
             .returning(EVENTS.ID)
             .fetchOne(EVENTS.ID)!!
 
@@ -97,8 +93,6 @@ class EventService(
         if ((req.type != null || req.location != null) && event.applicationCount > 0) {
             throw ApiException(HttpStatus.CONFLICT, ProblemCode.EDIT_LOCKED)
         }
-        req.expiresAt?.let(::checkExpiry)
-
         val title = req.title?.trim()
         val body = req.body?.trim()
         if (title != null && title.length < 3 || body != null && body.isEmpty()) {
@@ -111,7 +105,10 @@ class EventService(
         body?.let { update.set(EVENTS.BODY, it) }
         req.location?.let { update.set(EVENTS.LOCATION, point(it)) }
         req.applyable?.let { update.set(EVENTS.APPLYABLE, it) }
-        req.expiresAt?.let {
+        if (req.neverExpires == true) {
+            update.setNull(EVENTS.EXPIRES_AT)
+            update.setNull(EVENTS.EXPIRING_NOTIFIED_AT)
+        } else req.expiresAt?.let {
             update.set(EVENTS.EXPIRES_AT, it.atOffset(ZoneOffset.UTC))
             update.setNull(EVENTS.EXPIRING_NOTIFIED_AT)
         }
@@ -141,7 +138,6 @@ class EventService(
         if (event.status != DbEventStatus.active && event.status != DbEventStatus.expired) {
             throw ApiException(HttpStatus.CONFLICT, ProblemCode.INVALID_STATUS)
         }
-        checkExpiry(expiresAt)
         dsl.update(EVENTS)
             .set(EVENTS.STATUS, DbEventStatus.active)
             .set(EVENTS.EXPIRES_AT, expiresAt.atOffset(ZoneOffset.UTC))
@@ -190,7 +186,7 @@ class EventService(
                 applyable = r[EVENTS.APPLYABLE]!!,
                 score = r[EVENTS.SCORE]!!,
                 applicationCount = r[EVENTS.APPLICATION_COUNT]!!,
-                expiresAt = r[EVENTS.EXPIRES_AT]!!.toInstant(),
+                expiresAt = r[EVENTS.EXPIRES_AT]?.toInstant(),
                 resolvedAt = r[EVENTS.RESOLVED_AT]?.toInstant(),
                 createdAt = r[EVENTS.CREATED_AT]!!.toInstant(),
                 updatedAt = r[EVENTS.UPDATED_AT]!!.toInstant(),
@@ -241,7 +237,7 @@ class EventService(
                     applyable = r[EVENTS.APPLYABLE]!!,
                     score = r[EVENTS.SCORE]!!,
                     applicationCount = r[EVENTS.APPLICATION_COUNT]!!,
-                    expiresAt = r[EVENTS.EXPIRES_AT]!!,
+                    expiresAt = r[EVENTS.EXPIRES_AT],
                     resolvedAt = r[EVENTS.RESOLVED_AT],
                     createdAt = r[EVENTS.CREATED_AT]!!,
                     updatedAt = r[EVENTS.UPDATED_AT]!!,
@@ -269,7 +265,7 @@ class EventService(
                 memberSince = author[USERS.CREATED_AT]!!.toInstant(),
             ),
             viewerState = viewerState(event.id, event.authorId, viewerId),
-            expiresAt = event.expiresAt.toInstant(),
+            expiresAt = event.expiresAt?.toInstant(),
             resolvedAt = event.resolvedAt?.toInstant(),
             createdAt = event.createdAt.toInstant(),
             updatedAt = event.updatedAt.toInstant(),
@@ -284,12 +280,6 @@ class EventService(
             applied = dsl.fetchExists(APPLICATIONS, APPLICATIONS.APPLICANT_ID.eq(viewerId), APPLICATIONS.EVENT_ID.eq(eventId)),
             isAuthor = viewerId == authorId,
         )
-    }
-
-    private fun checkExpiry(expiresAt: Instant) {
-        if (expiresAt.isAfter(Instant.now(clock).plus(Duration.ofDays(MAX_EXPIRY_DAYS)))) {
-            throw ApiException(HttpStatus.UNPROCESSABLE_ENTITY, ProblemCode.EXPIRY_TOO_FAR)
-        }
     }
 
     @Suppress("UNCHECKED_CAST")

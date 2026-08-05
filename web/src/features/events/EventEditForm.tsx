@@ -14,6 +14,7 @@ export function EventEditForm({ event, onDone }: { event: EventDetail; onDone: (
   const queryClient = useQueryClient();
   const [type, setType] = useState(event.type as string);
   const [applyable, setApplyable] = useState(event.applyable);
+  const [noEndDate, setNoEndDate] = useState(!event.expiresAt);
   const [tags, setTags] = useState(event.tags.map((t) => t.name));
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -32,7 +33,9 @@ export function EventEditForm({ event, onDone }: { event: EventDetail; onDone: (
         title: String(data.get("title") ?? ""),
         body: String(data.get("body") ?? ""),
         applyable,
-        expiresAt: `${String(data.get("expiresAt"))}T23:59:59Z`,
+        expiresAt: noEndDate ? undefined : `${String(data.get("expiresAt"))}T23:59:59Z`,
+        // an absent expiresAt means "leave it alone", so removing the end date has to say so
+        neverExpires: noEndDate ? true : undefined,
         tags,
       });
       await queryClient.invalidateQueries({ queryKey: ["event", event.id] });
@@ -79,16 +82,24 @@ export function EventEditForm({ event, onDone }: { event: EventDetail; onDone: (
         <input type="checkbox" checked={applyable} onChange={(e) => setApplyable(e.target.checked)} />
         {strings.create.applyableLabel}
       </label>
-      <label>
-        {strings.create.expiresLabel}
-        <input
-          type="date"
-          name="expiresAt"
-          required
-          defaultValue={new Date(event.expiresAt).toISOString().slice(0, 10)}
-          max={new Date(Date.now() + 89 * 86_400_000).toISOString().slice(0, 10)}
-        />
+      <label className="inline">
+        <input type="checkbox" checked={noEndDate} onChange={(e) => setNoEndDate(e.target.checked)} />
+        {strings.create.noEndDateLabel}
       </label>
+      {!noEndDate && (
+        <label>
+          {strings.create.expiresLabel}
+          <input
+            type="date"
+            name="expiresAt"
+            required
+            defaultValue={(event.expiresAt ? new Date(event.expiresAt) : new Date(Date.now() + 30 * 86_400_000))
+              .toISOString()
+              .slice(0, 10)}
+            min={new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)}
+          />
+        </label>
+      )}
       <label>
         {strings.create.tagsLabel}
         <TagInput value={tags} onChange={setTags} max={limits?.tagsMax ?? 5} />

@@ -165,7 +165,9 @@ export function EventDrawer() {
               <span className="dot">·</span>
               <span className="with-icon">
                 <ClockIcon size={13} />
-                {strings.event.expires(new Date(event.expiresAt).toLocaleDateString())}
+                {event.expiresAt
+                  ? strings.event.expires(new Date(event.expiresAt).toLocaleDateString())
+                  : strings.event.noEndDate}
               </span>
               {event.updatedAt > event.createdAt && (
                 <>

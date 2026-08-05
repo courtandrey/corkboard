@@ -124,7 +124,7 @@ class ViewportQuery(
                 applyable = r[EVENTS.APPLYABLE]!!,
                 score = r[EVENTS.SCORE]!!,
                 applicationCount = r[EVENTS.APPLICATION_COUNT]!!,
-                expiresAt = r[EVENTS.EXPIRES_AT]!!.toInstant(),
+                expiresAt = r[EVENTS.EXPIRES_AT]?.toInstant(),
                 createdAt = r[EVENTS.CREATED_AT]!!.toInstant(),
             )
         }
@@ -154,7 +154,8 @@ class ViewportQuery(
         val now = OffsetDateTime.now(clock)
         var cond = bboxCondition(p.bounds, cell)
             .and(
-                EVENTS.STATUS.eq(DbEventStatus.active).and(EVENTS.EXPIRES_AT.gt(now))
+                EVENTS.STATUS.eq(DbEventStatus.active)
+                    .and(EVENTS.EXPIRES_AT.isNull.or(EVENTS.EXPIRES_AT.gt(now)))
                     .or(
                         EVENTS.STATUS.eq(DbEventStatus.resolved)
                             .and(EVENTS.RESOLVED_AT.gt(now.minusHours(48)))

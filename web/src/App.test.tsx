@@ -35,7 +35,7 @@ const meta = {
   limits: {
     displayNameMax: 50, passwordMin: 8, passwordMax: 128, titleMin: 3, titleMax: 120,
     bodyMax: 4000, tagsMax: 5, tagNameMin: 2, tagNameMax: 40, messageMax: 2000,
-    reportDetailMax: 500, expiryDefaultDays: 30, expiryMaxDays: 90,
+    reportDetailMax: 500, expiryDefaultDays: 30,
     viewportLimitDefault: 60, viewportLimitMax: 100,
   },
   reportThreshold: 5,

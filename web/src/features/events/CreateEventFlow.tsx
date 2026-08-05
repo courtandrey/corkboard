@@ -33,6 +33,7 @@ export function CreateEventFlow() {
   const [type, setType] = useState<string | null>(null);
   const [applyable, setApplyable] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
+  const [noEndDate, setNoEndDate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -107,7 +108,7 @@ export function CreateEventFlow() {
         body: String(data.get("body") ?? ""),
         location: draftLocation,
         applyable,
-        expiresAt: `${String(data.get("expiresAt"))}T23:59:59Z`,
+        expiresAt: noEndDate ? undefined : `${String(data.get("expiresAt"))}T23:59:59Z`,
         tags,
       });
       await queryClient.invalidateQueries({ queryKey: ["events"] });
@@ -185,17 +186,25 @@ export function CreateEventFlow() {
               </label>
               <p className="form-hint">{s.applyableHelp}</p>
             </div>
-            <label>
-              {s.expiresLabel}
-              <input
-                type="date"
-                name="expiresAt"
-                required
-                defaultValue={isoDate(limits?.expiryDefaultDays ?? 30)}
-                min={isoDate(1)}
-                max={isoDate((limits?.expiryMaxDays ?? 90) - 1)}
-              />
-            </label>
+            <div>
+              <label className="inline">
+                <input type="checkbox" checked={noEndDate} onChange={(e) => setNoEndDate(e.target.checked)} />
+                {s.noEndDateLabel}
+              </label>
+              <p className="form-hint">{s.noEndDateHelp}</p>
+            </div>
+            {!noEndDate && (
+              <label>
+                {s.expiresLabel}
+                <input
+                  type="date"
+                  name="expiresAt"
+                  required
+                  defaultValue={isoDate(limits?.expiryDefaultDays ?? 30)}
+                  min={isoDate(1)}
+                />
+              </label>
+            )}
             <label>
               {s.tagsLabel}
               <TagInput value={tags} onChange={setTags} max={limits?.tagsMax ?? 5} />
