@@ -34,6 +34,11 @@ data class LoginRequest(
     val transport: SessionTransport? = null,
 )
 
+data class UpdateProfileRequest(
+    @field:NotBlank @field:Size(min = 1, max = 50)
+    val displayName: String,
+)
+
 data class UserResponse(
     val id: UUID,
     val email: String,

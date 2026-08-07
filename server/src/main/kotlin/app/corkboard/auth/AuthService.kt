@@ -54,6 +54,27 @@ class AuthService(
         return AuthenticatedUser(user, sessions.create(user.id, userAgent))
     }
 
+    fun updateProfile(userId: UUID, req: UpdateProfileRequest): UserResponse {
+        val name = req.displayName.trim()
+        if (name.isEmpty()) {
+            throw ApiException(HttpStatus.UNPROCESSABLE_ENTITY, ProblemCode.VALIDATION_FAILED)
+        }
+        val record = dsl.update(USERS)
+            .set(USERS.DISPLAY_NAME, name)
+            .where(USERS.ID.eq(userId))
+            .returning()
+            .fetchOne()
+            ?: throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
+        return UserResponse(
+            id = record.id!!,
+            email = record.email!!,
+            displayName = record.displayName!!,
+            avatarSeed = record.avatarSeed!!,
+            emailVerified = record.emailVerifiedAt != null,
+            createdAt = record.createdAt!!.toInstant(),
+        )
+    }
+
     fun login(req: LoginRequest, clientIp: String, userAgent: String?): AuthenticatedUser {
         val ipAllowed = ipLimiter.tryConsume("ip:$clientIp")
         val emailAllowed = emailLimiter.tryConsume("email:${req.email.trim().lowercase()}")

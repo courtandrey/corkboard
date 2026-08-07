@@ -10,7 +10,7 @@ import { useBoardStore } from "../stores/boardStore";
 import { PixelAvatar } from "../ui/PixelAvatar";
 import { pushpinDataUri } from "../ui/pushpin";
 import { useDismiss } from "../ui/useDismiss";
-import { ChatIcon, ChevronDownIcon, PinIcon, SearchIcon, SignOutIcon } from "../ui/icons";
+import { ChatIcon, ChevronDownIcon, PinIcon, SearchIcon, SignOutIcon, UserIcon } from "../ui/icons";
 
 const logoPin = pushpinDataUri("#C94C4C");
 
@@ -88,6 +88,9 @@ export function TopBar() {
                 </Link>
                 <Link to="/messages" className="menu-item on-phone" role="menuitem" onClick={closeMenu}>
                   <ChatIcon size={15} /> {strings.messagesUi.title}
+                </Link>
+                <Link to="/me/account" className="menu-item" role="menuitem" onClick={closeMenu}>
+                  <UserIcon size={15} /> {strings.account.menuItem}
                 </Link>
                 <button type="button" className="menu-item signout" role="menuitem" onClick={signOut}>
                   <SignOutIcon size={15} /> {strings.auth.signOut}

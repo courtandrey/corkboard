@@ -328,7 +328,6 @@ textarea:focus {
 
 .user-menu {
   position: relative;
-  /* one normalized width for the badge and the menu it opens, so neither jumps with the name */
   --whoami-w: 190px;
   width: var(--whoami-w);
 }
@@ -414,6 +413,49 @@ textarea:focus {
 .menu-item.signout:hover {
   background: rgba(179, 53, 44, 0.08);
   color: var(--stamp-red);
+}
+
+.modal-scrim:has(.modal-account) {
+  overflow-y: auto;
+  align-items: flex-start;
+}
+
+.modal-account {
+  margin-block: auto;
+}
+
+.modal-account .modal-card {
+  max-height: none;
+}
+
+.modal-account .modal-body {
+  overflow: visible;
+}
+
+@media (min-width: 769px) {
+  .modal-shell.modal-account {
+    max-width: 500px;
+  }
+}
+
+
+.account-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 4px;
+}
+
+.account-identity-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.account-email {
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .verify-banner {
@@ -1905,7 +1947,6 @@ label.inline input[type="checkbox"] {
     padding-left: 10px;
   }
 
-  /* the name is hidden here, so the badge shrinks to its avatar and the menu keeps the full width */
   .user-menu {
     width: auto;
   }

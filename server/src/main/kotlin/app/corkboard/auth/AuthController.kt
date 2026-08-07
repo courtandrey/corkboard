@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -58,6 +59,12 @@ class AuthController(
 
     @GetMapping("/me")
     fun me(auth: SessionAuthentication): AuthResponse = AuthResponse(auth.user.toResponse())
+
+    @PatchMapping("/me")
+    fun updateMe(
+        auth: SessionAuthentication,
+        @Valid @RequestBody req: UpdateProfileRequest,
+    ): AuthResponse = AuthResponse(authService.updateProfile(auth.user.userId, req))
 
     @GetMapping("/verify")
     fun verify(@RequestParam token: String): ResponseEntity<Void> {

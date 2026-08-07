@@ -146,8 +146,6 @@ class AuthApiTest : ApiTestBase() {
     fun `cross-site cookie mutations are rejected`() {
         val cookie = sessionCookie(register())!!
 
-        // A foreign Origin header is already rejected by the CORS layer; the origin
-        // filter itself is exercised through Sec-Fetch-Site, which CORS ignores.
         val corsRejected = cookieHeader(cookie).apply { origin = "https://evil.example" }
         assertThat(post("/api/v1/auth/logout", null, corsRejected).statusCode.value()).isEqualTo(403)
 
@@ -160,6 +158,46 @@ class AuthApiTest : ApiTestBase() {
 
         val sameSite = cookieHeader(cookie).apply { origin = "http://localhost:5173" }
         assertThat(post("/api/v1/auth/logout", null, sameSite).statusCode.value()).isEqualTo(204)
+    }
+
+    @Test
+    fun `a resident can rename themselves, and it sticks everywhere they appear`() {
+        val token = json(register(displayName = "Original Name", transport = "bearer"))["token"].asText()
+        val headers = bearerHeader(token)
+
+        val renamed = rest.exchange(
+            "/api/v1/auth/me", HttpMethod.PATCH,
+            HttpEntity(
+                mapper.writeValueAsString(mapOf("displayName" to "  Renamed Resident  ")),
+                headers.apply { contentType = MediaType.APPLICATION_JSON },
+            ),
+            String::class.java,
+        )
+        assertThat(renamed.statusCode.value()).isEqualTo(200)
+        assertThat(json(renamed)["user"]["displayName"].asText())
+            .describedAs("trimmed, like registration does")
+            .isEqualTo("Renamed Resident")
+
+        val me = json(get("/api/v1/auth/me", bearerHeader(token)))["user"]
+        assertThat(me["displayName"].asText()).isEqualTo("Renamed Resident")
+        assertThat(me["email"].asText()).describedAs("the address is unchanged and still shown").isNotBlank()
+
+        val blank = rest.exchange(
+            "/api/v1/auth/me", HttpMethod.PATCH,
+            HttpEntity(mapper.writeValueAsString(mapOf("displayName" to "   ")), bearerHeader(token).apply {
+                contentType = MediaType.APPLICATION_JSON
+            }),
+            String::class.java,
+        )
+        assertThat(blank.statusCode.value()).describedAs("a blank name is refused").isEqualTo(422)
+
+        assertThat(rest.exchange(
+            "/api/v1/auth/me", HttpMethod.PATCH,
+            HttpEntity(mapper.writeValueAsString(mapOf("displayName" to "Nobody")), HttpHeaders().apply {
+                contentType = MediaType.APPLICATION_JSON
+            }),
+            String::class.java,
+        ).statusCode.value()).describedAs("and a stranger cannot rename anyone").isEqualTo(401)
     }
 
     @Test

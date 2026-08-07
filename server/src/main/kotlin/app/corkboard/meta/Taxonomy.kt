@@ -24,9 +24,9 @@ enum class EventType(
 }
 
 data class Limits(
-    val displayNameMax: Int = 50,
     val passwordMin: Int = 8,
     val passwordMax: Int = 128,
+    val displayNameMax: Int = 50,
     val titleMin: Int = 3,
     val titleMax: Int = 120,
     val bodyMax: Int = 4000,

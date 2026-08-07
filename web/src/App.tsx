@@ -9,6 +9,7 @@ import { CreateEventFlow } from "./features/events/CreateEventFlow";
 import { AuthDrawer } from "./features/auth/AuthDrawer";
 import { VerifyBanner } from "./features/auth/VerifyBanner";
 import { VerifyGate } from "./features/auth/verifyGate";
+import { AccountModal } from "./features/auth/AccountModal";
 import { MessagesDrawer } from "./features/messaging/MessagesDrawer";
 import { MyPins } from "./features/events/MyPins";
 import { useSocket } from "./features/realtime/useSocket";
@@ -60,6 +61,7 @@ export function App() {
           <Route path="/events/:id" element={<EventDrawer />} />
           <Route path="/new" element={<CreateEventFlow />} />
           <Route path="/me/pins" element={<MyPins />} />
+          <Route path="/me/account" element={<AccountModal />} />
           <Route path="/messages" element={<MessagesDrawer />} />
           <Route path="/messages/:conversationId" element={<MessagesDrawer />} />
           <Route path="/login" element={<AuthDrawer />} />

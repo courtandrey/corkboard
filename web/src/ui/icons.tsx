@@ -144,6 +144,13 @@ export const PushpinIcon = (p: IconProps) => (
   </Base>
 );
 
+export const UserIcon = (p: IconProps) => (
+  <Base {...p}>
+    <circle cx="12" cy="8" r="3.5" />
+    <path d="M5 20c0-3.6 3.1-5.5 7-5.5s7 1.9 7 5.5" />
+  </Base>
+);
+
 export const SignOutIcon = (p: IconProps) => (
   <Base {...p}>
     <path d="M14 20H6a1 1 0 01-1-1V5a1 1 0 011-1h8" />

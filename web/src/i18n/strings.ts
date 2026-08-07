@@ -175,6 +175,18 @@ export const strings = {
     edit: "Edit note",
     notFound: "This note isn’t on the board anymore.",
   },
+  account: {
+    title: "Your account",
+    displayNameLabel: "Display name",
+    displayNameHelp: "This is the name on every note and message you write.",
+    emailConfirmed: "email confirmed",
+    emailUnconfirmed: "email not confirmed yet",
+    memberSince: (date: string) => `on the board since ${date}`,
+    save: "Save",
+    cancel: "Never mind",
+    saved: "Name updated",
+    menuItem: "Account",
+  },
   create: {
     title: "Pin a note",
     pickSpotHint: "Click the map where your note belongs.",
