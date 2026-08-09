@@ -175,6 +175,12 @@ export const strings = {
     edit: "Edit note",
     notFound: "This note isn’t on the board anymore.",
   },
+  consent: {
+    title: "Cookies on the board.",
+    body: "We only need one to keep you signed in. Anything beyond that is up to you.",
+    essentialOnly: "Only essential",
+    acceptAll: "Accept all",
+  },
   account: {
     title: "Your account",
     displayNameLabel: "Display name",

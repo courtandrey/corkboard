@@ -10,6 +10,7 @@ import { AuthDrawer } from "./features/auth/AuthDrawer";
 import { VerifyBanner } from "./features/auth/VerifyBanner";
 import { VerifyGate } from "./features/auth/verifyGate";
 import { AccountModal } from "./features/auth/AccountModal";
+import { CookieBanner } from "./features/consent/CookieBanner";
 import { MessagesDrawer } from "./features/messaging/MessagesDrawer";
 import { MyPins } from "./features/events/MyPins";
 import { useSocket } from "./features/realtime/useSocket";
@@ -68,6 +69,7 @@ export function App() {
           <Route path="*" element={null} />
         </Routes>
       </div>
+      <CookieBanner />
       <VerifyGate />
       <Toaster />
     </div>
