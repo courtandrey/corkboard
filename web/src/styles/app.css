@@ -354,7 +354,7 @@ textarea:focus {
 .whoami-name {
   flex: 1;
   min-width: 0;
-  text-align: left;
+  text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
