@@ -32,7 +32,8 @@ class EventService(
 ) {
 
     companion object {
-        private val HIDDEN_STATUSES = setOf(DbEventStatus.removed, DbEventStatus.under_review)
+        private val HIDDEN_STATUSES =
+            setOf(DbEventStatus.removed, DbEventStatus.taken_down, DbEventStatus.under_review)
         private val LNG = DSL.field("ST_X({0})", Double::class.java, EVENTS.LOCATION)
         private val LAT = DSL.field("ST_Y({0})", Double::class.java, EVENTS.LOCATION)
     }

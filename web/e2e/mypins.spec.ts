@@ -25,7 +25,7 @@ test("my pins: resolve stamps the note, delete takes it down", async ({ page }) 
   await gonerRow.getByRole("button", { name: "Take down" }).click();
   await expect(gonerRow.locator(".confirm-slip")).toBeVisible();
   await gonerRow.getByRole("button", { name: "Yes, take it down" }).click();
-  await expect(page.getByRole("heading", { name: "Taken down" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Withdrawn" })).toBeVisible();
 
   const anonymous = await page.context().browser()!.newContext();
   const anonymousPage = await anonymous.newPage();

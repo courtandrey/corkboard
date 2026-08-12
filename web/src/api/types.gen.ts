@@ -244,6 +244,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/users/{userId}/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["grant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/events/{id}/takedown": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["takeDown"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/events/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{id}": {
         parameters: {
             query?: never;
@@ -420,6 +468,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["roles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["reports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{userId}/roles/{role}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["revoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -456,7 +552,7 @@ export interface components {
             /** @enum {string} */
             type: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice";
             /** @enum {string} */
-            status: "active" | "resolved" | "expired" | "removed" | "under_review";
+            status: "active" | "resolved" | "expired" | "removed" | "taken_down" | "under_review";
             title: string;
             body: string;
             location: components["schemas"]["LatLng"];
@@ -555,12 +651,17 @@ export interface components {
             emailVerified: boolean;
             /** Format: date-time */
             createdAt: string;
+            roles: string[];
+            permissions: string[];
         };
         LoginRequest: {
             email: string;
             password: string;
             /** @enum {string} */
             transport?: "cookie" | "bearer";
+        };
+        RoleGrantRequest: {
+            role: string;
         };
         UpdateEventRequest: {
             /** @enum {string} */
@@ -600,7 +701,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            kind: "application_received" | "application_status" | "message_received" | "event_expiring" | "event_under_review";
+            kind: "application_received" | "application_status" | "message_received" | "event_expiring" | "event_under_review" | "event_taken_down";
             payload: {
                 [key: string]: Record<string, never>;
             };
@@ -609,11 +710,11 @@ export interface components {
         };
         Limits: {
             /** Format: int32 */
-            displayNameMax: number;
-            /** Format: int32 */
             passwordMin: number;
             /** Format: int32 */
             passwordMax: number;
+            /** Format: int32 */
+            displayNameMax: number;
             /** Format: int32 */
             titleMin: number;
             /** Format: int32 */
@@ -656,7 +757,7 @@ export interface components {
             /** @enum {string} */
             type: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice";
             /** @enum {string} */
-            status: "active" | "resolved" | "expired" | "removed" | "under_review";
+            status: "active" | "resolved" | "expired" | "removed" | "taken_down" | "under_review";
             title: string;
             location: components["schemas"]["LatLng"];
             applyable: boolean;
@@ -698,7 +799,7 @@ export interface components {
             id: string;
             title: string;
             /** @enum {string} */
-            status: "active" | "resolved" | "expired" | "removed" | "under_review";
+            status: "active" | "resolved" | "expired" | "removed" | "taken_down" | "under_review";
         };
         MyApplicationsResponse: {
             items: components["schemas"]["ApplicationGroup"][];
@@ -767,6 +868,32 @@ export interface components {
         MessageListResponse: {
             items: components["schemas"]["MessageResponse"][];
             nextCursor?: string;
+        };
+        RoleCatalogResponse: {
+            roles: string[];
+        };
+        ReportQueueResponse: {
+            items: components["schemas"]["ReportedEvent"][];
+        };
+        ReportedEvent: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            /** @enum {string} */
+            status: "active" | "resolved" | "expired" | "removed" | "taken_down" | "under_review";
+            authorDisplayName: string;
+            /** Format: int32 */
+            reportCount: number;
+            reasons: components["schemas"]["ReportedReason"][];
+            /** Format: date-time */
+            lastReportedAt: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ReportedReason: {
+            reason: string;
+            /** Format: int32 */
+            count: number;
         };
     };
     responses: never;
@@ -1189,6 +1316,70 @@ export interface operations {
             };
         };
     };
+    grant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleGrantRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    takeDown: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     detail: {
         parameters: {
             query?: never;
@@ -1489,6 +1680,69 @@ export interface operations {
             };
             header?: never;
             path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    roles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RoleCatalogResponse"];
+                };
+            };
+        };
+    };
+    reports: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReportQueueResponse"];
+                };
+            };
+        };
+    };
+    revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+                role: string;
+            };
             cookie?: never;
         };
         requestBody?: never;

@@ -46,6 +46,7 @@ class SeedRunner(
     private val applications: ApplicationService,
     private val conversations: ConversationService,
     private val sweep: ExpirationSweep,
+    private val userRoles: app.corkboard.auth.UserRoleService,
     private val props: CorkboardProperties,
     private val context: ConfigurableApplicationContext,
 ) : ApplicationRunner {
@@ -83,6 +84,7 @@ class SeedRunner(
         }
 
         val demo = register(SeedData.DEMO_EMAIL, "Demo Resident", props.seedDemoPassword)
+        userRoles.grant(demo, app.corkboard.auth.Roles.ADMIN, demo)
         val residents = SeedData.RESIDENTS.map { name ->
             register(
                 "${name.lowercase().replace(Regex("[^a-z]+"), ".").trim('.')}@corkboard.local",

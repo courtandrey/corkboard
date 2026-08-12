@@ -30,7 +30,7 @@ function ConversationRow({ conversation, active }: { conversation: ConversationS
 
 function Thread({ conversation, onBack }: { conversation: ConversationSummary; onBack?: () => void }) {
   const { data: me } = useMe();
-  const { verified, block } = useVerifyGate();
+  const { allows, block } = useVerifyGate();
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useMessages(conversation.id);
   const queryClient = useQueryClient();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -82,7 +82,7 @@ function Thread({ conversation, onBack }: { conversation: ConversationSummary; o
 
   async function send(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!verified) {
+    if (!allows("message")) {
       block("message");
       return;
     }

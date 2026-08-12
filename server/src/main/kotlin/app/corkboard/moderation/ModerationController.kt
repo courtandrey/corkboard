@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size
 import java.util.UUID
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -35,18 +36,21 @@ class ModerationController(
     private val reports: ReportService,
 ) {
 
+    @PreAuthorize("hasAuthority('EVENT_HIDE')")
     @PostMapping("/hide")
     fun hide(@PathVariable id: UUID, auth: SessionAuthentication): ResponseEntity<Void> {
         hides.hide(id, auth.user.userId)
         return ResponseEntity.noContent().build()
     }
 
+    @PreAuthorize("hasAuthority('EVENT_HIDE')")
     @DeleteMapping("/hide")
     fun unhide(@PathVariable id: UUID, auth: SessionAuthentication): ResponseEntity<Void> {
         hides.unhide(id, auth.user.userId)
         return ResponseEntity.noContent().build()
     }
 
+    @PreAuthorize("hasAuthority('EVENT_REPORT')")
     @PostMapping("/report")
     fun report(
         @PathVariable id: UUID,

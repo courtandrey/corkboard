@@ -6,7 +6,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 class SessionAuthentication(
     val user: SessionUser,
     val transport: SessionTransport,
-) : AbstractAuthenticationToken(listOf(SimpleGrantedAuthority("ROLE_USER"))) {
+) : AbstractAuthenticationToken(
+    user.permissions.map { SimpleGrantedAuthority(it.name) },
+) {
 
     init {
         isAuthenticated = true

@@ -4,6 +4,7 @@ export type MetaResponse = components["schemas"]["MetaResponse"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
 export type AuthResponse = components["schemas"]["AuthResponse"];
 export type UserResponse = components["schemas"]["UserResponse"];
+export type ReportQueueResponse = components["schemas"]["ReportQueueResponse"];
 export type RegisterRequest = components["schemas"]["RegisterRequest"];
 export type LoginRequest = components["schemas"]["LoginRequest"];
 export type TypeMeta = components["schemas"]["TypeMeta"];

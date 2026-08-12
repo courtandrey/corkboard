@@ -7,6 +7,7 @@ import { api, ApiError } from "../../api/client";
 import type { EventDetail } from "../../api/client";
 import { useMe, useMeta } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
+import { useVerifyGate } from "../auth/verifyGate";
 import { useBoardStore } from "../../stores/boardStore";
 import { Modal } from "../../ui/Modal";
 import { PinIcon, PlusIcon } from "../../ui/icons";
@@ -34,13 +35,14 @@ export function CreateEventFlow() {
   const [applyable, setApplyable] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [noEndDate, setNoEndDate] = useState(false);
+  const { allows } = useVerifyGate();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const signedIn = !!me;
   const close = () => navigate("/");
 
-  const confirmed = me?.emailVerified ?? false;
+  const confirmed = allows("pin");
 
   useEffect(() => {
     if (!signedIn || !confirmed) return;

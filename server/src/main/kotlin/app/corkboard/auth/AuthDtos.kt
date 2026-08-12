@@ -46,6 +46,8 @@ data class UserResponse(
     val avatarSeed: String,
     val emailVerified: Boolean,
     val createdAt: Instant,
+    val roles: List<String> = emptyList(),
+    val permissions: List<String> = emptyList(),
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

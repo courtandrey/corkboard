@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { expect } from "@playwright/test";
+import { expect, request } from "@playwright/test";
 
 export const SHOTS = "e2e/.screenshots";
 
@@ -102,4 +102,33 @@ export async function clickPin(page: Page, lng: number, lat: number): Promise<vo
   const box = await page.locator(".map-wrap .map").boundingBox();
   if (!box) throw new Error("map not visible");
   await page.mouse.click(box.x + point.x, box.y + point.y - 10);
+}
+
+export async function grantRole(targetUserId: string, role: string): Promise<void> {
+  const api = await request.newContext({ baseURL: "http://localhost:5173" });
+  try {
+    const login = await api.post("/api/v1/auth/login", {
+      data: {
+        email: "demo@corkboard.local",
+        password: process.env.SEED_DEMO_PASSWORD ?? "DemoPass123!",
+        transport: "bearer",
+      },
+    });
+    expect(login.status(), await login.text()).toBe(200);
+    const token = ((await login.json()) as { token: string }).token;
+
+    const granted = await api.post(`/api/v1/admin/users/${targetUserId}/roles`, {
+      data: { role },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(granted.status(), await granted.text()).toBe(204);
+  } finally {
+    await api.dispose();
+  }
+}
+
+export async function myUserId(page: Page): Promise<string> {
+  const res = await page.request.get("/api/v1/auth/me");
+  expect(res.status()).toBe(200);
+  return ((await res.json()) as { user: { id: string } }).user.id;
 }

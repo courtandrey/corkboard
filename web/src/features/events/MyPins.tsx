@@ -13,7 +13,7 @@ import { CheckIcon, ChevronDownIcon, RenewIcon, TrashIcon } from "../../ui/icons
 
 const s = strings.myPins;
 
-const STATUS_ORDER = ["active", "expired", "resolved", "under_review", "removed"];
+const STATUS_ORDER = ["active", "expired", "resolved", "under_review", "taken_down", "removed"];
 
 function isoInDays(days: number): string {
   return new Date(Date.now() + days * 86_400_000).toISOString();
@@ -123,13 +123,12 @@ function PinRow({ pin }: { pin: MyEventItem }) {
                 <CheckIcon size={14} /> {s.resolve}
               </button>
             )}
-            {/* nothing to extend on a note that has no end date */}
             {pin.expiresAt && (pin.status === "active" || pin.status === "expired") && (
               <button type="button" className="ghost sm" onClick={renew}>
                 <RenewIcon size={14} /> {s.renew}
               </button>
             )}
-            {pin.status !== "removed" && (
+            {pin.status !== "removed" && pin.status !== "taken_down" && (
               <button type="button" className="danger sm" onClick={() => setConfirmingRemove(true)}>
                 <TrashIcon size={14} /> {s.remove}
               </button>

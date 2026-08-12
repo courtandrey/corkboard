@@ -5,6 +5,7 @@ import jakarta.validation.Valid
 import java.util.UUID
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -34,6 +35,7 @@ class ConversationController(private val conversations: ConversationService) {
     ): MessageListResponse =
         conversations.messages(id, auth.user.userId, cursor, limit.coerceIn(1, 200))
 
+    @PreAuthorize("hasAuthority('MESSAGE_SEND')")
     @PostMapping("/{id}/messages")
     fun send(
         @PathVariable id: UUID,

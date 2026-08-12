@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
@@ -46,6 +47,7 @@ private val PUBLIC_READS = arrayOf(
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 class SecurityConfig(
     private val props: CorkboardProperties,
     private val problems: Problems,
@@ -67,7 +69,6 @@ class SecurityConfig(
             .requestCache { it.disable() }
             .addFilterBefore(SessionAuthFilter(sessions), UsernamePasswordAuthenticationFilter::class.java)
             .addFilterBefore(OriginCheckFilter(props.webOrigin, problems), AuthorizationFilter::class.java)
-            .addFilterBefore(EmailVerifiedFilter(problems), AuthorizationFilter::class.java)
             .authorizeHttpRequests {
                 it.requestMatchers(HttpMethod.GET, *PUBLIC_READS).permitAll()
                     .requestMatchers(HttpMethod.HEAD, *PUBLIC_READS).permitAll()
@@ -79,7 +80,7 @@ class SecurityConfig(
                     problems.write(response, HttpStatus.UNAUTHORIZED, ProblemCode.UNAUTHENTICATED)
                 }
                 it.accessDeniedHandler { _, response, _ ->
-                    problems.write(response, HttpStatus.FORBIDDEN, ProblemCode.FORBIDDEN)
+                    problems.write(response, HttpStatus.FORBIDDEN, denialCode())
                 }
             }
         googleLogin.ifAvailable { it.configure(http) }

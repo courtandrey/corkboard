@@ -9,6 +9,7 @@ import java.security.Principal
 import java.util.UUID
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -57,6 +58,7 @@ class EventController(
     fun detail(@PathVariable id: UUID, principal: Principal?): EventDetail =
         events.detail(id, viewerId(principal))
 
+    @PreAuthorize("hasAuthority('EVENT_CREATE')")
     @PostMapping
     fun create(
         @Valid @RequestBody req: CreateEventRequest,
@@ -64,6 +66,7 @@ class EventController(
     ): ResponseEntity<EventDetail> =
         ResponseEntity.status(HttpStatus.CREATED).body(events.create(auth.user.userId, req))
 
+    @PreAuthorize("hasAuthority('EVENT_CREATE')")
     @PatchMapping("/{id}")
     fun update(
         @PathVariable id: UUID,
@@ -71,16 +74,19 @@ class EventController(
         auth: SessionAuthentication,
     ): EventDetail = events.update(id, auth.user.userId, req)
 
+    @PreAuthorize("hasAuthority('EVENT_CREATE')")
     @DeleteMapping("/{id}")
     fun remove(@PathVariable id: UUID, auth: SessionAuthentication): ResponseEntity<Void> {
         events.remove(id, auth.user.userId)
         return ResponseEntity.noContent().build()
     }
 
+    @PreAuthorize("hasAuthority('EVENT_CREATE')")
     @PostMapping("/{id}/resolve")
     fun resolve(@PathVariable id: UUID, auth: SessionAuthentication): EventDetail =
         events.resolve(id, auth.user.userId)
 
+    @PreAuthorize("hasAuthority('EVENT_CREATE')")
     @PostMapping("/{id}/renew")
     fun renew(
         @PathVariable id: UUID,

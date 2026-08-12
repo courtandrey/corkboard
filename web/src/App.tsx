@@ -11,6 +11,7 @@ import { VerifyBanner } from "./features/auth/VerifyBanner";
 import { VerifyGate } from "./features/auth/verifyGate";
 import { AccountModal } from "./features/auth/AccountModal";
 import { CookieBanner } from "./features/consent/CookieBanner";
+import { ModerationPanel } from "./features/moderation/ModerationPanel";
 import { MessagesDrawer } from "./features/messaging/MessagesDrawer";
 import { MyPins } from "./features/events/MyPins";
 import { useSocket } from "./features/realtime/useSocket";
@@ -63,6 +64,7 @@ export function App() {
           <Route path="/new" element={<CreateEventFlow />} />
           <Route path="/me/pins" element={<MyPins />} />
           <Route path="/me/account" element={<AccountModal />} />
+          <Route path="/admin/reports" element={<ModerationPanel />} />
           <Route path="/messages" element={<MessagesDrawer />} />
           <Route path="/messages/:conversationId" element={<MessagesDrawer />} />
           <Route path="/login" element={<AuthDrawer />} />

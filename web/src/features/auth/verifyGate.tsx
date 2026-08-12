@@ -2,12 +2,22 @@ import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { api, ApiError } from "../../api/client";
 import { useMe } from "../../api/hooks";
+import { usePermissions } from "../../ui/permissions";
+import type { Permission } from "../../ui/permissions";
 import { strings } from "../../i18n/strings";
 import { Modal } from "../../ui/Modal";
 import { SendIcon } from "../../ui/icons";
 import { toast } from "../../ui/toast";
 
 export type GatedAction = keyof typeof strings.verify.gateReason;
+
+const NEEDED: Record<GatedAction, Permission> = {
+  pin: "EVENT_CREATE",
+  vote: "EVENT_VOTE",
+  report: "EVENT_REPORT",
+  respond: "EVENT_APPLY",
+  message: "MESSAGE_SEND",
+};
 
 interface GateState {
   reason: GatedAction | null;
@@ -23,15 +33,16 @@ const useGateStore = create<GateState>((set) => ({
 
 export function useVerifyGate() {
   const { data: me } = useMe();
+  const { can } = usePermissions();
   const open = useGateStore((s) => s.open);
-  const verified = !!me?.emailVerified;
 
   return {
-    verified,
+    verified: !!me?.emailVerified,
+    allows: (reason: GatedAction) => can(NEEDED[reason]),
     block: open,
     guard<A extends unknown[]>(reason: GatedAction, action: (...args: A) => void) {
       return (...args: A) => {
-        if (!verified) open(reason);
+        if (!can(NEEDED[reason])) open(reason);
         else action(...args);
       };
     },

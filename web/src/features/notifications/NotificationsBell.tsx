@@ -22,6 +22,8 @@ function label(notification: NotificationResponse): string {
       return s.eventExpiring(event);
     case "event_under_review":
       return s.eventUnderReview(event);
+    case "event_taken_down":
+      return s.eventTakenDown(event);
     case "message_received":
       return s.messageReceived(event);
     default:

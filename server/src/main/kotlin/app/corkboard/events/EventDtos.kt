@@ -15,6 +15,7 @@ enum class EventStatus(@get:JsonValue val key: String) {
     RESOLVED("resolved"),
     EXPIRED("expired"),
     REMOVED("removed"),
+    TAKEN_DOWN("taken_down"),
     UNDER_REVIEW("under_review");
 
     companion object {

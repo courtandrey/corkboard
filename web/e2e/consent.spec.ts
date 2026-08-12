@@ -67,3 +67,15 @@ test("phone: answering does not leave the board unusable", async ({ page }) => {
   await expect(banner).toHaveCount(0);
   await expect(page.locator(".pin-fab"), "the board is fully usable again").toBeVisible();
 });
+
+test("the banner steps aside while a modal is open, and comes back after", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator(".cookie-banner")).toBeVisible();
+
+  await page.goto("/login");
+  await expect(page.locator(".modal-card")).toBeVisible();
+  await expect(page.locator(".cookie-banner")).toBeHidden();
+
+  await page.getByRole("button", { name: "Close" }).click();
+  await expect(page.locator(".cookie-banner"), "still unanswered, so still asked").toBeVisible();
+});

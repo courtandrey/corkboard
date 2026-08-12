@@ -20,7 +20,8 @@ enum class NotificationKind(@get:JsonValue val key: String) {
     APPLICATION_STATUS("application_status"),
     MESSAGE_RECEIVED("message_received"),
     EVENT_EXPIRING("event_expiring"),
-    EVENT_UNDER_REVIEW("event_under_review");
+    EVENT_UNDER_REVIEW("event_under_review"),
+    EVENT_TAKEN_DOWN("event_taken_down");
 
     companion object {
         fun fromDb(literal: String): NotificationKind = entries.first { it.key == literal }

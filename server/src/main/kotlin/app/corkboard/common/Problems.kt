@@ -18,7 +18,7 @@ class Problems(
     fun detail(status: HttpStatus, code: ProblemCode): ProblemDetail =
         ProblemDetail.forStatusAndDetail(
             status,
-            messages.getMessage("problem.${code.wireValue()}", null, Locale.ENGLISH),
+            messages.getMessage("problem.${code.wireValue()}", null, code.wireValue(), Locale.ENGLISH),
         ).apply {
             title = status.reasonPhrase
             setProperty("code", code)

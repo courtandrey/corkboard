@@ -4,6 +4,7 @@ import app.corkboard.common.ApiException
 import app.corkboard.common.CorkboardProperties
 import app.corkboard.common.ProblemCode
 import app.corkboard.common.RateLimiter
+import app.corkboard.jooq.tables.records.UsersRecord
 import app.corkboard.jooq.tables.references.USERS
 import java.util.UUID
 import org.jooq.DSLContext
@@ -19,6 +20,8 @@ class AuthService(
     private val passwords: PasswordService,
     private val sessions: SessionService,
     private val verifications: EmailVerificationService,
+    private val userRoles: UserRoleService,
+    private val catalog: RoleCatalog,
     props: CorkboardProperties,
 ) {
 
@@ -42,16 +45,24 @@ class AuthService(
         } catch (e: DuplicateKeyException) {
             throw ApiException(HttpStatus.CONFLICT, ProblemCode.EMAIL_TAKEN)
         }
-        val user = UserResponse(
+        val user = toResponse(record)
+        verifications.issue(user.id, user.email, user.displayName)
+        return AuthenticatedUser(user, sessions.create(user.id, userAgent))
+    }
+
+    private fun toResponse(record: UsersRecord): UserResponse {
+        val emailVerified = record.emailVerifiedAt != null
+        val roles = userRoles.rolesOf(record.id!!, emailVerified)
+        return UserResponse(
             id = record.id!!,
             email = record.email!!,
             displayName = record.displayName!!,
             avatarSeed = record.avatarSeed!!,
-            emailVerified = false,
+            emailVerified = emailVerified,
             createdAt = record.createdAt!!.toInstant(),
+            roles = roles.sorted(),
+            permissions = catalog.permissionsOf(roles).map { it.name }.sorted(),
         )
-        verifications.issue(user.id, user.email, user.displayName)
-        return AuthenticatedUser(user, sessions.create(user.id, userAgent))
     }
 
     fun updateProfile(userId: UUID, req: UpdateProfileRequest): UserResponse {
@@ -65,14 +76,7 @@ class AuthService(
             .returning()
             .fetchOne()
             ?: throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
-        return UserResponse(
-            id = record.id!!,
-            email = record.email!!,
-            displayName = record.displayName!!,
-            avatarSeed = record.avatarSeed!!,
-            emailVerified = record.emailVerifiedAt != null,
-            createdAt = record.createdAt!!.toInstant(),
-        )
+        return toResponse(record)
     }
 
     fun login(req: LoginRequest, clientIp: String, userAgent: String?): AuthenticatedUser {
@@ -88,14 +92,7 @@ class AuthService(
             throw ApiException(HttpStatus.UNAUTHORIZED, ProblemCode.INVALID_CREDENTIALS)
         }
 
-        val user = UserResponse(
-            id = record.id!!,
-            email = record.email!!,
-            displayName = record.displayName!!,
-            avatarSeed = record.avatarSeed!!,
-            emailVerified = record.emailVerifiedAt != null,
-            createdAt = record.createdAt!!.toInstant(),
-        )
+        val user = toResponse(record)
         return AuthenticatedUser(user, sessions.create(user.id, userAgent))
     }
 

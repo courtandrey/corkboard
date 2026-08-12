@@ -7,15 +7,17 @@ import { useMe } from "../api/hooks";
 import { NotificationsBell } from "../features/notifications/NotificationsBell";
 import { strings } from "../i18n/strings";
 import { useBoardStore } from "../stores/boardStore";
+import { usePermissions } from "../ui/permissions";
 import { PixelAvatar } from "../ui/PixelAvatar";
 import { pushpinDataUri } from "../ui/pushpin";
 import { useDismiss } from "../ui/useDismiss";
-import { ChatIcon, ChevronDownIcon, PinIcon, SearchIcon, SignOutIcon, UserIcon } from "../ui/icons";
+import { ChatIcon, ChevronDownIcon, FlagIcon, PinIcon, SearchIcon, SignOutIcon, UserIcon } from "../ui/icons";
 
 const logoPin = pushpinDataUri("#C94C4C");
 
 export function TopBar() {
   const { data: me } = useMe();
+  const { can } = usePermissions();
   const q = useBoardStore((s) => s.filters.q);
   const setFilters = useBoardStore((s) => s.setFilters);
   const queryClient = useQueryClient();
@@ -92,6 +94,11 @@ export function TopBar() {
                 <Link to="/me/account" className="menu-item" role="menuitem" onClick={closeMenu}>
                   <UserIcon size={15} /> {strings.account.menuItem}
                 </Link>
+                {can("REPORT_QUEUE_VIEW") && (
+                  <Link to="/admin/reports" className="menu-item" role="menuitem" onClick={closeMenu}>
+                    <FlagIcon size={15} /> {strings.moderation.menuItem}
+                  </Link>
+                )}
                 <button type="button" className="menu-item signout" role="menuitem" onClick={signOut}>
                   <SignOutIcon size={15} /> {strings.auth.signOut}
                 </button>

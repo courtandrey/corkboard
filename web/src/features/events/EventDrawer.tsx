@@ -10,8 +10,9 @@ import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
 import { toast } from "../../ui/toast";
 import { useNoteFontReady } from "../../ui/noteFont";
-import { ChatIcon, ClockIcon, FlagIcon, HideIcon, SendIcon, ShowIcon } from "../../ui/icons";
+import { ChatIcon, ClockIcon, FlagIcon, HideIcon, SendIcon, ShowIcon, TrashIcon } from "../../ui/icons";
 import { useVerifyGate } from "../auth/verifyGate";
+import { usePermissions } from "../../ui/permissions";
 import { VoteControl } from "./VoteControl";
 import { EventEditForm } from "./EventEditForm";
 
@@ -34,7 +35,7 @@ function Linkified({ text }: { text: string }) {
   );
 }
 
-type Mode = "view" | "respond" | "report" | "edit";
+type Mode = "view" | "respond" | "report" | "takedown" | "edit";
 
 export function EventDrawer() {
   const { id } = useParams();
@@ -46,11 +47,24 @@ export function EventDrawer() {
   const [mode, setMode] = useState<Mode>("view");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const { verified, guard, block } = useVerifyGate();
+  const { allows, guard, block } = useVerifyGate();
+  const { can } = usePermissions();
+  const canTakeDown = can("EVENT_TAKE_DOWN_ANY") && !event?.viewerState.isAuthor;
   const titleReady = useNoteFontReady(event?.title);
 
   const close = () => navigate("/");
   const type = meta?.types.find((t) => t.key === event?.type);
+
+  const takeDown = useMutation({
+    mutationFn: () => api.post(`/api/v1/admin/events/${event!.id}/takedown`),
+    onSuccess: async () => {
+      toast(strings.moderation.tookDown);
+      await queryClient.invalidateQueries({ queryKey: ["event", event!.id] });
+      await queryClient.invalidateQueries({ queryKey: ["events"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "reports"] });
+      setMode("view");
+    },
+  });
 
   const hide = useMutation({
     mutationFn: () =>
@@ -146,7 +160,7 @@ export function EventDrawer() {
                 !me ? eng.voteSignedOut : event.viewerState.isAuthor ? eng.voteOwn : undefined
               }
               intercept={() => {
-                if (verified) return false;
+                if (allows("vote")) return false;
                 block("vote");
                 return true;
               }}
@@ -229,6 +243,27 @@ export function EventDrawer() {
             </form>
           )}
 
+          {mode === "takedown" && (
+            <div className="ev-foot" style={{ flexDirection: "column", alignItems: "stretch", gap: 10 }}>
+              <p className="form-hint" style={{ margin: 0 }}>
+                {strings.moderation.takeDownConfirm}
+              </p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  className="danger grow"
+                  disabled={takeDown.isPending}
+                  onClick={() => takeDown.mutate()}
+                >
+                  <TrashIcon size={15} /> {strings.moderation.takeDownYes}
+                </button>
+                <button type="button" className="ghost" onClick={() => setMode("view")}>
+                  {strings.moderation.takeDownNo}
+                </button>
+              </div>
+            </div>
+          )}
+
           {mode === "view" && (
             <div className="ev-foot">
               {conversationId ? (
@@ -273,15 +308,27 @@ export function EventDrawer() {
                       >
                         {event.viewerState.hidden ? <ShowIcon size={18} /> : <HideIcon size={18} />}
                       </button>
-                      <button
-                        type="button"
-                        className="icon-btn"
-                        onClick={guard("report", () => setMode("report"))}
-                        aria-label={eng.report}
-                        title={eng.report}
-                      >
-                        <FlagIcon size={18} />
-                      </button>
+                      {canTakeDown ? (
+                        <button
+                          type="button"
+                          className="icon-btn danger-icon"
+                          onClick={() => setMode("takedown")}
+                          aria-label={strings.moderation.takeDown}
+                          title={strings.moderation.takeDown}
+                        >
+                          <TrashIcon size={18} />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          onClick={guard("report", () => setMode("report"))}
+                          aria-label={eng.report}
+                          title={eng.report}
+                        >
+                          <FlagIcon size={18} />
+                        </button>
+                      )}
                     </>
                   )}
                 </>

@@ -1,9 +1,12 @@
 package app.corkboard.common
 
 import jakarta.validation.ConstraintViolationException
+import app.corkboard.auth.denialCode
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
+import org.springframework.security.access.AccessDeniedException
+import org.springframework.security.authorization.AuthorizationDeniedException
 import org.springframework.web.ErrorResponse
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -36,6 +39,10 @@ class ApiExceptionHandler(private val problems: Problems) {
                 },
             )
         }
+
+
+    @ExceptionHandler(AuthorizationDeniedException::class, AccessDeniedException::class)
+    fun denied(): ProblemDetail = problems.detail(HttpStatus.FORBIDDEN, denialCode())
 
     @ExceptionHandler(Exception::class)
     fun fallback(e: Exception): ProblemDetail {

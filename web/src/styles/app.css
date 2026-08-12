@@ -439,6 +439,117 @@ textarea:focus {
 }
 
 
+.report-queue {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-md);
+}
+
+.report-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.report-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.report-side {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.report-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+  color: var(--stamp-red);
+}
+
+.report-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.link-like {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  font-weight: 700;
+  color: var(--fb-blue);
+  text-align: left;
+}
+
+.link-like:hover {
+  background: none;
+  border-color: transparent;
+  text-decoration: underline;
+}
+
+.icon-btn.danger-icon {
+  color: var(--stamp-red);
+}
+
+.icon-btn.danger-icon:hover {
+  background: rgba(179, 53, 44, 0.1);
+  color: var(--stamp-red);
+}
+
+.report-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(43, 43, 43, 0.08);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+.report-status.status-removed,
+.report-status.status-taken_down,
+.report-status.status-under_review {
+  background: rgba(179, 53, 44, 0.12);
+  color: var(--stamp-red);
+}
+
+@media (max-width: 768px) {
+  .report-row {
+    flex-direction: column;
+  }
+
+  .report-side {
+    align-items: flex-start;
+    width: 100%;
+  }
+}
+
 .account-identity {
   display: flex;
   align-items: center;
@@ -1184,9 +1295,10 @@ textarea:focus {
 
 .cookie-banner {
   position: fixed;
-  left: 50%;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
   bottom: 84px;
-  transform: translateX(-50%);
   z-index: 45;
   display: flex;
   align-items: center;
@@ -1198,6 +1310,10 @@ textarea:focus {
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lift);
   animation: card-in var(--dur) var(--ease);
+}
+
+body:has(.modal-scrim) .cookie-banner {
+  display: none;
 }
 
 .cookie-text {

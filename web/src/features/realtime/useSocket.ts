@@ -46,13 +46,11 @@ export function useSocket(enabled: boolean) {
             }
             break;
           case "account:verified": {
-            let announce = false;
-            queryClient.setQueryData<AuthResponse["user"] | null>(["auth", "me"], (me) => {
-              if (!me || me.emailVerified) return me;
-              announce = true;
-              return { ...me, emailVerified: true };
-            });
-            if (announce) toast(strings.verify.confirmed);
+            const known = queryClient.getQueryData<AuthResponse["user"] | null>(["auth", "me"]);
+            if (known && !known.emailVerified) {
+              toast(strings.verify.confirmed);
+              void queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+            }
             break;
           }
           case "conversation:read":
