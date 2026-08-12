@@ -6,6 +6,7 @@ import { api, ApiError } from "../../api/client";
 import type { AuthResponse } from "../../api/client";
 import { useMe, useMeta } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
+import { useFeature } from "../../ui/features";
 import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
 import { toast } from "../../ui/toast";
@@ -17,6 +18,7 @@ export function AccountModal() {
   const queryClient = useQueryClient();
   const { data: me, isLoading } = useMe();
   const { data: meta } = useMeta();
+  const editable = useFeature("ARE_USER_DETAILS_EDITABLE");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -76,6 +78,7 @@ export function AccountModal() {
                 name="displayName"
                 defaultValue={me.displayName}
                 required
+                disabled={!editable}
                 maxLength={meta?.limits.displayNameMax ?? 50}
                 autoComplete="nickname"
               />
@@ -93,9 +96,11 @@ export function AccountModal() {
         </div>
         <div className="modal-foot">
           <div className="modal-actions">
-            <button type="submit" className="primary" disabled={busy}>
-              {s.save}
-            </button>
+            {editable && (
+              <button type="submit" className="primary" disabled={busy}>
+                {s.save}
+              </button>
+            )}
             <button type="button" className="ghost" onClick={close}>
               {s.cancel}
             </button>

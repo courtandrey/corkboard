@@ -340,6 +340,22 @@ export interface paths {
         patch: operations["updateStatus"];
         trace?: never;
     };
+    "/api/v1/admin/features/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["update_1"];
+        trace?: never;
+    };
     "/api/v1/tags": {
         parameters: {
             query?: never;
@@ -436,6 +452,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["features"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/conversations": {
         parameters: {
             query?: never;
@@ -492,6 +524,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["reports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -682,6 +730,18 @@ export interface components {
             /** @enum {string} */
             status: "pending" | "accepted" | "declined" | "withdrawn";
         };
+        UpdateFeatureFlagRequest: {
+            enabled: boolean;
+        };
+        FeatureFlagItem: {
+            key: string;
+            label: string;
+            description: string;
+            enabled: boolean;
+            /** Format: date-time */
+            updatedAt?: string;
+            updatedBy?: string;
+        };
         TagItem: {
             name: string;
             slug: string;
@@ -807,6 +867,11 @@ export interface components {
         HealthResponse: {
             status: string;
         };
+        FeaturesResponse: {
+            flags: {
+                [key: string]: boolean;
+            };
+        };
         ClusterBounds: {
             /** Format: double */
             west: number;
@@ -894,6 +959,9 @@ export interface components {
             reason: string;
             /** Format: int32 */
             count: number;
+        };
+        FeatureFlagListResponse: {
+            items: components["schemas"]["FeatureFlagItem"][];
         };
     };
     responses: never;
@@ -1518,6 +1586,32 @@ export interface operations {
             };
         };
     };
+    update_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFeatureFlagRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FeatureFlagItem"];
+                };
+            };
+        };
+    };
     list_1: {
         parameters: {
             query?: {
@@ -1650,6 +1744,26 @@ export interface operations {
             };
         };
     };
+    features: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FeaturesResponse"];
+                };
+            };
+        };
+    };
     list_4: {
         parameters: {
             query?: {
@@ -1731,6 +1845,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ReportQueueResponse"];
+                };
+            };
+        };
+    };
+    list_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FeatureFlagListResponse"];
                 };
             };
         };

@@ -104,7 +104,9 @@ export async function clickPin(page: Page, lng: number, lat: number): Promise<vo
   await page.mouse.click(box.x + point.x, box.y + point.y - 10);
 }
 
-export async function grantRole(targetUserId: string, role: string): Promise<void> {
+async function asDemoAdmin<T>(
+  use: (api: import("@playwright/test").APIRequestContext, headers: Record<string, string>) => Promise<T>,
+): Promise<T> {
   const api = await request.newContext({ baseURL: "http://localhost:5173" });
   try {
     const login = await api.post("/api/v1/auth/login", {
@@ -116,15 +118,27 @@ export async function grantRole(targetUserId: string, role: string): Promise<voi
     });
     expect(login.status(), await login.text()).toBe(200);
     const token = ((await login.json()) as { token: string }).token;
-
-    const granted = await api.post(`/api/v1/admin/users/${targetUserId}/roles`, {
-      data: { role },
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    expect(granted.status(), await granted.text()).toBe(204);
+    return await use(api, { Authorization: `Bearer ${token}` });
   } finally {
     await api.dispose();
   }
+}
+
+export async function grantRole(targetUserId: string, role: string): Promise<void> {
+  await asDemoAdmin(async (api, headers) => {
+    const granted = await api.post(`/api/v1/admin/users/${targetUserId}/roles`, {
+      data: { role },
+      headers,
+    });
+    expect(granted.status(), await granted.text()).toBe(204);
+  });
+}
+
+export async function setFeatureFlag(key: string, enabled: boolean): Promise<void> {
+  await asDemoAdmin(async (api, headers) => {
+    const flipped = await api.patch(`/api/v1/admin/features/${key}`, { data: { enabled }, headers });
+    expect(flipped.status(), await flipped.text()).toBe(200);
+  });
 }
 
 export async function myUserId(page: Page): Promise<string> {

@@ -6,7 +6,7 @@ import { toast } from "../../ui/toast";
 
 interface Frame {
   type: string;
-  payload: { conversationId?: string };
+  payload: { conversationId?: string; flags?: Record<string, boolean> };
 }
 
 export function useSocket(enabled: boolean) {
@@ -53,6 +53,11 @@ export function useSocket(enabled: boolean) {
             }
             break;
           }
+          case "features:changed":
+            if (frame.payload.flags) {
+              queryClient.setQueryData(["features"], { flags: frame.payload.flags });
+            }
+            break;
           case "conversation:read":
             if (frame.payload.conversationId) {
               void queryClient.invalidateQueries({

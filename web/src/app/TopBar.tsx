@@ -11,7 +11,16 @@ import { usePermissions } from "../ui/permissions";
 import { PixelAvatar } from "../ui/PixelAvatar";
 import { pushpinDataUri } from "../ui/pushpin";
 import { useDismiss } from "../ui/useDismiss";
-import { ChatIcon, ChevronDownIcon, FlagIcon, PinIcon, SearchIcon, SignOutIcon, UserIcon } from "../ui/icons";
+import {
+  ChatIcon,
+  ChevronDownIcon,
+  FlagIcon,
+  PinIcon,
+  SearchIcon,
+  SignOutIcon,
+  SlidersIcon,
+  UserIcon,
+} from "../ui/icons";
 
 const logoPin = pushpinDataUri("#C94C4C");
 
@@ -97,6 +106,11 @@ export function TopBar() {
                 {can("REPORT_QUEUE_VIEW") && (
                   <Link to="/admin/reports" className="menu-item" role="menuitem" onClick={closeMenu}>
                     <FlagIcon size={15} /> {strings.moderation.menuItem}
+                  </Link>
+                )}
+                {can("FEATURE_FLAG_MANAGE") && (
+                  <Link to="/admin/features" className="menu-item" role="menuitem" onClick={closeMenu}>
+                    <SlidersIcon size={15} /> {strings.features.menuItem}
                   </Link>
                 )}
                 <button type="button" className="menu-item signout" role="menuitem" onClick={signOut}>

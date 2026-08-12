@@ -1,12 +1,14 @@
 package app.corkboard.messaging
 
 import app.corkboard.auth.EmailVerified
+import app.corkboard.features.FeatureFlagsChanged
 import app.corkboard.notifications.NotificationCreated
 import com.fasterxml.jackson.databind.ObjectMapper
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
 import org.slf4j.LoggerFactory
+import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionalEventListener
@@ -59,6 +61,11 @@ class WsGateway(private val objectMapper: ObjectMapper) : TextWebSocketHandler()
         push(event.userId, "account:verified", emptyMap<String, Any>())
     }
 
+    @EventListener
+    fun onFeatureFlagsChanged(event: FeatureFlagsChanged) {
+        broadcast("features:changed", mapOf("flags" to event.flags))
+    }
+
     @Scheduled(fixedRate = 30_000)
     fun ping() {
         sessions.values.flatten().forEach { session ->
@@ -67,12 +74,19 @@ class WsGateway(private val objectMapper: ObjectMapper) : TextWebSocketHandler()
     }
 
     fun push(userId: UUID, type: String, payload: Any) {
-        val targets = sessions[userId] ?: return
+        send(sessions[userId] ?: return, type, payload)
+    }
+
+    fun broadcast(type: String, payload: Any) {
+        send(sessions.values.flatten(), type, payload)
+    }
+
+    private fun send(targets: Collection<WebSocketSession>, type: String, payload: Any) {
         val frame = TextMessage(objectMapper.writeValueAsString(mapOf("type" to type, "payload" to payload)))
         targets.forEach { session ->
             runCatching {
                 if (session.isOpen) session.sendMessage(frame)
-            }.onFailure { log.debug("WS send failed for {}", userId, it) }
+            }.onFailure { log.debug("WS send failed for {}", session.id, it) }
         }
     }
 }

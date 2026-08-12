@@ -11,7 +11,8 @@ enum class Permission {
     MESSAGE_SEND,
     EVENT_TAKE_DOWN_ANY,
     REPORT_QUEUE_VIEW,
-    ROLE_MANAGE;
+    ROLE_MANAGE,
+    FEATURE_FLAG_MANAGE;
 
     @JsonValue
     fun wireValue(): String = name

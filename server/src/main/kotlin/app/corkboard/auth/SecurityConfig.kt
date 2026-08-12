@@ -3,6 +3,8 @@ package app.corkboard.auth
 import app.corkboard.common.CorkboardProperties
 import app.corkboard.common.ProblemCode
 import app.corkboard.common.Problems
+import app.corkboard.features.FeatureFlagService
+import app.corkboard.features.FeatureGuardFilter
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -22,6 +24,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 private val PUBLIC_READS = arrayOf(
     "/api/v1/health",
     "/api/v1/meta",
+    "/api/v1/features",
     "/api/v1/openapi.json",
     "/api/v1/openapi.json/**",
     "/swagger-ui/**",
@@ -57,6 +60,7 @@ class SecurityConfig(
     fun filterChain(
         http: HttpSecurity,
         sessions: SessionService,
+        flags: FeatureFlagService,
         googleLogin: ObjectProvider<GoogleLoginCustomizer>,
     ): SecurityFilterChain {
         http
@@ -69,6 +73,8 @@ class SecurityConfig(
             .requestCache { it.disable() }
             .addFilterBefore(SessionAuthFilter(sessions), UsernamePasswordAuthenticationFilter::class.java)
             .addFilterBefore(OriginCheckFilter(props.webOrigin, problems), AuthorizationFilter::class.java)
+            // after authorization, so a switched-off feature never answers before "sign in first"
+            .addFilterAfter(FeatureGuardFilter(flags, problems), AuthorizationFilter::class.java)
             .authorizeHttpRequests {
                 it.requestMatchers(HttpMethod.GET, *PUBLIC_READS).permitAll()
                     .requestMatchers(HttpMethod.HEAD, *PUBLIC_READS).permitAll()

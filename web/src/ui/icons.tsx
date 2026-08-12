@@ -158,6 +158,14 @@ export const SignOutIcon = (p: IconProps) => (
   </Base>
 );
 
+export const SlidersIcon = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M4 8h10M18 8h2M4 16h4M12 16h8" />
+    <circle cx="16" cy="8" r="2" />
+    <circle cx="10" cy="16" r="2" />
+  </Base>
+);
+
 export const ChevronDownIcon = (p: IconProps) => (
   <Base {...p}>
     <path d="M6 9.5l6 6 6-6" />

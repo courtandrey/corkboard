@@ -31,6 +31,9 @@ export type ApplicationItem = components["schemas"]["ApplicationItem"];
 export type TagItem = components["schemas"]["TagItem"];
 export type TagListResponse = components["schemas"]["TagListResponse"];
 export type ReportRequest = components["schemas"]["ReportRequest"];
+export type FeaturesResponse = components["schemas"]["FeaturesResponse"];
+export type FeatureFlagItem = components["schemas"]["FeatureFlagItem"];
+export type FeatureFlagListResponse = components["schemas"]["FeatureFlagListResponse"];
 
 export class ApiError extends Error {
   constructor(

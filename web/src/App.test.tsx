@@ -65,6 +65,9 @@ beforeEach(() => {
     vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/api/v1/meta")) return jsonResponse(meta);
+      if (url.includes("/api/v1/features")) {
+        return jsonResponse({ flags: { ARE_USER_DETAILS_EDITABLE: true } });
+      }
       if (url.includes("/api/v1/auth/me")) {
         return jsonResponse({ status: 401, code: "unauthenticated", detail: "Sign in" }, 401);
       }

@@ -13,10 +13,13 @@ data class CorkboardProperties(
     val googleCallbackUrl: String,
     val authRate: AuthRate,
     val notifications: Notifications = Notifications(),
+    val featureFlags: FeatureFlags = FeatureFlags(),
     val seedDemoPassword: String = "",
     val seedForce: Boolean = false,
 ) {
     data class AuthRate(val perIp: Int, val perEmail: Int)
+
+    data class FeatureFlags(val listen: Boolean = true)
 
     data class Notifications(
         val enabled: Boolean = true,

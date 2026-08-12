@@ -4,6 +4,7 @@ import type {
   AuthResponse,
   ConversationListResponse,
   EventDetail,
+  FeaturesResponse,
   MessageListResponse,
   MetaResponse,
   MyApplicationsResponse,
@@ -19,6 +20,17 @@ export function useMeta() {
     queryKey: ["meta"],
     queryFn: () => api.get<MetaResponse>("/api/v1/meta"),
     staleTime: Infinity,
+  });
+}
+
+const FEATURES_REFRESH_MS = 600_000;
+
+export function useFeatures() {
+  return useQuery({
+    queryKey: ["features"],
+    queryFn: () => api.get<FeaturesResponse>("/api/v1/features"),
+    staleTime: FEATURES_REFRESH_MS,
+    refetchInterval: FEATURES_REFRESH_MS,
   });
 }
 
