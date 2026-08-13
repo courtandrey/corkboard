@@ -4,7 +4,7 @@ import { api } from "../../api/client";
 import type { ReportQueueResponse } from "../../api/client";
 import { strings } from "../../i18n/strings";
 import { toast } from "../../ui/toast";
-import { FlagIcon, RenewIcon, TrashIcon } from "../../ui/icons";
+import { CheckIcon, FlagIcon, TrashIcon } from "../../ui/icons";
 
 const s = strings.moderation;
 const reasons = strings.engagement.reasons;
@@ -19,10 +19,10 @@ export function ReportQueue() {
   });
 
   const act = useMutation({
-    mutationFn: ({ id, action }: { id: string; action: "takedown" | "restore" }) =>
+    mutationFn: ({ id, action }: { id: string; action: "takedown" | "approve" }) =>
       api.post(`/api/v1/admin/events/${id}/${action}`),
     onSuccess: async (_result, { action }) => {
-      toast(action === "takedown" ? s.tookDown : s.restored);
+      toast(action === "takedown" ? s.tookDown : s.approved);
       await queryClient.invalidateQueries({ queryKey: ["admin", "reports"] });
       await queryClient.invalidateQueries({ queryKey: ["events"] });
     },
@@ -60,7 +60,15 @@ export function ReportQueue() {
                 <FlagIcon size={14} /> {item.reportCount}
               </span>
               <div className="report-actions">
-                {item.status !== "removed" && item.status !== "taken_down" && (
+                <button
+                  type="button"
+                  className="ghost sm"
+                  disabled={act.isPending}
+                  onClick={() => act.mutate({ id: item.id, action: "approve" })}
+                >
+                  <CheckIcon size={14} /> {s.approve}
+                </button>
+                {item.status !== "removed" && (
                   <button
                     type="button"
                     className="danger sm"
@@ -68,16 +76,6 @@ export function ReportQueue() {
                     onClick={() => act.mutate({ id: item.id, action: "takedown" })}
                   >
                     <TrashIcon size={14} /> {s.takeDown}
-                  </button>
-                )}
-                {item.status !== "active" && (
-                  <button
-                    type="button"
-                    className="ghost sm"
-                    disabled={act.isPending}
-                    onClick={() => act.mutate({ id: item.id, action: "restore" })}
-                  >
-                    <RenewIcon size={14} /> {s.restore}
                   </button>
                 )}
               </div>

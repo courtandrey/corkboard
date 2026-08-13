@@ -185,17 +185,18 @@ export const strings = {
   },
   moderation: {
     menuItem: "Moderation",
-    intro: "The most reported notes first. Taking one down hides it from the board for everyone.",
-    empty: "Nothing has been reported. The board is behaving itself.",
+    intro:
+      "Notes with reports nobody has looked at yet, worst first. Approving clears their reports; taking one down hides it from the board for everyone.",
+    empty: "Nothing waiting — every report has been looked at.",
     by: (name: string) => `by ${name}`,
     reportCount: (n: number) => `${n} ${n === 1 ? "report" : "reports"}`,
     takeDown: "Take down",
     takeDownConfirm: "Take this note off the board? Nobody but its author will see it again.",
     takeDownYes: "Yes, take it down",
     takeDownNo: "Leave it up",
-    restore: "Put back",
+    approve: "Approve",
     tookDown: "Taken off the board",
-    restored: "Back on the board",
+    approved: "Reports cleared",
   },
   admin: {
     title: "Keeping the board",

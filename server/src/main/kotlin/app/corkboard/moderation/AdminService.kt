@@ -52,6 +52,8 @@ class AdminService(
             .from(REPORTS)
             .join(EVENTS).on(EVENTS.ID.eq(REPORTS.EVENT_ID))
             .join(USERS).on(USERS.ID.eq(EVENTS.AUTHOR_ID))
+            .where(REPORTS.REVIEWED_AT.isNull)
+            .and(EVENTS.STATUS.ne(DbEventStatus.taken_down))
             .groupBy(EVENTS.ID, EVENTS.TITLE, EVENTS.STATUS, EVENTS.CREATED_AT, USERS.DISPLAY_NAME)
             .orderBy(count.desc(), lastAt.desc())
             .limit(limit)
@@ -62,7 +64,7 @@ class AdminService(
         val ids = rows.map { it[EVENTS.ID]!! }
         val breakdown = dsl.select(REPORTS.EVENT_ID, REPORTS.REASON, DSL.count())
             .from(REPORTS)
-            .where(REPORTS.EVENT_ID.`in`(ids))
+            .where(REPORTS.EVENT_ID.`in`(ids), REPORTS.REVIEWED_AT.isNull)
             .groupBy(REPORTS.EVENT_ID, REPORTS.REASON)
             .fetchGroups(REPORTS.EVENT_ID)
 
@@ -88,6 +90,7 @@ class AdminService(
     @Transactional
     fun takeDown(eventId: UUID, moderatorId: UUID) {
         val event = setStatus(eventId, DbEventStatus.taken_down, moderatorId, "took down")
+        review(eventId, moderatorId)
         notifications.create(
             event.authorId,
             NotificationKind.EVENT_TAKEN_DOWN,
@@ -98,6 +101,25 @@ class AdminService(
     @Transactional
     fun restore(eventId: UUID, moderatorId: UUID) {
         setStatus(eventId, DbEventStatus.active, moderatorId, "restored")
+    }
+
+    @Transactional
+    fun approve(eventId: UUID, moderatorId: UUID) {
+        val status = dsl.select(EVENTS.STATUS).from(EVENTS).where(EVENTS.ID.eq(eventId)).fetchOne(EVENTS.STATUS)
+            ?: throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
+        if (status == DbEventStatus.under_review) {
+            setStatus(eventId, DbEventStatus.active, moderatorId, "cleared")
+        }
+        review(eventId, moderatorId)
+        log.info("moderator {} approved event {}", moderatorId, eventId)
+    }
+
+    private fun review(eventId: UUID, moderatorId: UUID) {
+        dsl.update(REPORTS)
+            .set(REPORTS.REVIEWED_AT, DSL.currentOffsetDateTime())
+            .set(REPORTS.REVIEWED_BY, moderatorId)
+            .where(REPORTS.EVENT_ID.eq(eventId), REPORTS.REVIEWED_AT.isNull)
+            .execute()
     }
 
     private data class Touched(val authorId: UUID, val title: String)

@@ -1201,6 +1201,17 @@ textarea:focus {
   max-height: 86vh;
 }
 
+@media (min-width: 769px) {
+  .modal-admin .modal-card {
+    height: 596px;
+    max-height: 86vh;
+  }
+}
+
+.modal-admin .modal-body {
+  padding-bottom: 18px;
+}
+
 .modal-pin {
   position: absolute;
   top: -13px;

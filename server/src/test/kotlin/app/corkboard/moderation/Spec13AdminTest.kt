@@ -21,13 +21,19 @@ class Spec13AdminTest : ApiTestBase() {
     }
 
     private fun report(eventId: String, reporterName: String, reason: String) {
-        val reporter = registerUser(reporterName)
+        reportAs(registerUser(reporterName), eventId, reason)
+    }
+
+    private fun reportAs(reporter: app.corkboard.TestUser, eventId: String, reason: String) {
         val res = sendJson(
             HttpMethod.POST, "/api/v1/events/$eventId/report",
             mapOf("reason" to reason), reporter.headers,
         )
         check(res.statusCode.value() == 202) { "report failed: ${res.body}" }
     }
+
+    private fun queueIds(moderator: app.corkboard.TestUser): List<String> =
+        json(getJson("/api/v1/admin/reports", moderator.headers))["items"].map { it["id"].asText() }
 
     @Test
     fun `the queue puts the worst-reported note first and breaks its reasons down`() {
@@ -78,6 +84,60 @@ class Spec13AdminTest : ApiTestBase() {
         assertThat(sendJson(HttpMethod.POST, "/api/v1/admin/events/$eventId/restore", null, moderator.headers)
             .statusCode.value()).isEqualTo(204)
         assertThat(json(getJson("/api/v1/events/$eventId", author.headers))["status"].asText()).isEqualTo("active")
+    }
+
+    @Test
+    fun `approving clears the reports, puts an auto-hidden note back, and empties the row from the queue`() {
+        val author = registerUser("Cleared Author")
+        val eventId = createEvent(author, 24.1, 44.1, title = "Reported but fine")
+        val moderator = registerUser("Approving Moderator")
+        makeModerator(moderator.id)
+
+        val reporter = registerUser("Second-Guessing Reporter")
+        reportAs(reporter, eventId, "spam")
+        repeat(4) { report(eventId, "Piling Reporter $it", "spam") }
+        assertThat(json(getJson("/api/v1/events/$eventId", author.headers))["status"].asText())
+            .describedAs("five reports auto-hide it")
+            .isEqualTo("under_review")
+
+        assertThat(sendJson(HttpMethod.POST, "/api/v1/admin/events/$eventId/approve", null, moderator.headers)
+            .statusCode.value()).isEqualTo(204)
+
+        assertThat(json(getJson("/api/v1/events/$eventId", author.headers))["status"].asText())
+            .describedAs("clearing the reports has to undo the auto-hide they caused")
+            .isEqualTo("active")
+        assertThat(queueIds(moderator))
+            .describedAs("nothing is left to decide, so it leaves the queue")
+            .doesNotContain(eventId)
+
+        val again = sendJson(
+            HttpMethod.POST, "/api/v1/events/$eventId/report",
+            mapOf("reason" to "spam"), reporter.headers,
+        )
+        assertThat(again.statusCode.value()).isEqualTo(202)
+        assertThat(queueIds(moderator))
+            .describedAs("a reviewed report is still that reporter's one and only")
+            .doesNotContain(eventId)
+    }
+
+    @Test
+    fun `a note that was taken down is off the queue as well as off the board`() {
+        val author = registerUser("Removed Author")
+        val eventId = createEvent(author, 25.1, 45.1, title = "Gone for good")
+        val moderator = registerUser("Deciding Moderator")
+        makeModerator(moderator.id)
+
+        report(eventId, "Sole Reporter", "scam")
+        assertThat(queueIds(moderator)).contains(eventId)
+
+        sendJson(HttpMethod.POST, "/api/v1/admin/events/$eventId/takedown", null, moderator.headers)
+
+        assertThat(queueIds(moderator)).doesNotContain(eventId)
+
+        sendJson(HttpMethod.POST, "/api/v1/admin/events/$eventId/restore", null, moderator.headers)
+        assertThat(queueIds(moderator))
+            .describedAs("and putting it back does not reopen a decision already made")
+            .doesNotContain(eventId)
     }
 
     @Test

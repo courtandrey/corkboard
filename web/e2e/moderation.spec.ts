@@ -45,15 +45,21 @@ test("a moderator sees the worst-reported notes first and can take one down", as
   await expect(rows.first(), "the reasons are broken down").toContainText("It’s spam × 2");
   await modPage.screenshot({ path: `${SHOTS}/moderation.png` });
 
-  await rows.first().getByRole("button", { name: "Take down" }).click();
+  const loudRow = modPage.locator(".report-row", { hasText: loud.title });
+  await loudRow.getByRole("button", { name: "Take down" }).click();
   await expect(modPage.locator(".toaster")).toContainText("Taken off the board");
-  await expect(rows.first()).toContainText("Taken down");
+  await expect(loudRow, "a note taken down leaves the queue with it").toHaveCount(0);
 
   const gone = await authorPage.request.get(`/api/v1/events/${loud.id}`);
   expect(((await gone.json()) as { status: string }).status).toBe("taken_down");
 
-  await rows.first().getByRole("button", { name: "Put back" }).click();
-  await expect(modPage.locator(".toaster")).toContainText("Back on the board");
+  const quietRow = modPage.locator(".report-row", { hasText: quiet.title });
+  await quietRow.getByRole("button", { name: "Approve" }).click();
+  await expect(modPage.locator(".toaster")).toContainText("Reports cleared");
+  await expect(quietRow, "and an approved note leaves it with its reports settled").toHaveCount(0);
+
+  const kept = await authorPage.request.get(`/api/v1/events/${quiet.id}`);
+  expect(((await kept.json()) as { status: string }).status).toBe("active");
 
   await authorCtx.close();
   await modCtx.close();

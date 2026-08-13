@@ -36,7 +36,7 @@ export function AdminPanel({ tab }: { tab: AdminTab }) {
   }
 
   return (
-    <Modal onClose={close} size="lg" labelledBy="admin-title">
+    <Modal onClose={close} size="lg" className="modal-admin" labelledBy="admin-title">
       <div className="modal-head">
         <h2 id="admin-title">{s.title}</h2>
         {visible.length > 1 && (

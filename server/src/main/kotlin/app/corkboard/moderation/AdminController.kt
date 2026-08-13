@@ -48,6 +48,13 @@ class AdminController(
     }
 
     @PreAuthorize("hasAuthority('EVENT_TAKE_DOWN_ANY')")
+    @PostMapping("/events/{id}/approve")
+    fun approve(@PathVariable id: UUID, auth: SessionAuthentication): ResponseEntity<Void> {
+        admin.approve(id, auth.user.userId)
+        return ResponseEntity.noContent().build()
+    }
+
+    @PreAuthorize("hasAuthority('EVENT_TAKE_DOWN_ANY')")
     @PostMapping("/events/{id}/restore")
     fun restore(@PathVariable id: UUID, auth: SessionAuthentication): ResponseEntity<Void> {
         admin.restore(id, auth.user.userId)
