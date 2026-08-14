@@ -4,6 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { ApplicationItem, MyEventItem } from "../../api/client";
 import { useMe, useMeta, useMyEvents, useReceivedApplications } from "../../api/hooks";
+import { boardEvent, notePath } from "../../api/paths";
+import { useBoardHome } from "../../stores/boardStore";
 import { strings } from "../../i18n/strings";
 import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
@@ -74,20 +76,20 @@ function PinRow({ pin }: { pin: MyEventItem }) {
   }
 
   async function resolve() {
-    await api.post(`/api/v1/events/${pin.id}/resolve`);
+    await api.post(`${boardEvent(pin.boardOwnerId ?? null, pin.id)}/resolve`);
     toast(strings.toasts.resolved);
     await refresh();
   }
 
   async function renew() {
-    await api.post(`/api/v1/events/${pin.id}/renew`, { expiresAt: isoInDays(30) });
+    await api.post(`${boardEvent(pin.boardOwnerId ?? null, pin.id)}/renew`, { expiresAt: isoInDays(30) });
     toast(strings.toasts.renewed);
     await refresh();
   }
 
   async function remove() {
     setConfirmingRemove(false);
-    await api.del(`/api/v1/events/${pin.id}`);
+    await api.del(boardEvent(pin.boardOwnerId ?? null, pin.id));
     toast(strings.toasts.removed);
     await refresh();
   }
@@ -96,9 +98,10 @@ function PinRow({ pin }: { pin: MyEventItem }) {
     <div className="pin-row">
       <div className="pin-row-top">
         <div className="grow">
-          <Link to={`/events/${pin.id}`} className="pin-title">
+          <Link to={notePath(pin.boardOwnerId, pin.id)} className="pin-title">
             {type && <span className="type-dot" style={{ background: type.color }} />}
             {pin.title}
+            {pin.scope === "personal" && <span className="scope-chip">{strings.scope.chip}</span>}
           </Link>
           <div className="meta-row" style={{ margin: "4px 0 0" }}>
             {strings.board.points(pin.score)} · {s.responses(pin.applicationCount)} ·{" "}
@@ -162,10 +165,11 @@ export function MyPins() {
   const { data: me, isLoading } = useMe();
   const { data } = useMyEvents(!!me);
   const navigate = useNavigate();
+  const home = useBoardHome();
 
   if (!me && !isLoading) {
     return (
-      <Modal onClose={() => navigate("/")} size="sm">
+      <Modal onClose={() => navigate(home)} size="sm">
         <p className="empty-state">{strings.auth.signInToPin}</p>
       </Modal>
     );
@@ -177,7 +181,7 @@ export function MyPins() {
   })).filter((g) => g.pins.length > 0);
 
   return (
-    <Modal onClose={() => navigate("/")} size="lg">
+    <Modal onClose={() => navigate(home)} size="lg">
       <div className="modal-head">
         <h2>{s.title}</h2>
       </div>

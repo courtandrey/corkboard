@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../../api/client";
 import type { AuthResponse } from "../../api/client";
 import { useMe, useMeta } from "../../api/hooks";
+import { useBoardHome } from "../../stores/boardStore";
 import { strings } from "../../i18n/strings";
 import { useFeature } from "../../ui/features";
 import { Modal } from "../../ui/Modal";
@@ -15,6 +16,7 @@ const s = strings.account;
 
 export function AccountModal() {
   const navigate = useNavigate();
+  const home = useBoardHome();
   const queryClient = useQueryClient();
   const { data: me, isLoading } = useMe();
   const { data: meta } = useMeta();
@@ -22,7 +24,7 @@ export function AccountModal() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const close = () => navigate("/");
+  const close = () => navigate(home);
 
   if (isLoading) return null;
   if (!me) {

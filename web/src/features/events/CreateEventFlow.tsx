@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../../api/client";
 import type { EventDetail } from "../../api/client";
 import { useMe, useMeta } from "../../api/hooks";
+import { boardEvents, boardPath, notePath } from "../../api/paths";
 import { strings } from "../../i18n/strings";
 import { useVerifyGate } from "../auth/verifyGate";
 import { useBoardStore } from "../../stores/boardStore";
+import { useScopeTypes } from "../../ui/scope";
 import { Modal } from "../../ui/Modal";
 import { PinIcon, PlusIcon } from "../../ui/icons";
 import { AuthPanel } from "../auth/AuthPanel";
@@ -26,6 +28,10 @@ export function CreateEventFlow() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  const { ownerId } = useParams();
+  const board = ownerId ?? null;
+  const scopeTypes = useScopeTypes(board);
+  const personal = board !== null;
   const setCrosshair = useBoardStore((st) => st.setCrosshair);
   const draftLocation = useBoardStore((st) => st.draftLocation);
   const draftPinEl = useBoardStore((st) => st.draftPinEl);
@@ -34,13 +40,13 @@ export function CreateEventFlow() {
   const [type, setType] = useState<string | null>(null);
   const [applyable, setApplyable] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
-  const [noEndDate, setNoEndDate] = useState(false);
+  const [noEndDate, setNoEndDate] = useState(board !== null);
   const { allows } = useVerifyGate();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const signedIn = !!me;
-  const close = () => navigate("/");
+  const close = () => navigate(boardPath(board));
 
   const confirmed = allows("pin");
 
@@ -51,11 +57,11 @@ export function CreateEventFlow() {
   }, [signedIn, confirmed, setCrosshair]);
 
   useEffect(() => {
-    if (meta && type === null) {
-      setType(meta.types[0].key);
-      setApplyable(meta.types[0].applyableDefault);
+    if (scopeTypes.length > 0 && !scopeTypes.some((t) => t.key === type)) {
+      setType(scopeTypes[0].key);
+      setApplyable(!personal && scopeTypes[0].applyableDefault);
     }
-  }, [meta, type]);
+  }, [scopeTypes, type, personal]);
 
   if (meLoading) return null;
 
@@ -93,8 +99,8 @@ export function CreateEventFlow() {
 
   function pickType(key: string) {
     setType(key);
-    const t = meta?.types.find((x) => x.key === key);
-    if (t) setApplyable(t.applyableDefault);
+    const t = scopeTypes.find((x) => x.key === key);
+    if (t) setApplyable(!personal && t.applyableDefault);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -104,7 +110,7 @@ export function CreateEventFlow() {
     setBusy(true);
     setError(null);
     try {
-      const created = await api.post<EventDetail>("/api/v1/events", {
+      const created = await api.post<EventDetail>(boardEvents(board), {
         type,
         title: String(data.get("title") ?? ""),
         body: String(data.get("body") ?? ""),
@@ -114,7 +120,7 @@ export function CreateEventFlow() {
         tags,
       });
       await queryClient.invalidateQueries({ queryKey: ["events"] });
-      navigate(`/events/${created.id}`);
+      navigate(notePath(board, created.id));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : strings.auth.genericError);
     } finally {
@@ -157,6 +163,7 @@ export function CreateEventFlow() {
     <Modal onClose={close} size="md">
       <div className="modal-head">
         <h2>{s.title}</h2>
+        {personal && <p className="form-hint">{strings.scope.personalHint}</p>}
       </div>
       <form onSubmit={submit} style={{ display: "contents" }}>
         <div className="modal-body">
@@ -164,7 +171,7 @@ export function CreateEventFlow() {
             <div>
               <div style={{ marginBottom: 6 }}>{s.typeLabel}</div>
               <div className="type-pick">
-                {meta?.types.map((t) => (
+                {scopeTypes.map((t) => (
                   <label key={t.key} className={type === t.key ? "selected" : ""}>
                     <input type="radio" name="type" checked={type === t.key} onChange={() => pickType(t.key)} />
                     <span className="type-dot" style={{ background: t.color }} />
@@ -181,13 +188,15 @@ export function CreateEventFlow() {
               {s.bodyLabel}
               <textarea name="body" required rows={5} maxLength={limits?.bodyMax ?? 4000} />
             </label>
-            <div>
-              <label className="inline">
-                <input type="checkbox" checked={applyable} onChange={(e) => setApplyable(e.target.checked)} />
-                {s.applyableLabel}
-              </label>
-              <p className="form-hint">{s.applyableHelp}</p>
-            </div>
+            {!personal && (
+              <div>
+                <label className="inline">
+                  <input type="checkbox" checked={applyable} onChange={(e) => setApplyable(e.target.checked)} />
+                  {s.applyableLabel}
+                </label>
+                <p className="form-hint">{s.applyableHelp}</p>
+              </div>
+            )}
             <div>
               <label className="inline">
                 <input type="checkbox" checked={noEndDate} onChange={(e) => setNoEndDate(e.target.checked)} />

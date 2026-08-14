@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { boardEvent } from "../../api/paths";
 import { api, ApiError } from "../../api/client";
 import type { EventDetail } from "../../api/client";
 import { useMeta } from "../../api/hooks";
@@ -28,13 +29,12 @@ export function EventEditForm({ event, onDone }: { event: EventDetail; onDone: (
     setBusy(true);
     setError(null);
     try {
-      await api.patch(`/api/v1/events/${event.id}`, {
+      await api.patch(boardEvent(event.boardOwnerId ?? null, event.id), {
         type: typeLocked ? undefined : type,
         title: String(data.get("title") ?? ""),
         body: String(data.get("body") ?? ""),
         applyable,
         expiresAt: noEndDate ? undefined : `${String(data.get("expiresAt"))}T23:59:59Z`,
-        // an absent expiresAt means "leave it alone", so removing the end date has to say so
         neverExpires: noEndDate ? true : undefined,
         tags,
       });

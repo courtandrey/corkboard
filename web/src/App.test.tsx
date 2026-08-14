@@ -32,6 +32,10 @@ const meta = {
     { key: "lost_found", label: "Lost & Found", color: "#D9822B", applyableDefault: true },
     { key: "notice", label: "Notices", color: "#8A8A8A", applyableDefault: false },
   ],
+  scopes: [
+    { key: "global", label: "The board", types: ["lost_found", "notice"] },
+    { key: "personal", label: "Your board", types: ["notice"] },
+  ],
   limits: {
     displayNameMax: 50, passwordMin: 8, passwordMax: 128, titleMin: 3, titleMax: 120,
     bodyMax: 4000, tagsMax: 5, tagNameMin: 2, tagNameMax: 40, messageMax: 2000,

@@ -21,17 +21,26 @@ class ApiSmokeTest : ApiTestBase() {
     }
 
     @Test
-    fun `meta serves the seven-type taxonomy and config`() {
+    fun `meta serves the taxonomy of every board and the config`() {
         val res = rest.getForEntity("/api/v1/meta", Map::class.java)
         assertThat(res.statusCode.value()).isEqualTo(200)
 
         val body = res.body!!
         @Suppress("UNCHECKED_CAST")
         val types = body["types"] as List<Map<String, Any>>
-        assertThat(types).hasSize(7)
         assertThat(types.map { it["key"] }).containsExactly(
-            "lost_found", "activity", "club", "help", "giveaway", "happening", "notice"
+            "lost_found", "activity", "club", "help", "giveaway", "happening", "notice", "plan", "memory"
         )
+
+        @Suppress("UNCHECKED_CAST")
+        val scopes = body["scopes"] as List<Map<String, Any>>
+        assertThat(scopes.map { it["key"] }).containsExactly("global", "personal")
+        assertThat(scopes.first { it["key"] == "global" }["types"]).isEqualTo(
+            listOf("lost_found", "activity", "club", "help", "giveaway", "happening", "notice")
+        )
+        assertThat(scopes.first { it["key"] == "personal" }["types"])
+            .describedAs("a resident's own board keeps its own, smaller vocabulary")
+            .isEqualTo(listOf("notice", "plan", "memory"))
         assertThat(types.first { it["key"] == "lost_found" }["color"]).isEqualTo("#D9822B")
         assertThat(body["reportThreshold"]).isEqualTo(5)
         assertThat(body["googleAuth"]).isEqualTo(false)

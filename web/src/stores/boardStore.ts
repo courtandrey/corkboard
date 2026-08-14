@@ -15,6 +15,7 @@ export interface Viewport {
 }
 
 export interface Filters {
+  board: string | null;
   types: string[];
   tags: string[];
   applyableOnly: boolean;
@@ -30,6 +31,7 @@ interface BoardState {
   sidebarOpen: boolean;
   setViewport: (viewport: Viewport) => void;
   setFilters: (patch: Partial<Filters>) => void;
+  setBoard: (board: string | null) => void;
   toggleType: (key: string) => void;
   setCrosshair: (on: boolean) => void;
   setDraftLocation: (location: LatLng | null) => void;
@@ -61,8 +63,20 @@ export function savePosition(position: SavedPosition): void {
   }
 }
 
-export function initialFilters(search: URLSearchParams): Filters {
+const BOARD_IN_PATH = /^\/boards\/([^/]+)/;
+
+export function useBoardHome(): string {
+  const board = useBoardStore((s) => s.filters.board);
+  return board ? `/boards/${board}` : "/";
+}
+
+export function boardInPath(pathname: string): string | null {
+  return BOARD_IN_PATH.exec(pathname)?.[1] ?? null;
+}
+
+export function initialFilters(search: URLSearchParams, pathname: string): Filters {
   return {
+    board: boardInPath(pathname),
     types: search.get("types")?.split(",").filter(Boolean) ?? [],
     tags: search.get("tags")?.split(",").filter(Boolean) ?? [],
     applyableOnly: search.get("applyable") === "true",
@@ -81,12 +95,14 @@ export function filtersToSearch(filters: Filters): URLSearchParams {
 
 export const useBoardStore = create<BoardState>((set) => ({
   viewport: null,
-  filters: initialFilters(new URLSearchParams(window.location.search)),
+  filters: initialFilters(new URLSearchParams(window.location.search), window.location.pathname),
   crosshair: false,
   draftLocation: null,
   draftPinEl: null,
   setViewport: (viewport) => set({ viewport }),
   setFilters: (patch) => set((s) => ({ filters: { ...s.filters, ...patch } })),
+  setBoard: (board) =>
+    set((s) => ({ filters: { ...s.filters, board, types: [], tags: [], applyableOnly: false } })),
   toggleType: (key) =>
     set((s) => ({
       filters: {

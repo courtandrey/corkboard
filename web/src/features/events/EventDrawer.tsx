@@ -6,6 +6,7 @@ import { api, ApiError } from "../../api/client";
 import type { ApplyResponse } from "../../api/client";
 import { useEventDetail, useMe, useMeta } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
+import { boardPath } from "../../api/paths";
 import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
 import { toast } from "../../ui/toast";
@@ -38,12 +39,13 @@ function Linkified({ text }: { text: string }) {
 type Mode = "view" | "respond" | "report" | "takedown" | "edit";
 
 export function EventDrawer() {
-  const { id } = useParams();
+  const { id, ownerId } = useParams();
+  const board = ownerId ?? null;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: meta } = useMeta();
   const { data: me } = useMe();
-  const { data: event, error } = useEventDetail(id);
+  const { data: event, error } = useEventDetail(id, board);
   const [mode, setMode] = useState<Mode>("view");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -52,7 +54,7 @@ export function EventDrawer() {
   const canTakeDown = can("EVENT_TAKE_DOWN_ANY") && !event?.viewerState.isAuthor;
   const titleReady = useNoteFontReady(event?.title);
 
-  const close = () => navigate("/");
+  const close = () => navigate(boardPath(board));
   const type = meta?.types.find((t) => t.key === event?.type);
 
   const takeDown = useMutation({
@@ -153,6 +155,7 @@ export function EventDrawer() {
               </span>
             )}
             <span className="spacer" />
+            {event.scope === "global" && (
             <VoteControl
               event={event}
               interactive={!!me && !event.viewerState.isAuthor}
@@ -165,6 +168,7 @@ export function EventDrawer() {
                 return true;
               }}
             />
+            )}
           </div>
 
           <div className="ev-scroll">
@@ -264,7 +268,19 @@ export function EventDrawer() {
             </div>
           )}
 
-          {mode === "view" && (
+          {mode === "view" && event.scope === "personal" && (
+            <div className="ev-foot">
+              <span className="grow meta-row" style={{ margin: 0 }}>
+                {strings.scope.personalHint}
+              </span>
+              {event.viewerState.isAuthor && (
+                <button type="button" className="ghost" onClick={() => setMode("edit")}>
+                  {strings.event.edit}
+                </button>
+              )}
+            </div>
+          )}
+          {mode === "view" && event.scope === "global" && (
             <div className="ev-foot">
               {conversationId ? (
                 <span className="grow meta-row" style={{ margin: 0 }}>

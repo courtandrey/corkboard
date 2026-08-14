@@ -12,6 +12,12 @@ data class SeedNote(
     val expiryDays: Long = 30,
 )
 
+data class PersonalNote(
+    val type: EventType,
+    val title: String,
+    val body: String,
+)
+
 data class Neighborhood(
     val name: String,
     val lng: Double,
@@ -31,6 +37,29 @@ object SeedData {
         "Dot Kowalski", "Hector Alvarez", "Nina Osei", "Frank DiMaggio", "Yuki Tanaka",
         "Beatrix Hummel", "Omar Haddad", "Celia Nascimento", "Stan the Super", "Ada Nwosu",
         "Pieter Janssen", "Rosa Almeida", "Mikkel Sørensen", "Tess O'Rourke", "Lev Abramov",
+    )
+
+    val PERSONAL_ANCHOR = -73.9840 to 40.7290
+
+    val PERSONAL = listOf(
+        PersonalNote(
+            EventType.MEMORY,
+            "The bench where we waited out the rain",
+            "August, the sky went green and we ran for the awning on 7th. " +
+                "Two coffees, one umbrella between four people. Nobody wanted it to stop.",
+        ),
+        PersonalNote(
+            EventType.PLAN,
+            "Bring the ladder back to Stan",
+            "It has been leaning in the hallway since the shelf went up. " +
+                "Take the good screwdriver back down while I am at it.",
+        ),
+        PersonalNote(
+            EventType.NOTICE,
+            "The corner where the light is right at six",
+            "Low sun straight down the avenue, everything the colour of weak tea. " +
+                "Worth walking past on the way home rather than cutting through the park.",
+        ),
     )
 
     val EAST_VILLAGE = -73.9816 to 40.7265

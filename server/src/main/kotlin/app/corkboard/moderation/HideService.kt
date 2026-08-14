@@ -13,7 +13,7 @@ class HideService(
 ) {
 
     fun hide(eventId: UUID, userId: UUID) {
-        events.requireViewableAuthor(eventId, userId)
+        events.requireSharedBoardAuthor(eventId, userId)
         dsl.insertInto(EVENT_HIDES)
             .set(EVENT_HIDES.USER_ID, userId)
             .set(EVENT_HIDES.EVENT_ID, eventId)

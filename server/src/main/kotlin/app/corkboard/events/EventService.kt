@@ -7,9 +7,12 @@ import app.corkboard.jooq.enums.EventType as DbEventType
 import app.corkboard.jooq.tables.references.APPLICATIONS
 import app.corkboard.jooq.tables.references.EVENTS
 import app.corkboard.jooq.tables.references.EVENT_HIDES
+import app.corkboard.jooq.tables.references.SCOPES
 import app.corkboard.jooq.tables.references.USERS
 import app.corkboard.jooq.tables.references.VOTES
 import app.corkboard.meta.EventType
+import app.corkboard.scopes.ScopeKind
+import app.corkboard.scopes.ScopeService
 import app.corkboard.tags.TagService
 import java.time.Clock
 import java.time.Instant
@@ -28,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional
 class EventService(
     private val dsl: DSLContext,
     private val tags: TagService,
+    private val scopes: ScopeService,
     private val clock: Clock,
 ) {
 
@@ -41,6 +45,8 @@ class EventService(
     private data class EventRow(
         val id: UUID,
         val authorId: UUID,
+        val scopeId: UUID,
+        val boardOwnerId: UUID?,
         val type: DbEventType,
         val status: DbEventStatus,
         val title: String,
@@ -57,19 +63,22 @@ class EventService(
     )
 
     @Transactional
-    fun create(authorId: UUID, req: CreateEventRequest): EventDetail {
+    fun create(authorId: UUID, scopeId: UUID, req: CreateEventRequest): EventDetail {
         val title = req.title.trim()
         val body = req.body.trim()
         if (title.length < 3 || body.isEmpty()) {
             throw ApiException(HttpStatus.UNPROCESSABLE_ENTITY, ProblemCode.VALIDATION_FAILED)
         }
+        val kind = scopes.kindOf(scopeId)
+        scopes.requireAllowsType(kind, req.type.key)
         val id = dsl.insertInto(EVENTS)
             .set(EVENTS.AUTHOR_ID, authorId)
+            .set(EVENTS.SCOPE_ID, scopeId)
             .set(EVENTS.TYPE, DbEventType.valueOf(req.type.key))
             .set(EVENTS.TITLE, title)
             .set(EVENTS.BODY, body)
             .set(EVENTS.LOCATION, point(req.location))
-            .set(EVENTS.APPLYABLE, req.applyable)
+            .set(EVENTS.APPLYABLE, req.applyable && kind == ScopeKind.GLOBAL)
             .set(EVENTS.EXPIRES_AT, req.expiresAt?.atOffset(ZoneOffset.UTC))
             .returning(EVENTS.ID)
             .fetchOne(EVENTS.ID)!!
@@ -77,11 +86,11 @@ class EventService(
         if (req.tags.isNotEmpty()) {
             tags.replaceEventTags(id, req.tags)
         }
-        return detail(id, authorId)
+        return detail(id, authorId, scopeId)
     }
 
-    fun detail(id: UUID, viewerId: UUID?): EventDetail {
-        val event = fetchEvent(id)
+    fun detail(id: UUID, viewerId: UUID?, scopeId: UUID): EventDetail {
+        val event = fetchEvent(id, scopeId)
         if (event.status in HIDDEN_STATUSES && event.authorId != viewerId) {
             throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
         }
@@ -89,11 +98,12 @@ class EventService(
     }
 
     @Transactional
-    fun update(id: UUID, viewerId: UUID, req: UpdateEventRequest): EventDetail {
-        val event = fetchAuthored(id, viewerId)
+    fun update(id: UUID, viewerId: UUID, scopeId: UUID, req: UpdateEventRequest): EventDetail {
+        val event = fetchAuthored(id, viewerId, scopeId)
         if ((req.type != null || req.location != null) && event.applicationCount > 0) {
             throw ApiException(HttpStatus.CONFLICT, ProblemCode.EDIT_LOCKED)
         }
+        req.type?.let { scopes.requireAllowsType(scopes.kindOf(event.scopeId), it.key) }
         val title = req.title?.trim()
         val body = req.body?.trim()
         if (title != null && title.length < 3 || body != null && body.isEmpty()) {
@@ -105,7 +115,7 @@ class EventService(
         title?.let { update.set(EVENTS.TITLE, it) }
         body?.let { update.set(EVENTS.BODY, it) }
         req.location?.let { update.set(EVENTS.LOCATION, point(it)) }
-        req.applyable?.let { update.set(EVENTS.APPLYABLE, it) }
+        req.applyable?.let { update.set(EVENTS.APPLYABLE, it && scopes.isGlobal(event.scopeId)) }
         if (req.neverExpires == true) {
             update.setNull(EVENTS.EXPIRES_AT)
             update.setNull(EVENTS.EXPIRING_NOTIFIED_AT)
@@ -116,12 +126,12 @@ class EventService(
         update.where(EVENTS.ID.eq(id)).execute()
 
         req.tags?.let { tags.replaceEventTags(id, it) }
-        return detail(id, viewerId)
+        return detail(id, viewerId, scopeId)
     }
 
     @Transactional
-    fun resolve(id: UUID, viewerId: UUID): EventDetail {
-        val event = fetchAuthored(id, viewerId)
+    fun resolve(id: UUID, viewerId: UUID, scopeId: UUID): EventDetail {
+        val event = fetchAuthored(id, viewerId, scopeId)
         if (event.status != DbEventStatus.active) {
             throw ApiException(HttpStatus.CONFLICT, ProblemCode.INVALID_STATUS)
         }
@@ -130,12 +140,12 @@ class EventService(
             .set(EVENTS.RESOLVED_AT, OffsetDateTime.now(clock))
             .where(EVENTS.ID.eq(id))
             .execute()
-        return detail(id, viewerId)
+        return detail(id, viewerId, scopeId)
     }
 
     @Transactional
-    fun renew(id: UUID, viewerId: UUID, expiresAt: Instant): EventDetail {
-        val event = fetchAuthored(id, viewerId)
+    fun renew(id: UUID, viewerId: UUID, scopeId: UUID, expiresAt: Instant): EventDetail {
+        val event = fetchAuthored(id, viewerId, scopeId)
         if (event.status != DbEventStatus.active && event.status != DbEventStatus.expired) {
             throw ApiException(HttpStatus.CONFLICT, ProblemCode.INVALID_STATUS)
         }
@@ -145,12 +155,12 @@ class EventService(
             .setNull(EVENTS.EXPIRING_NOTIFIED_AT)
             .where(EVENTS.ID.eq(id))
             .execute()
-        return detail(id, viewerId)
+        return detail(id, viewerId, scopeId)
     }
 
     @Transactional
-    fun remove(id: UUID, viewerId: UUID) {
-        fetchAuthored(id, viewerId)
+    fun remove(id: UUID, viewerId: UUID, scopeId: UUID) {
+        fetchAuthored(id, viewerId, scopeId)
         dsl.update(EVENTS)
             .set(EVENTS.STATUS, DbEventStatus.removed)
             .where(EVENTS.ID.eq(id))
@@ -159,12 +169,13 @@ class EventService(
 
     fun myEvents(userId: UUID, status: EventStatus?, cursor: String?, limit: Int): MyEventsResponse {
         var cond = EVENTS.AUTHOR_ID.eq(userId)
+        if (!scopes.enabled()) cond = cond.and(EVENTS.SCOPE_ID.eq(scopes.globalId))
         status?.let { cond = cond.and(EVENTS.STATUS.eq(DbEventStatus.valueOf(it.key))) }
         app.corkboard.common.Cursors.decode(cursor ?: "")?.let { (at, cursorId) ->
             cond = cond.and(DSL.row(EVENTS.CREATED_AT, EVENTS.ID).lessThan(at, cursorId))
         }
         val rows = dsl.select(
-            EVENTS.ID, EVENTS.TYPE, EVENTS.STATUS, EVENTS.TITLE, LNG, LAT,
+            EVENTS.ID, EVENTS.SCOPE_ID, EVENTS.TYPE, EVENTS.STATUS, EVENTS.TITLE, LNG, LAT,
             EVENTS.APPLYABLE, EVENTS.SCORE, EVENTS.APPLICATION_COUNT,
             EVENTS.EXPIRES_AT, EVENTS.RESOLVED_AT, EVENTS.CREATED_AT, EVENTS.UPDATED_AT,
         )
@@ -180,6 +191,8 @@ class EventService(
         val items = page.map { r ->
             MyEventItem(
                 id = r[EVENTS.ID]!!,
+                scope = scopes.kindOf(r[EVENTS.SCOPE_ID]!!),
+                boardOwnerId = if (scopes.isGlobal(r[EVENTS.SCOPE_ID]!!)) null else userId,
                 type = EventType.fromKey(r[EVENTS.TYPE]!!.literal)!!,
                 status = EventStatus.fromDb(r[EVENTS.STATUS]!!.literal),
                 title = r[EVENTS.TITLE]!!,
@@ -196,8 +209,8 @@ class EventService(
         return MyEventsResponse(items, nextCursor)
     }
 
-    private fun fetchAuthored(id: UUID, viewerId: UUID): EventRow {
-        val event = fetchEvent(id)
+    private fun fetchAuthored(id: UUID, viewerId: UUID, scopeId: UUID): EventRow {
+        val event = fetchEvent(id, scopeId)
         if (event.status in HIDDEN_STATUSES && event.authorId != viewerId) {
             throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
         }
@@ -207,9 +220,11 @@ class EventService(
         return event
     }
 
-    fun requireViewableAuthor(id: UUID, viewerId: UUID?): UUID {
+    fun requireSharedBoardAuthor(id: UUID, viewerId: UUID?): UUID {
         val row = dsl.select(EVENTS.AUTHOR_ID, EVENTS.STATUS)
-            .from(EVENTS).where(EVENTS.ID.eq(id)).fetchOne()
+            .from(EVENTS)
+            .where(EVENTS.ID.eq(id), EVENTS.SCOPE_ID.eq(scopes.globalId))
+            .fetchOne()
             ?: throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
         if (row[EVENTS.STATUS] in HIDDEN_STATUSES && row[EVENTS.AUTHOR_ID] != viewerId) {
             throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
@@ -217,18 +232,22 @@ class EventService(
         return row[EVENTS.AUTHOR_ID]!!
     }
 
-    private fun fetchEvent(id: UUID): EventRow =
+    private fun fetchEvent(id: UUID, scopeId: UUID): EventRow =
         dsl.select(
-            EVENTS.ID, EVENTS.AUTHOR_ID, EVENTS.TYPE, EVENTS.STATUS, EVENTS.TITLE, EVENTS.BODY,
+            EVENTS.ID, EVENTS.AUTHOR_ID, EVENTS.SCOPE_ID, SCOPES.OWNER_ID,
+            EVENTS.TYPE, EVENTS.STATUS, EVENTS.TITLE, EVENTS.BODY,
             LNG, LAT, EVENTS.APPLYABLE, EVENTS.SCORE, EVENTS.APPLICATION_COUNT,
             EVENTS.EXPIRES_AT, EVENTS.RESOLVED_AT, EVENTS.CREATED_AT, EVENTS.UPDATED_AT,
         )
             .from(EVENTS)
-            .where(EVENTS.ID.eq(id))
+            .join(SCOPES).on(SCOPES.ID.eq(EVENTS.SCOPE_ID))
+            .where(EVENTS.ID.eq(id), EVENTS.SCOPE_ID.eq(scopeId))
             .fetchOne { r ->
                 EventRow(
                     id = r[EVENTS.ID]!!,
                     authorId = r[EVENTS.AUTHOR_ID]!!,
+                    scopeId = r[EVENTS.SCOPE_ID]!!,
+                    boardOwnerId = r[SCOPES.OWNER_ID],
                     type = r[EVENTS.TYPE]!!,
                     status = r[EVENTS.STATUS]!!,
                     title = r[EVENTS.TITLE]!!,
@@ -251,6 +270,8 @@ class EventService(
 
         return EventDetail(
             id = event.id,
+            scope = scopes.kindOf(event.scopeId),
+            boardOwnerId = event.boardOwnerId,
             type = EventType.fromKey(event.type.literal)!!,
             status = EventStatus.fromDb(event.status.literal),
             title = event.title,

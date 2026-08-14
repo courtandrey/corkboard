@@ -164,6 +164,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/boards/{ownerId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_1"];
+        put?: never;
+        post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/boards/{ownerId}/events/{id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resolve_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/boards/{ownerId}/events/{id}/renew": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["renew_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/verification/resend": {
         parameters: {
             query?: never;
@@ -324,6 +372,22 @@ export interface paths {
         patch: operations["update"];
         trace?: never;
     };
+    "/api/v1/boards/{ownerId}/events/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["detail_1"];
+        put?: never;
+        post?: never;
+        delete: operations["remove_1"];
+        options?: never;
+        head?: never;
+        patch: operations["update_1"];
+        trace?: never;
+    };
     "/api/v1/auth/me": {
         parameters: {
             query?: never;
@@ -369,7 +433,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_1"];
+        patch: operations["update_2"];
         trace?: never;
     };
     "/api/v1/tags": {
@@ -379,7 +443,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_1"];
+        get: operations["list_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -395,7 +459,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_2"];
+        get: operations["list_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -427,7 +491,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -491,7 +555,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -555,7 +619,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -589,7 +653,7 @@ export interface components {
         };
         CreateEventRequest: {
             /** @enum {string} */
-            type: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice";
+            type: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice" | "plan" | "memory";
             title: string;
             body: string;
             location: components["schemas"]["LatLng"];
@@ -614,7 +678,11 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            type: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice";
+            scope: "global" | "personal";
+            /** Format: uuid */
+            boardOwnerId?: string;
+            /** @enum {string} */
+            type: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice" | "plan" | "memory";
             /** @enum {string} */
             status: "active" | "resolved" | "expired" | "removed" | "taken_down" | "under_review";
             title: string;
@@ -729,7 +797,7 @@ export interface components {
         };
         UpdateEventRequest: {
             /** @enum {string} */
-            type?: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice";
+            type?: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice" | "plan" | "memory";
             title?: string;
             body?: string;
             location?: components["schemas"]["LatLng"];
@@ -816,10 +884,16 @@ export interface components {
         };
         MetaResponse: {
             types: components["schemas"]["TypeMeta"][];
+            scopes: components["schemas"]["ScopeMeta"][];
             limits: components["schemas"]["Limits"];
             /** Format: int32 */
             reportThreshold: number;
             googleAuth: boolean;
+        };
+        ScopeMeta: {
+            key: string;
+            label: string;
+            types: string[];
         };
         TypeMeta: {
             key: string;
@@ -831,7 +905,11 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            type: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice";
+            scope: "global" | "personal";
+            /** Format: uuid */
+            boardOwnerId?: string;
+            /** @enum {string} */
+            type: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice" | "plan" | "memory";
             /** @enum {string} */
             status: "active" | "resolved" | "expired" | "removed" | "taken_down" | "under_review";
             title: string;
@@ -908,7 +986,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            type: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice";
+            type: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice" | "plan" | "memory";
             title: string;
             location: components["schemas"]["LatLng"];
             applyable: boolean;
@@ -1294,6 +1372,112 @@ export interface operations {
             };
         };
     };
+    list_1: {
+        parameters: {
+            query: {
+                bbox: string;
+                zoom?: number;
+                types?: string;
+                tags?: string;
+                q?: string;
+                limit?: number;
+                clustered?: boolean;
+            };
+            header?: never;
+            path: {
+                ownerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ViewportResponse"];
+                };
+            };
+        };
+    };
+    create_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ownerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEventRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EventDetail"];
+                };
+            };
+        };
+    };
+    resolve_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ownerId: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EventDetail"];
+                };
+            };
+        };
+    };
+    renew_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ownerId: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenewRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EventDetail"];
+                };
+            };
+        };
+    };
     resend: {
         parameters: {
             query?: never;
@@ -1552,6 +1736,77 @@ export interface operations {
             };
         };
     };
+    detail_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ownerId: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EventDetail"];
+                };
+            };
+        };
+    };
+    remove_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ownerId: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ownerId: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEventRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EventDetail"];
+                };
+            };
+        };
+    };
     me: {
         parameters: {
             query?: never;
@@ -1622,7 +1877,7 @@ export interface operations {
             };
         };
     };
-    update_1: {
+    update_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -1648,7 +1903,7 @@ export interface operations {
             };
         };
     };
-    list_1: {
+    list_2: {
         parameters: {
             query?: {
                 q?: string;
@@ -1671,7 +1926,7 @@ export interface operations {
             };
         };
     };
-    list_2: {
+    list_3: {
         parameters: {
             query?: {
                 cursor?: string;
@@ -1714,7 +1969,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query?: {
                 status?: string;
@@ -1800,7 +2055,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: {
                 cursor?: string;
@@ -1885,7 +2140,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: never;
             header?: never;

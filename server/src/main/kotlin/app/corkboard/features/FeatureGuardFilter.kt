@@ -17,7 +17,7 @@ class FeatureGuardFilter(
     private val problems: Problems,
 ) : OncePerRequestFilter() {
 
-    private data class Route(val method: HttpMethod, val pattern: PathPattern, val flag: FeatureFlag)
+    private data class Route(val method: HttpMethod?, val pattern: PathPattern, val flag: FeatureFlag)
 
     private val routes = PathPatternParser().let { parser ->
         FeatureGuards.all.map { Route(it.method, parser.parse(it.pattern), it.flag) }
@@ -30,7 +30,9 @@ class FeatureGuardFilter(
     ) {
         val method = HttpMethod.valueOf(request.method)
         val path = PathContainer.parsePath(request.requestURI.removePrefix(request.contextPath))
-        val closed = routes.any { it.method == method && it.pattern.matches(path) && !flags.isEnabled(it.flag) }
+        val closed = routes.any {
+            (it.method == null || it.method == method) && it.pattern.matches(path) && !flags.isEnabled(it.flag)
+        }
 
         if (closed) {
             problems.write(response, HttpStatus.FORBIDDEN, ProblemCode.FEATURE_DISABLED)

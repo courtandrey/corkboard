@@ -24,10 +24,11 @@ class TagService(private val dsl: DSLContext) {
     }
 
     fun search(q: String?, limit: Int): List<TagItem> {
-        var query = dsl.select(TAGS.NAME, TAGS.SLUG, TAGS.USAGE_COUNT).from(TAGS)
+        val query = dsl.select(TAGS.NAME, TAGS.SLUG, TAGS.USAGE_COUNT).from(TAGS)
+            .where(TAGS.USAGE_COUNT.gt(0))
         val prefix = q?.trim()?.takeIf { it.isNotEmpty() }
         val step = if (prefix != null) {
-            query.where(TAGS.NAME.startsWithIgnoreCase(prefix).or(TAGS.SLUG.startsWith(slugify(prefix))))
+            query.and(TAGS.NAME.startsWithIgnoreCase(prefix).or(TAGS.SLUG.startsWith(slugify(prefix))))
         } else {
             query
         }

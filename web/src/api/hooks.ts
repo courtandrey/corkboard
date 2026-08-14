@@ -1,5 +1,6 @@
 import { keepPreviousData, useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, query } from "./client";
+import { boardEvent, boardEvents } from "./paths";
 import type {
   AuthResponse,
   ConversationListResponse,
@@ -67,7 +68,7 @@ export function useViewportEvents(viewport: Viewport | null, filters: Filters) {
     placeholderData: keepPreviousData,
     queryFn: () =>
       api.get<ViewportResponse>(
-        `/api/v1/events${query({
+        `${boardEvents(filters.board)}${query({
           bbox: bbox!,
           zoom: zoomInt!,
           types: filters.types.join(","),
@@ -132,10 +133,10 @@ export function useTagSearch(q: string) {
   });
 }
 
-export function useEventDetail(id: string | undefined) {
+export function useEventDetail(id: string | undefined, boardOwner: string | null = null) {
   return useQuery({
     queryKey: ["event", id],
     enabled: !!id,
-    queryFn: () => api.get<EventDetail>(`/api/v1/events/${id}`),
+    queryFn: () => api.get<EventDetail>(boardEvent(boardOwner, id!)),
   });
 }

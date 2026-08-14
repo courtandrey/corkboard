@@ -9,6 +9,7 @@ import app.corkboard.jooq.tables.references.REPORTS
 import app.corkboard.jooq.tables.references.USERS
 import app.corkboard.notifications.NotificationKind
 import app.corkboard.notifications.NotificationService
+import app.corkboard.scopes.ScopeService
 import java.time.Instant
 import java.util.UUID
 import org.jooq.DSLContext
@@ -37,6 +38,7 @@ data class ReportQueueResponse(val items: List<ReportedEvent>)
 class AdminService(
     private val dsl: DSLContext,
     private val notifications: NotificationService,
+    private val scopes: ScopeService,
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -54,6 +56,7 @@ class AdminService(
             .join(USERS).on(USERS.ID.eq(EVENTS.AUTHOR_ID))
             .where(REPORTS.REVIEWED_AT.isNull)
             .and(EVENTS.STATUS.ne(DbEventStatus.taken_down))
+            .and(EVENTS.SCOPE_ID.eq(scopes.globalId))
             .groupBy(EVENTS.ID, EVENTS.TITLE, EVENTS.STATUS, EVENTS.CREATED_AT, USERS.DISPLAY_NAME)
             .orderBy(count.desc(), lastAt.desc())
             .limit(limit)
@@ -127,7 +130,7 @@ class AdminService(
     private fun setStatus(eventId: UUID, status: DbEventStatus, moderatorId: UUID, verb: String): Touched {
         val row = dsl.update(EVENTS)
             .set(EVENTS.STATUS, status)
-            .where(EVENTS.ID.eq(eventId))
+            .where(EVENTS.ID.eq(eventId), EVENTS.SCOPE_ID.eq(scopes.globalId))
             .returningResult(EVENTS.AUTHOR_ID, EVENTS.TITLE)
             .fetchOne()
             ?: throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)

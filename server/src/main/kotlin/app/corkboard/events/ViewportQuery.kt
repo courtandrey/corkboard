@@ -24,6 +24,7 @@ class ViewportQuery(
 ) {
 
     data class Params(
+        val scopeId: UUID,
         val bounds: Bounds,
         val zoom: Int,
         val types: List<EventType>?,
@@ -152,7 +153,8 @@ class ViewportQuery(
 
     private fun conditions(p: Params, cell: Double?): Condition {
         val now = OffsetDateTime.now(clock)
-        var cond = bboxCondition(p.bounds, cell)
+        var cond = EVENTS.SCOPE_ID.eq(p.scopeId)
+            .and(bboxCondition(p.bounds, cell))
             .and(
                 EVENTS.STATUS.eq(DbEventStatus.active)
                     .and(EVENTS.EXPIRES_AT.isNull.or(EVENTS.EXPIRES_AT.gt(now)))

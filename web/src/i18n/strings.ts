@@ -42,6 +42,14 @@ export const strings = {
       message: "Sending a message needs a confirmed email.",
     },
   },
+  scope: {
+    switcherLabel: "Which board",
+    global: "The board",
+    personal: "Yours",
+    personalHint: "Only you can see what you pin here.",
+    emptyPersonal: "Your board is empty. Anything you pin here is yours alone.",
+    chip: "Yours",
+  },
   board: {
     searchPlaceholder: "search notes…",
     filtersTitle: "Show on the board",

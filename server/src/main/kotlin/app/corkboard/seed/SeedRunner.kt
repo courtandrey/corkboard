@@ -19,6 +19,9 @@ import app.corkboard.moderation.HideService
 import app.corkboard.moderation.ReportReason
 import app.corkboard.moderation.ReportRequest
 import app.corkboard.moderation.ReportService
+import app.corkboard.jooq.enums.ScopeKind as DbScopeKind
+import app.corkboard.jooq.tables.references.SCOPES
+import app.corkboard.scopes.ScopeService
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
@@ -46,6 +49,7 @@ class SeedRunner(
     private val applications: ApplicationService,
     private val conversations: ConversationService,
     private val sweep: ExpirationSweep,
+    private val scopes: ScopeService,
     private val userRoles: app.corkboard.auth.UserRoleService,
     private val props: CorkboardProperties,
     private val context: ConfigurableApplicationContext,
@@ -137,6 +141,7 @@ class SeedRunner(
             )
         }
 
+        personalNotes(demo)
         castVotes(created, users)
         resolveSome(created)
         storyArc(created, demo, residents)
@@ -156,6 +161,30 @@ class SeedRunner(
         log.info("SEED_FORCE set — wiping existing data")
         dsl.truncate(USERS).cascade().execute()
         dsl.truncate(TAGS).restartIdentity().cascade().execute()
+        dsl.insertInto(SCOPES)
+            .set(SCOPES.ID, scopes.globalId)
+            .set(SCOPES.KIND, DbScopeKind.global)
+            .onConflictDoNothing()
+            .execute()
+    }
+
+    private fun personalNotes(demo: UUID) {
+        val board = scopes.ensureBoardOf(demo)
+        for (note in SeedData.PERSONAL) {
+            events.create(
+                demo,
+                board,
+                CreateEventRequest(
+                    type = note.type,
+                    title = note.title,
+                    body = note.body,
+                    location = jitter(SeedData.PERSONAL_ANCHOR, 0.004, 0.003),
+                    applyable = false,
+                    expiresAt = null,
+                    tags = emptyList(),
+                ),
+            )
+        }
     }
 
     private fun register(email: String, displayName: String, password: String): UUID {
@@ -179,6 +208,7 @@ class SeedRunner(
     ): Created {
         val detail = events.create(
             authorId,
+            scopes.globalId,
             CreateEventRequest(
                 type = type,
                 title = title.take(120),
@@ -214,7 +244,7 @@ class SeedRunner(
     private fun resolveSome(created: List<Created>) {
         val candidates = created.filter { !it.expired && it.title != SeedData.PIROZHOK_TITLE }
         val toResolve = candidates.shuffled(random).take((created.size * 0.08).toInt())
-        toResolve.forEach { events.resolve(it.id, it.authorId) }
+        toResolve.forEach { events.resolve(it.id, it.authorId, scopes.globalId) }
         log.info("Resolved {} events", toResolve.size)
     }
 
@@ -245,7 +275,7 @@ class SeedRunner(
         conversations.markRead(thread, demo)
         conversations.markRead(thread, marisol)
 
-        events.resolve(pirozhok.id, demo)
+        events.resolve(pirozhok.id, demo, scopes.globalId)
         log.info("Story arc seeded (Pirozhok is home)")
     }
 

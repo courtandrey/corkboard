@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { ConversationSummary, MessageResponse } from "../../api/client";
 import { useConversations, useMe, useMessages } from "../../api/hooks";
+import { useBoardHome } from "../../stores/boardStore";
 import { strings } from "../../i18n/strings";
 import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
@@ -139,13 +140,14 @@ export function MessagesDrawer() {
   const { data: me, isLoading } = useMe();
   const { data } = useConversations(!!me);
   const navigate = useNavigate();
+  const home = useBoardHome();
   const isPhone = useIsPhone();
 
   const selected = data?.items.find((c) => c.id === conversationId);
 
   if (!me && !isLoading) {
     return (
-      <Modal onClose={() => navigate("/")} size="sm">
+      <Modal onClose={() => navigate(home)} size="sm">
         <p className="empty-state">{strings.auth.signInToPin}</p>
       </Modal>
     );
@@ -154,7 +156,7 @@ export function MessagesDrawer() {
   const threadOnly = isPhone && !!selected;
 
   return (
-    <Modal onClose={() => navigate("/")} size="lg" className="modal-messages">
+    <Modal onClose={() => navigate(home)} size="lg" className="modal-messages">
       {!threadOnly && (
         <div className="modal-head modal-head-ruled">
           <h2>{s.title}</h2>

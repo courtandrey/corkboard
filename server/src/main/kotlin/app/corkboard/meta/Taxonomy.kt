@@ -12,7 +12,9 @@ enum class EventType(
     HELP("#4A76C7", true),
     GIVEAWAY("#2A9D8F", true),
     HAPPENING("#C94C4C", false),
-    NOTICE("#8A8A8A", false);
+    NOTICE("#8A8A8A", false),
+    PLAN("#6E8B3D", false),
+    MEMORY("#A6608A", false);
 
     @get:JsonValue
     val key: String = name.lowercase()

@@ -8,6 +8,7 @@ import app.corkboard.jooq.tables.references.EVENTS
 import app.corkboard.jooq.tables.references.REPORTS
 import app.corkboard.notifications.NotificationKind
 import app.corkboard.notifications.NotificationService
+import app.corkboard.scopes.ScopeService
 import java.util.UUID
 import org.jooq.DSLContext
 import org.springframework.http.HttpStatus
@@ -18,13 +19,15 @@ import org.springframework.transaction.annotation.Transactional
 class ReportService(
     private val dsl: DSLContext,
     private val notifications: NotificationService,
+    private val scopes: ScopeService,
 ) {
 
     @Transactional
     fun report(eventId: UUID, reporterId: UUID, req: ReportRequest) {
-        val event = dsl.select(EVENTS.AUTHOR_ID, EVENTS.TITLE, EVENTS.STATUS)
+        val event = dsl.select(EVENTS.AUTHOR_ID, EVENTS.TITLE, EVENTS.STATUS, EVENTS.SCOPE_ID)
             .from(EVENTS).where(EVENTS.ID.eq(eventId)).fetchOne()
             ?: throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
+        scopes.requireSharedBoard(event[EVENTS.SCOPE_ID]!!)
         val authorId = event[EVENTS.AUTHOR_ID]!!
         val statusBefore = event[EVENTS.STATUS]
         if (authorId == reporterId) {

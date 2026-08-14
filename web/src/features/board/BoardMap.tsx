@@ -7,6 +7,7 @@ import { useMeta, useViewportEvents } from "../../api/hooks";
 import { api, query } from "../../api/client";
 import type { MetaResponse, ViewportResponse } from "../../api/client";
 import { strings } from "../../i18n/strings";
+import { boardEvents, newNotePath, notePath } from "../../api/paths";
 import { clusterPushpinDataUri, pushpinDataUri } from "../../ui/pushpin";
 import { PinIcon, PushpinIcon } from "../../ui/icons";
 import { toast } from "../../ui/toast";
@@ -29,8 +30,9 @@ function countLabel(count: number): string {
   return count > 99 ? "99+" : String(count);
 }
 
-function statusText(total: number, short: boolean): string {
+function statusText(total: number, short: boolean, personal: boolean): string {
   if (total === 0) {
+    if (personal) return strings.scope.emptyPersonal;
     return short ? strings.board.emptyViewportShort : strings.board.emptyViewport;
   }
   return short ? strings.board.notesHereShort(total) : strings.board.notesHere(total);
@@ -183,9 +185,12 @@ export function BoardMap() {
   const setDraftPinEl = useBoardStore((s) => s.setDraftPinEl);
   const draftPinEl = useBoardStore((s) => s.draftPinEl);
   const isPhone = useIsPhone();
+  const boardRef = useRef(filters.board);
+  boardRef.current = filters.board;
   const navigate = useNavigate();
   const selectedMatch = useMatch("/events/:id");
-  const selectedId = selectedMatch?.params.id;
+  const selectedOnBoard = useMatch("/boards/:ownerId/events/:id");
+  const selectedId = selectedMatch?.params.id ?? selectedOnBoard?.params.id;
 
   const { data } = useViewportEvents(viewport, filters);
 
@@ -358,7 +363,7 @@ export function BoardMap() {
       more.textContent = strings.board.readMore;
       more.addEventListener("click", () => {
         popupRef.current?.remove();
-        navigate(`/events/${props.id}`);
+        navigate(notePath(boardRef.current, props.id));
       });
 
       container.append(pinImg, title, metaRow, more);
@@ -375,7 +380,7 @@ export function BoardMap() {
       };
       const eps = 1e-6;
       const res = await api.get<ViewportResponse>(
-        `/api/v1/events${query({
+        `${boardEvents(boardRef.current)}${query({
           bbox: [props.west - eps, props.south - eps, props.east + eps, props.north + eps].join(","),
           zoom: 22,
           clustered: false,
@@ -403,7 +408,7 @@ export function BoardMap() {
         row.append(dot, ` ${pin.title}`);
         row.addEventListener("click", () => {
           popupRef.current?.remove();
-          navigate(`/events/${pin.id}`);
+          navigate(notePath(boardRef.current, pin.id));
         });
         container.append(row);
       }
@@ -582,7 +587,7 @@ export function BoardMap() {
         <button
           type="button"
           className="pin-fab"
-          onClick={() => navigate("/new")}
+          onClick={() => navigate(newNotePath(filters.board))}
           title={strings.board.pinANote}
           aria-label={strings.board.pinANote}
         >
@@ -591,7 +596,7 @@ export function BoardMap() {
       )}
       {data && (
         <div className="status-line" role="status">
-          {statusText(data.total, isPhone)}
+          {statusText(data.total, isPhone, filters.board !== null)}
         </div>
       )}
     </div>

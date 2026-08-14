@@ -1,6 +1,7 @@
 package app.corkboard.events
 
 import app.corkboard.meta.EventType
+import app.corkboard.scopes.ScopeKind
 import com.fasterxml.jackson.annotation.JsonValue
 import jakarta.validation.Valid
 import jakarta.validation.constraints.DecimalMax
@@ -123,6 +124,8 @@ data class RenewRequest(
 
 data class MyEventItem(
     val id: UUID,
+    val scope: ScopeKind,
+    val boardOwnerId: UUID?,
     val type: EventType,
     val status: EventStatus,
     val title: String,
@@ -143,6 +146,8 @@ data class MyEventsResponse(
 
 data class EventDetail(
     val id: UUID,
+    val scope: ScopeKind,
+    val boardOwnerId: UUID?,
     val type: EventType,
     val status: EventStatus,
     val title: String,

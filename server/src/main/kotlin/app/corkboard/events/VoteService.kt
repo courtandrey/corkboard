@@ -20,7 +20,7 @@ class VoteService(
 
     @Transactional
     fun toggle(eventId: UUID, userId: UUID): VoteResponse {
-        val authorId = events.requireViewableAuthor(eventId, userId)
+        val authorId = events.requireSharedBoardAuthor(eventId, userId)
         if (authorId == userId) {
             throw ApiException(HttpStatus.CONFLICT, ProblemCode.OWN_EVENT)
         }

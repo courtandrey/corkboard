@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Route, Routes, useSearchParams } from "react-router";
+import { Route, Routes, useLocation, useNavigate, useSearchParams } from "react-router";
 import { TopBar } from "./app/TopBar";
 import { useMe } from "./api/hooks";
 import { FilterSidebar } from "./features/board/FilterSidebar";
@@ -16,9 +16,11 @@ import { MessagesDrawer } from "./features/messaging/MessagesDrawer";
 import { MyPins } from "./features/events/MyPins";
 import { useSocket } from "./features/realtime/useSocket";
 import { strings } from "./i18n/strings";
-import { filtersToSearch, useBoardStore } from "./stores/boardStore";
+import { boardInPath, filtersToSearch, useBoardStore } from "./stores/boardStore";
 import { Toaster, toast } from "./ui/toast";
 import { FiltersIcon } from "./ui/icons";
+
+const SHARED_BOARD_ROUTES = /^\/(events\/|new$|$)/;
 
 const VERIFIED_MESSAGES: Record<string, string> = {
   "1": strings.verify.confirmed,
@@ -30,7 +32,10 @@ const VERIFIED_MESSAGES: Record<string, string> = {
 export function App() {
   const filters = useBoardStore((s) => s.filters);
   const toggleSidebar = useBoardStore((s) => s.toggleSidebar);
+  const setBoard = useBoardStore((s) => s.setBoard);
   const [, setSearchParams] = useSearchParams();
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { data: me, refetch: refetchMe } = useMe();
   useSocket(!!me);
 
@@ -48,6 +53,17 @@ export function App() {
     setSearchParams(filtersToSearch(filters), { replace: true });
   }, [filters, setSearchParams]);
 
+  useEffect(() => {
+    const named = boardInPath(pathname);
+    const saysShared = named === null && SHARED_BOARD_ROUTES.test(pathname);
+    if (named !== null && named !== filters.board) setBoard(named);
+    else if (saysShared && filters.board) setBoard(null);
+  }, [pathname, filters.board, setBoard]);
+
+  useEffect(() => {
+    if (me === null && boardInPath(pathname)) navigate("/", { replace: true });
+  }, [me, pathname, navigate]);
+
   return (
     <div className="layout">
       <TopBar />
@@ -60,8 +76,11 @@ export function App() {
         <BoardMap />
         <Routes>
           <Route path="/" element={null} />
+          <Route path="/boards/:ownerId" element={null} />
           <Route path="/events/:id" element={<EventDrawer />} />
+          <Route path="/boards/:ownerId/events/:id" element={<EventDrawer />} />
           <Route path="/new" element={<CreateEventFlow />} />
+          <Route path="/boards/:ownerId/new" element={<CreateEventFlow />} />
           <Route path="/me/pins" element={<MyPins />} />
           <Route path="/me/account" element={<AccountModal />} />
           <Route path="/admin/reports" element={<AdminPanel tab="reports" />} />

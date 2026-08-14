@@ -6,7 +6,9 @@ import { api } from "../api/client";
 import { useMe } from "../api/hooks";
 import { NotificationsBell } from "../features/notifications/NotificationsBell";
 import { strings } from "../i18n/strings";
+import { boardPath } from "../api/paths";
 import { useBoardStore } from "../stores/boardStore";
+import { useFeature } from "../ui/features";
 import { usePermissions } from "../ui/permissions";
 import { PixelAvatar } from "../ui/PixelAvatar";
 import { pushpinDataUri } from "../ui/pushpin";
@@ -28,7 +30,9 @@ export function TopBar() {
   const { data: me } = useMe();
   const { can } = usePermissions();
   const q = useBoardStore((s) => s.filters.q);
+  const board = useBoardStore((s) => s.filters.board);
   const setFilters = useBoardStore((s) => s.setFilters);
+  const personalBoards = useFeature("IS_PERSONAL_SCOPE_ENABLED");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -67,6 +71,21 @@ export function TopBar() {
           aria-label={strings.board.searchPlaceholder}
         />
       </form>
+      {me && personalBoards && (
+        <div className="scope-switch" role="group" aria-label={strings.scope.switcherLabel}>
+          {[null, me.id].map((owner) => (
+            <button
+              key={owner ?? "global"}
+              type="button"
+              className={`scope-option${board === owner ? " current" : ""}`}
+              aria-pressed={board === owner}
+              onClick={() => navigate(boardPath(owner))}
+            >
+              {owner ? strings.scope.personal : strings.scope.global}
+            </button>
+          ))}
+        </div>
+      )}
       <span className="spacer" />
       {me ? (
         <>

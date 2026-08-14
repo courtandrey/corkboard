@@ -1,13 +1,16 @@
 import { useNavigate } from "react-router";
-import { useMeta, useTagSearch } from "../../api/hooks";
+import { useTagSearch } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
+import { newNotePath } from "../../api/paths";
 import { useBoardStore } from "../../stores/boardStore";
+import { useScopeTypes } from "../../ui/scope";
 import { CloseIcon, PlusIcon } from "../../ui/icons";
 
 export function FilterSidebar() {
-  const { data: meta } = useMeta();
   const { data: topTags } = useTagSearch("");
   const filters = useBoardStore((s) => s.filters);
+  const types = useScopeTypes(filters.board);
+  const shared = filters.board === null;
   const toggleType = useBoardStore((s) => s.toggleType);
   const setFilters = useBoardStore((s) => s.setFilters);
   const navigate = useNavigate();
@@ -36,21 +39,21 @@ export function FilterSidebar() {
         className="primary pin-cta"
         onClick={() => {
           if (sidebarOpen) toggleSidebar();
-          navigate("/new");
+          navigate(newNotePath(filters.board));
         }}
       >
         <PlusIcon size={17} /> {strings.board.pinANote}
       </button>
       <div className="panel">
         <h3>{strings.board.filtersTitle}</h3>
-        {meta?.types.map((t) => (
+        {types.map((t) => (
           <label key={t.key} className="type-row">
             <input
               type="checkbox"
               checked={filters.types.length === 0 || filters.types.includes(t.key)}
               onChange={() => {
                 if (filters.types.length === 0) {
-                  setFilters({ types: meta.types.map((x) => x.key).filter((k) => k !== t.key) });
+                  setFilters({ types: types.map((x) => x.key).filter((k) => k !== t.key) });
                 } else {
                   toggleType(t.key);
                 }
@@ -60,16 +63,18 @@ export function FilterSidebar() {
             {t.label}
           </label>
         ))}
-        <label className="type-row applyable-row">
-          <input
-            type="checkbox"
-            checked={filters.applyableOnly}
-            onChange={(e) => setFilters({ applyableOnly: e.target.checked })}
-          />
-          {strings.board.applyableOnly}
-        </label>
+        {shared && (
+          <label className="type-row applyable-row">
+            <input
+              type="checkbox"
+              checked={filters.applyableOnly}
+              onChange={(e) => setFilters({ applyableOnly: e.target.checked })}
+            />
+            {strings.board.applyableOnly}
+          </label>
+        )}
       </div>
-      {topTags && topTags.items.length > 0 && (
+      {shared && topTags && topTags.items.length > 0 && (
         <div className="panel">
           <h3>{strings.tags.popularTitle}</h3>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>

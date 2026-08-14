@@ -305,6 +305,55 @@ textarea:focus {
   flex: 1;
 }
 
+.scope-switch {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.16);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.scope-option {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.scope-option:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: transparent;
+  color: #fff;
+}
+
+.scope-option.current {
+  background: var(--paper);
+  color: var(--fb-blue);
+  box-shadow: var(--shadow-1);
+}
+
+.scope-option.current:hover {
+  background: var(--paper);
+}
+
+.scope-chip {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border: 1px solid var(--fb-border);
+  border-radius: 999px;
+  background: var(--fb-blue-wash);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  vertical-align: middle;
+}
+
 .nav-link {
   color: #fff;
   font-weight: 600;

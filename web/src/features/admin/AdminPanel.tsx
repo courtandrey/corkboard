@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router";
+import { useBoardHome } from "../../stores/boardStore";
 import { strings } from "../../i18n/strings";
 import { Modal } from "../../ui/Modal";
 import { usePermissions } from "../../ui/permissions";
@@ -17,8 +18,9 @@ const tabs: { key: AdminTab; to: string; label: string; permission: Permission }
 
 export function AdminPanel({ tab }: { tab: AdminTab }) {
   const navigate = useNavigate();
+  const home = useBoardHome();
   const { can, loaded } = usePermissions();
-  const close = () => navigate("/");
+  const close = () => navigate(home);
 
   const visible = tabs.filter((t) => can(t.permission));
 

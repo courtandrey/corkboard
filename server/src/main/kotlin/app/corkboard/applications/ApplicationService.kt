@@ -17,6 +17,7 @@ import app.corkboard.messaging.ConversationService
 import app.corkboard.messaging.MessageCreated
 import app.corkboard.notifications.NotificationKind
 import app.corkboard.notifications.NotificationService
+import app.corkboard.scopes.ScopeService
 import java.util.UUID
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class ApplicationService(
     private val dsl: DSLContext,
+    private val scopes: ScopeService,
     private val conversations: ConversationService,
     private val notifications: NotificationService,
     private val publisher: ApplicationEventPublisher,
@@ -40,9 +42,10 @@ class ApplicationService(
 
     @Transactional
     fun apply(eventId: UUID, applicantId: UUID, message: String): ApplyResponse {
-        val event = dsl.select(EVENTS.AUTHOR_ID, EVENTS.TITLE, EVENTS.STATUS, EVENTS.APPLYABLE)
+        val event = dsl.select(EVENTS.AUTHOR_ID, EVENTS.TITLE, EVENTS.STATUS, EVENTS.APPLYABLE, EVENTS.SCOPE_ID)
             .from(EVENTS).where(EVENTS.ID.eq(eventId)).fetchOne()
             ?: throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
+        scopes.requireSharedBoard(event[EVENTS.SCOPE_ID]!!)
         val authorId = event[EVENTS.AUTHOR_ID]!!
         if (authorId == applicantId) {
             throw ApiException(HttpStatus.CONFLICT, ProblemCode.OWN_EVENT)
