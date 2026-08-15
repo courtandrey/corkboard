@@ -5,6 +5,7 @@ import { boardEvent } from "../../api/paths";
 import { api, ApiError } from "../../api/client";
 import type { EventDetail } from "../../api/client";
 import { useMeta } from "../../api/hooks";
+import { useScopeTypes } from "../../ui/scope";
 import { strings } from "../../i18n/strings";
 import { TagInput } from "../tags/TagInput";
 
@@ -12,6 +13,8 @@ const s = strings.eventEdit;
 
 export function EventEditForm({ event, onDone }: { event: EventDetail; onDone: () => void }) {
   const { data: meta } = useMeta();
+  const board = event.boardOwnerId ?? null;
+  const types = useScopeTypes(board);
   const queryClient = useQueryClient();
   const [type, setType] = useState(event.type as string);
   const [applyable, setApplyable] = useState(event.applyable);
@@ -29,7 +32,7 @@ export function EventEditForm({ event, onDone }: { event: EventDetail; onDone: (
     setBusy(true);
     setError(null);
     try {
-      await api.patch(boardEvent(event.boardOwnerId ?? null, event.id), {
+      await api.patch(boardEvent(board, event.id), {
         type: typeLocked ? undefined : type,
         title: String(data.get("title") ?? ""),
         body: String(data.get("body") ?? ""),
@@ -55,7 +58,7 @@ export function EventEditForm({ event, onDone }: { event: EventDetail; onDone: (
         <p className="meta-row">{s.typeLocked}</p>
       ) : (
         <div className="type-pick">
-          {meta?.types.map((t) => (
+          {types.map((t) => (
             <label key={t.key} className={type === t.key ? "selected" : ""}>
               <input type="radio" name="type" checked={type === t.key} onChange={() => setType(t.key)} />
               <span className="type-dot" style={{ background: t.color }} />
@@ -78,10 +81,12 @@ export function EventEditForm({ event, onDone }: { event: EventDetail; onDone: (
         {strings.create.bodyLabel}
         <textarea name="body" required rows={6} defaultValue={event.body} maxLength={limits?.bodyMax ?? 4000} />
       </label>
-      <label className="inline">
-        <input type="checkbox" checked={applyable} onChange={(e) => setApplyable(e.target.checked)} />
-        {strings.create.applyableLabel}
-      </label>
+      {board === null && (
+        <label className="inline">
+          <input type="checkbox" checked={applyable} onChange={(e) => setApplyable(e.target.checked)} />
+          {strings.create.applyableLabel}
+        </label>
+      )}
       <label className="inline">
         <input type="checkbox" checked={noEndDate} onChange={(e) => setNoEndDate(e.target.checked)} />
         {strings.create.noEndDateLabel}

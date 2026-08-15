@@ -48,12 +48,24 @@ test("a personal note lives on its own board and nowhere else", async ({ browser
     new RegExp(`/boards/${ownerId}/events/[0-9a-f-]+$`),
   );
   await page.screenshot({ path: `${SHOTS}/personal-board.png` });
+
+  await drawer.getByRole("button", { name: "Edit note" }).click();
+  const typePick = drawer.locator(".type-pick");
+  await expect(typePick).toContainText("Memories");
+  await expect(typePick).toContainText("Plans");
+  await expect(typePick, "the shared board's kinds are not on offer here").not.toContainText("Free Stuff");
+  await expect(typePick).not.toContainText("Help Wanted");
+  await expect(
+    drawer.getByText("People can respond to this note"),
+    "nor is a setting that cannot mean anything on a private note",
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Never mind" }).click();
   await page.getByRole("button", { name: "Close" }).click();
 
   await page.getByRole("button", { name: "The board", exact: true }).click();
   await expect(page).not.toHaveURL(/\/boards\//);
   const onShared = await page.request.get(
-    "/api/v1/events?bbox=-180,-85,180,85&zoom=2&clustered=false&scope=global&q=" +
+    "/api/v1/events?bbox=-180,-85,180,85&zoom=2&clustered=false&q=" +
       encodeURIComponent(title),
   );
   expect(
@@ -65,8 +77,11 @@ test("a personal note lives on its own board and nowhere else", async ({ browser
   const strangerPage = await strangerCtx.newPage();
   await strangerPage.goto("/");
   await registerViaApi(strangerPage, "Nosy Neighbour");
-  await strangerPage.goto(noteUrl.replace(/\?.*$/, ""));
-  await expect(strangerPage.getByText("This note isn’t on the board anymore.")).toBeVisible();
+  await strangerPage.goto(`/boards/${ownerId}`);
+  await expect(strangerPage, "somebody else's board hands you back the shared one").toHaveURL(
+    /\/$|\/\?/,
+  );
+  await expect(strangerPage.locator(".toaster")).toContainText("isn’t open to you");
 
   await page.getByRole("button", { name: "Yours", exact: true }).click();
   await page.getByRole("link", { name: "My pins" }).first().click();
@@ -117,7 +132,7 @@ test("switching the feature off closes the board API, not just the switcher", as
   }
 
   await page.goto(noteUrl);
-  await expect(page.getByText("This note isn’t on the board anymore.")).toBeVisible();
+  await expect(page, "a switched-off board hands the visitor back too").toHaveURL(/\/$|\/\?/);
 
   await setFeatureFlag(FLAG, true);
   await page.goto(noteUrl);

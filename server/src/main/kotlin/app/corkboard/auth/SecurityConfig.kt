@@ -43,7 +43,9 @@ private val PUBLIC_READS = arrayOf(
     "/events/*",
     "/new",
     "/login",
-    "/me/pins",
+    "/boards/**",
+    "/me/**",
+    "/admin/**",
     "/messages",
     "/messages/*",
 )

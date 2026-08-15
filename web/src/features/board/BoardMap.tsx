@@ -4,7 +4,7 @@ import type { GeoJSONSource, MapMouseEvent } from "maplibre-gl";
 import type { Feature, FeatureCollection, Point } from "geojson";
 import { useMatch, useNavigate } from "react-router";
 import { useMeta, useViewportEvents } from "../../api/hooks";
-import { api, query } from "../../api/client";
+import { ApiError, api, query } from "../../api/client";
 import type { MetaResponse, ViewportResponse } from "../../api/client";
 import { strings } from "../../i18n/strings";
 import { boardEvents, newNotePath, notePath } from "../../api/paths";
@@ -192,7 +192,15 @@ export function BoardMap() {
   const selectedOnBoard = useMatch("/boards/:ownerId/events/:id");
   const selectedId = selectedMatch?.params.id ?? selectedOnBoard?.params.id;
 
-  const { data } = useViewportEvents(viewport, filters);
+  const { data, error } = useViewportEvents(viewport, filters);
+
+  useEffect(() => {
+    if (!filters.board || !(error instanceof ApiError)) return;
+    if (error.status === 401 || error.status === 403 || error.status === 404) {
+      toast(strings.scope.unavailable, "info");
+      navigate("/", { replace: true });
+    }
+  }, [error, filters.board, navigate]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;

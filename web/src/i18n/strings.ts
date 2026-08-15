@@ -49,6 +49,7 @@ export const strings = {
     personalHint: "Only you can see what you pin here.",
     emptyPersonal: "Your board is empty. Anything you pin here is yours alone.",
     chip: "Yours",
+    unavailable: "That board isn’t open to you — here’s the one everyone shares.",
   },
   board: {
     searchPlaceholder: "search notes…",
