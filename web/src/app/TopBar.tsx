@@ -1,5 +1,4 @@
 import { useCallback, useState } from "react";
-import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
@@ -18,7 +17,6 @@ import {
   ChevronDownIcon,
   FlagIcon,
   PinIcon,
-  SearchIcon,
   SignOutIcon,
   SlidersIcon,
   UserIcon,
@@ -29,21 +27,13 @@ const logoPin = pushpinDataUri("#C94C4C");
 export function TopBar() {
   const { data: me } = useMe();
   const { can } = usePermissions();
-  const q = useBoardStore((s) => s.filters.q);
   const board = useBoardStore((s) => s.filters.board);
-  const setFilters = useBoardStore((s) => s.setFilters);
   const personalBoards = useFeature("IS_PERSONAL_SCOPE_ENABLED");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   const menuRef = useDismiss<HTMLDivElement>(menuOpen, closeMenu);
-
-  function onSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const value = new FormData(event.currentTarget).get("q");
-    setFilters({ q: String(value ?? "") });
-  }
 
   async function signOut() {
     setMenuOpen(false);
@@ -61,16 +51,6 @@ export function TopBar() {
         <img className="logo-pin" src={logoPin} alt="o" />
         <span>{after}</span>
       </Link>
-      <form className="search" onSubmit={onSearch}>
-        <SearchIcon size={15} className="search-icon" />
-        <input
-          type="search"
-          name="q"
-          defaultValue={q}
-          placeholder={strings.board.searchPlaceholder}
-          aria-label={strings.board.searchPlaceholder}
-        />
-      </form>
       {me && personalBoards && (
         <div className="scope-switch" role="group" aria-label={strings.scope.switcherLabel}>
           {[null, me.id].map((owner) => (

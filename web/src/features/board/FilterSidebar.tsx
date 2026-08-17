@@ -1,10 +1,11 @@
+import type { FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { useTagSearch } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
 import { newNotePath } from "../../api/paths";
 import { useBoardStore } from "../../stores/boardStore";
 import { useScopeTypes } from "../../ui/scope";
-import { CloseIcon, PlusIcon } from "../../ui/icons";
+import { CloseIcon, PlusIcon, SearchIcon } from "../../ui/icons";
 
 export function FilterSidebar() {
   const { data: topTags } = useTagSearch("");
@@ -13,7 +14,16 @@ export function FilterSidebar() {
   const shared = filters.board === null;
   const toggleType = useBoardStore((s) => s.toggleType);
   const setFilters = useBoardStore((s) => s.setFilters);
+  const sidebarOpen = useBoardStore((s) => s.sidebarOpen);
+  const toggleSidebar = useBoardStore((s) => s.toggleSidebar);
   const navigate = useNavigate();
+
+  function onSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const value = new FormData(event.currentTarget).get("q");
+    setFilters({ q: String(value ?? "") });
+    if (sidebarOpen) toggleSidebar();
+  }
 
   function toggleTag(slug: string) {
     setFilters({
@@ -22,9 +32,6 @@ export function FilterSidebar() {
         : [...filters.tags, slug],
     });
   }
-
-  const sidebarOpen = useBoardStore((s) => s.sidebarOpen);
-  const toggleSidebar = useBoardStore((s) => s.toggleSidebar);
 
   return (
     <aside className={`sidebar${sidebarOpen ? " open" : ""}`}>
@@ -46,6 +53,16 @@ export function FilterSidebar() {
       </button>
       <div className="panel">
         <h3>{strings.board.filtersTitle}</h3>
+        <form className="search sidebar-search" onSubmit={onSearch}>
+          <SearchIcon size={15} className="search-icon" />
+          <input
+            type="search"
+            name="q"
+            defaultValue={filters.q}
+            placeholder={strings.board.searchPlaceholder}
+            aria-label={strings.board.searchPlaceholder}
+          />
+        </form>
         {types.map((t) => (
           <label key={t.key} className="type-row">
             <input
