@@ -149,25 +149,24 @@ export function EventDrawer() {
                 {type.label}
               </span>
             )}
+            {event.scope === "global" && (
+              <VoteControl
+                event={event}
+                interactive={!!me && !event.viewerState.isAuthor}
+                hint={
+                  !me ? eng.voteSignedOut : event.viewerState.isAuthor ? eng.voteOwn : undefined
+                }
+                intercept={() => {
+                  if (allows("vote")) return false;
+                  block("vote");
+                  return true;
+                }}
+              />
+            )}
             {event.status !== "active" && (
               <span className={`stamp${event.status === "resolved" ? "" : " muted"}`}>
                 {strings.myPins.statusHeading[event.status] ?? event.status}
               </span>
-            )}
-            <span className="spacer" />
-            {event.scope === "global" && (
-            <VoteControl
-              event={event}
-              interactive={!!me && !event.viewerState.isAuthor}
-              hint={
-                !me ? eng.voteSignedOut : event.viewerState.isAuthor ? eng.voteOwn : undefined
-              }
-              intercept={() => {
-                if (allows("vote")) return false;
-                block("vote");
-                return true;
-              }}
-            />
             )}
           </div>
 

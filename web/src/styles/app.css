@@ -1323,20 +1323,26 @@ textarea:focus {
 /* ── event card ───────────────────────────────────────────────── */
 
 .ev-head {
+  position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 18px 46px 0 20px;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 46px 0 20px;
 }
 
-.ev-head .spacer {
-  flex: 1;
+.ev-head .stamp {
+  position: absolute;
+  top: 20px;
+  right: 40px;
+  margin: 0;
+  font-size: 18px;
 }
 
 .ev-scroll {
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
-  padding: 0 20px;
+  padding: 11px 20px 0;
 }
 
 .ev-title {
@@ -1344,7 +1350,7 @@ textarea:focus {
   font-size: 27px;
   line-height: 1.12;
   font-weight: 700;
-  margin: 10px 0 8px;
+  margin: 0 0 8px;
   overflow-wrap: anywhere;
 }
 
@@ -1409,13 +1415,11 @@ textarea:focus {
 
 .vote {
   display: inline-flex;
-  flex-direction: column;
   align-items: center;
-  gap: 1px;
-  min-width: 48px;
-  padding: 5px 9px;
+  gap: 5px;
+  padding: 5px 11px;
   border: 1px solid var(--fb-border);
-  border-radius: var(--radius-md);
+  border-radius: 999px;
   background: #fff;
   color: var(--ink-soft);
   box-shadow: var(--shadow-1);
@@ -1424,7 +1428,7 @@ textarea:focus {
 }
 
 .vote .vote-count {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink);
 }
@@ -1631,7 +1635,7 @@ body:has(.modal-scrim) .cookie-banner {
   border-radius: var(--radius);
   color: var(--stamp-red);
   opacity: 0.85;
-  transform: rotate(-12deg);
+  transform: rotate(13deg);
   mask-image: var(--grunge-mask);
   -webkit-mask-image: var(--grunge-mask);
   animation: stamp-thump 150ms ease-out;
@@ -1644,11 +1648,11 @@ body:has(.modal-scrim) .cookie-banner {
 
 @keyframes stamp-thump {
   from {
-    transform: rotate(-12deg) scale(1.6);
+    transform: rotate(13deg) scale(1.6);
     opacity: 0;
   }
   to {
-    transform: rotate(-12deg) scale(1);
+    transform: rotate(13deg) scale(1);
     opacity: 0.85;
   }
 }
@@ -2295,6 +2299,11 @@ label.inline input[type="checkbox"] {
     display: none;
   }
 
+  .scope-option {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
   .user-menu {
     width: auto;
   }
@@ -2494,7 +2503,20 @@ label.inline input[type="checkbox"] {
   }
 
   .ev-head {
-    padding: 16px 46px 0 16px;
+    padding: 14px 46px 0 16px;
+  }
+
+  .vote {
+    padding: 7px 12px;
+  }
+
+  .vote .vote-label {
+    display: none;
+  }
+
+  .ev-head .stamp {
+    right: 46px;
+    font-size: 16px;
   }
 
   .ev-foot {
