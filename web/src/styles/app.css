@@ -1323,11 +1323,22 @@ textarea:focus {
 /* ── event card ───────────────────────────────────────────────── */
 
 .ev-head {
+  --head-control-h: 26px;
   position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 14px 46px 0 20px;
+}
+
+.ev-head .type-chip,
+.ev-head .vote {
+  min-height: var(--head-control-h);
+}
+
+.ev-head .vote {
+  padding-top: 3px;
+  padding-bottom: 3px;
 }
 
 .ev-head .stamp {
@@ -2503,6 +2514,7 @@ label.inline input[type="checkbox"] {
   }
 
   .ev-head {
+    --head-control-h: 30px;
     padding: 14px 46px 0 16px;
   }
 
