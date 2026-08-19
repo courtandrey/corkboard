@@ -110,13 +110,34 @@ function loadImage(map: maplibregl.Map, name: string, uri: string, size: [number
 }
 
 const BUILDING_SOURCE_LAYER = "building";
+const TRANSIT_LAYER = "poi_transit";
+
+const RAIL_STATIONS: maplibregl.FilterSpecification = [
+  "all",
+  ["match", ["get", "class"], ["railway", "rail"], true, false],
+  ["match", ["get", "subclass"], ["station", "subway", "halt", "light_rail"], true, false],
+];
+
+const STATION_ICON = [
+  "match",
+  ["get", "subclass"],
+  "subway",
+  "railway_metro",
+  "light_rail",
+  "railway_light",
+  "railway",
+];
 
 function flattenBaseMap(map: maplibregl.Map): void {
   const layers = map.getStyle().layers ?? [];
   let hasBuildings = false;
   for (const layer of layers) {
     const sourceLayer = (layer as { "source-layer"?: string })["source-layer"];
-    if (layer.type === "fill-extrusion" || sourceLayer === "poi") {
+    if (layer.id === TRANSIT_LAYER) {
+      map.setFilter(layer.id, RAIL_STATIONS);
+      map.setLayoutProperty(layer.id, "icon-image", STATION_ICON);
+      map.setLayoutProperty(layer.id, "icon-size", 1);
+    } else if (layer.type === "fill-extrusion" || sourceLayer === "poi") {
       map.setLayoutProperty(layer.id, "visibility", "none");
     } else if (sourceLayer === BUILDING_SOURCE_LAYER && layer.type === "fill") {
       hasBuildings = true;
