@@ -51,6 +51,8 @@ services:
       SEED_FORCE: ${SEED_FORCE:-false}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       NOTIFICATIONS_ENABLED: ${NOTIFICATIONS_ENABLED:-true}
+      GEOCODER_URL: ${GEOCODER_URL:-https://photon.komoot.io}
+      GEOCODER_RATE_PER_MINUTE: ${GEOCODER_RATE_PER_MINUTE:-60}
     expose:
       - "8080"
     ports:

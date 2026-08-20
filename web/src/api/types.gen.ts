@@ -452,6 +452,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/places": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notifications": {
         parameters: {
             query?: never;
@@ -835,6 +851,26 @@ export interface components {
         TagListResponse: {
             items: components["schemas"]["TagItem"][];
         };
+        PlaceBounds: {
+            /** Format: double */
+            west: number;
+            /** Format: double */
+            south: number;
+            /** Format: double */
+            east: number;
+            /** Format: double */
+            north: number;
+        };
+        PlaceSuggestion: {
+            id: string;
+            name: string;
+            context?: string;
+            location: components["schemas"]["LatLng"];
+            bounds?: components["schemas"]["PlaceBounds"];
+        };
+        PlaceSuggestions: {
+            items: components["schemas"]["PlaceSuggestion"][];
+        };
         NotificationListResponse: {
             items: components["schemas"]["NotificationResponse"][];
             /** Format: int32 */
@@ -889,6 +925,7 @@ export interface components {
             /** Format: int32 */
             reportThreshold: number;
             googleAuth: boolean;
+            placeSearch: boolean;
         };
         ScopeMeta: {
             key: string;
@@ -1922,6 +1959,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["TagListResponse"];
+                };
+            };
+        };
+    };
+    search: {
+        parameters: {
+            query: {
+                q: string;
+                near?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PlaceSuggestions"];
                 };
             };
         };

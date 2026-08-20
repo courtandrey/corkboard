@@ -4,8 +4,9 @@ import type { GeoJSONSource, MapMouseEvent } from "maplibre-gl";
 import type { Feature, FeatureCollection, Point } from "geojson";
 import { useMatch, useNavigate } from "react-router";
 import { useMeta, useViewportEvents } from "../../api/hooks";
+import { AddressSearch } from "./AddressSearch";
 import { ApiError, api, query } from "../../api/client";
-import type { MetaResponse, ViewportResponse } from "../../api/client";
+import type { MetaResponse, PlaceSuggestion, ViewportResponse } from "../../api/client";
 import { strings } from "../../i18n/strings";
 import { boardEvents, newNotePath, notePath } from "../../api/paths";
 import { clusterPushpinDataUri, pushpinDataUri } from "../../ui/pushpin";
@@ -43,6 +44,8 @@ function reducedMotion(): boolean {
 }
 
 const FLY_TO_ME = { zoom: 14, speed: 2.8, curve: 1.3 } as const;
+const FLY_TO_PLACE = { zoom: 16, speed: 2.4, curve: 1.3, maxDuration: 2200 } as const;
+const FIT_PLACE = { padding: 64, maxZoom: 16, duration: 900 } as const;
 
 function wrapLng(value: number): number {
   return ((((value + 180) % 360) + 360) % 360) - 180;
@@ -567,6 +570,17 @@ export function BoardMap() {
     };
   }, [draftLocation, draftPinEl]);
 
+  function goTo(place: PlaceSuggestion) {
+    const map = mapRef.current;
+    if (!map) return;
+    const { bounds } = place;
+    if (bounds) {
+      map.fitBounds([bounds.west, bounds.south, bounds.east, bounds.north], FIT_PLACE);
+    } else {
+      map.flyTo({ center: [place.location.lng, place.location.lat], ...FLY_TO_PLACE });
+    }
+  }
+
   function locateMe() {
     const map = mapRef.current;
     if (!map) return;
@@ -602,6 +616,12 @@ export function BoardMap() {
   return (
     <div className="map-wrap">
       <div ref={containerRef} className={`map${crosshair ? " crosshair" : ""}`} />
+      {meta?.placeSearch && (
+        <AddressSearch
+          near={viewport ? `${viewport.center.lng.toFixed(4)},${viewport.center.lat.toFixed(4)}` : undefined}
+          onPick={goTo}
+        />
+      )}
       <button
         type="button"
         className="locate-btn"

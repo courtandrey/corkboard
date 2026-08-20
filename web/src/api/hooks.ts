@@ -11,6 +11,7 @@ import type {
   MyApplicationsResponse,
   MyEventsResponse,
   NotificationListResponse,
+  PlaceSuggestions,
   TagListResponse,
   ViewportResponse,
 } from "./client";
@@ -130,6 +131,19 @@ export function useTagSearch(q: string) {
     queryKey: ["tags", q],
     queryFn: () => api.get<TagListResponse>(`/api/v1/tags${query({ q })}`),
     staleTime: 30_000,
+  });
+}
+
+const PLACE_MIN_QUERY = 3;
+
+export function usePlaceSearch(q: string, near: string | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: ["places", q, near],
+    enabled: enabled && q.trim().length >= PLACE_MIN_QUERY,
+    queryFn: () => api.get<PlaceSuggestions>(`/api/v1/places${query({ q: q.trim(), near })}`),
+    placeholderData: keepPreviousData,
+    staleTime: 300_000,
+    retry: false,
   });
 }
 

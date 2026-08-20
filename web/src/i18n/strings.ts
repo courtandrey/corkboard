@@ -70,6 +70,12 @@ export const strings = {
     points: (n: number) => `${n} ${n === 1 ? "point" : "points"}`,
     pointsLabel: (n: number) => (n === 1 ? "point" : "points"),
   },
+  places: {
+    placeholder: "jump to an address…",
+    clear: "Clear the address",
+    nothingFound: "No such place — try a street, a district or a postcode.",
+    failed: "Address lookup is having a moment. Try again shortly.",
+  },
   engagement: {
     vote: "Give a point",
     unvote: "Take your point back",

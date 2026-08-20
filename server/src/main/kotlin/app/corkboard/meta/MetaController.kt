@@ -27,6 +27,7 @@ data class MetaResponse(
     val limits: Limits,
     val reportThreshold: Int,
     val googleAuth: Boolean,
+    val placeSearch: Boolean,
 )
 
 @RestController
@@ -47,5 +48,6 @@ class MetaController(
         limits = Limits(),
         reportThreshold = props.reportAutoHideThreshold,
         googleAuth = props.googleAuthEnabled,
+        placeSearch = props.geocoder.enabled,
     )
 }
