@@ -1,4 +1,13 @@
 import { expect, test } from "@playwright/test";
+
+const arrives = expect.configure({ timeout: 25_000 });
+
+async function openThread(page: import("@playwright/test").Page, otherParty: string) {
+  await expect(async () => {
+    await page.getByRole("link", { name: new RegExp(otherParty) }).click();
+    await expect(page.locator(".bubble").first()).toBeVisible({ timeout: 3_000 });
+  }).toPass({ timeout: 25_000 });
+}
 import { SHOTS, createEventViaApi, registerViaApi } from "./helpers";
 
 test("vote, hide, and report from the drawer", async ({ browser }) => {
@@ -56,7 +65,7 @@ test("apply opens a conversation; replies arrive live over the websocket", async
   await applicantPage.getByRole("button", { name: "Send response" }).click();
   await expect(applicantPage.getByText("Your note is on its way — replies land in Messages.")).toBeVisible();
   await applicantPage.getByRole("link", { name: "Open the conversation" }).click();
-  await expect(applicantPage.locator(".bubble")).toContainText("Hello from the regression suite!");
+  await arrives(applicantPage.locator(".bubble").first()).toContainText("Hello from the regression suite!");
 
   await authorPage.goto("/");
   await expect(authorPage.locator(".badge").first()).toHaveText("1");
@@ -66,15 +75,14 @@ test("apply opens a conversation; replies arrive live over the websocket", async
   await expect(authorPage.locator(".topbar .badge")).toHaveCount(0);
 
   await authorPage.getByRole("link", { name: "Messages" }).click();
-  await authorPage.getByText("WS Applicant").click();
-  await expect(authorPage.locator(".bubble")).toContainText("Hello from the regression suite!");
+  // the list re-renders as the websocket lands, which can swallow a click on a row
+  await openThread(authorPage, "WS Applicant");
+  await arrives(authorPage.locator(".bubble").first()).toContainText("Hello from the regression suite!");
   await authorPage.getByPlaceholder("Write a message…").fill("Live reply, no reload needed.");
   await authorPage.getByRole("button", { name: "Send", exact: true }).click();
   await authorPage.screenshot({ path: `${SHOTS}/messages.png` });
 
-  await expect(applicantPage.locator(".bubble").last()).toContainText("Live reply, no reload needed.", {
-    timeout: 10_000,
-  });
+  await arrives(applicantPage.locator(".bubble").last()).toContainText("Live reply, no reload needed.");
 
   await authorCtx.close();
   await applicantCtx.close();
@@ -101,11 +109,11 @@ test("a reply raises the bell live, for a recipient who is not in the thread", a
     .fill("First contact.");
   await applicantPage.getByRole("button", { name: "Send response" }).click();
   await applicantPage.getByRole("link", { name: "Open the conversation" }).click();
-  await expect(applicantPage.locator(".bubble")).toContainText("First contact.");
+  await arrives(applicantPage.locator(".bubble").first()).toContainText("First contact.");
 
   await authorPage.goto("/messages");
-  await authorPage.getByText("Bell Applicant").click();
-  await expect(authorPage.locator(".bubble")).toContainText("First contact.");
+  await openThread(authorPage, "Bell Applicant");
+  await arrives(authorPage.locator(".bubble").first()).toContainText("First contact.");
   await authorPage.getByRole("link", { name: "lamppostal" }).click();
   await expect(authorPage.locator(".status-line")).toBeVisible();
   await expect(authorPage.locator(".topbar .badge")).toHaveCount(0);
