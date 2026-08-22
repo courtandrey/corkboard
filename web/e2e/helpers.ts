@@ -88,6 +88,49 @@ export async function gotoBoard(page: Page): Promise<void> {
   await expect(page.locator(".status-line")).toBeVisible({ timeout: 20_000 });
 }
 
+export const HERALD_SQUARE = { lng: -73.9877, lat: 40.7505 };
+
+export async function stubGeocoder(page: Page): Promise<string[]> {
+  const asked: string[] = [];
+  await page.route("**/api/v1/places?*", async (route) => {
+    asked.push(route.request().url());
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        items: [
+          {
+            id: "N1",
+            name: "Herald Square",
+            context: "Manhattan, New York",
+            location: HERALD_SQUARE,
+            bounds: null,
+          },
+          {
+            id: "R2",
+            name: "Herald Square Park",
+            context: "Midtown, New York",
+            location: { lng: -73.988, lat: 40.751 },
+            bounds: null,
+          },
+        ],
+      }),
+    });
+  });
+  return asked;
+}
+
+export async function settled(page: Page): Promise<void> {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const map = (window as unknown as { __corkboardMap: { once(e: string, cb: () => void): void } }).__corkboardMap;
+        map.once("moveend", () => resolve());
+        setTimeout(resolve, 10_000);
+      }),
+  );
+}
+
 export async function clickPin(page: Page, lng: number, lat: number): Promise<void> {
   const point = await page.evaluate(
     ([x, y]) => {

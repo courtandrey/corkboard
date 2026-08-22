@@ -44,8 +44,11 @@ function reducedMotion(): boolean {
 }
 
 const FLY_TO_ME = { zoom: 14, speed: 2.8, curve: 1.3 } as const;
-const FLY_TO_PLACE = { zoom: 16, speed: 2.4, curve: 1.3, maxDuration: 2200 } as const;
-const FIT_PLACE = { padding: 64, maxZoom: 16, duration: 900 } as const;
+const STREET_DETAIL_ZOOM = 16;
+const STREET_NAME_SOURCE_LAYER = "transportation_name";
+
+const FLY_TO_PLACE = { zoom: STREET_DETAIL_ZOOM, speed: 2.4, curve: 1.3, maxDuration: 2200 } as const;
+const FIT_PLACE = { padding: 64, maxZoom: STREET_DETAIL_ZOOM, duration: 900 } as const;
 
 function wrapLng(value: number): number {
   return ((((value + 180) % 360) + 360) % 360) - 180;
@@ -115,6 +118,7 @@ function loadImage(map: maplibregl.Map, name: string, uri: string, size: [number
 const BUILDING_SOURCE_LAYER = "building";
 const TRANSIT_LAYER = "poi_transit";
 
+
 const RAIL_STATIONS: maplibregl.FilterSpecification = [
   "all",
   ["match", ["get", "class"], ["railway", "rail"], true, false],
@@ -134,6 +138,7 @@ const STATION_ICON = [
 function flattenBaseMap(map: maplibregl.Map): void {
   const layers = map.getStyle().layers ?? [];
   let hasBuildings = false;
+  let firstStreetLabel: string | undefined;
   for (const layer of layers) {
     const sourceLayer = (layer as { "source-layer"?: string })["source-layer"];
     if (layer.id === TRANSIT_LAYER) {
@@ -142,6 +147,11 @@ function flattenBaseMap(map: maplibregl.Map): void {
       map.setLayoutProperty(layer.id, "icon-size", 1);
     } else if (layer.type === "fill-extrusion" || sourceLayer === "poi") {
       map.setLayoutProperty(layer.id, "visibility", "none");
+    } else if (layer.type === "symbol" && sourceLayer === STREET_NAME_SOURCE_LAYER) {
+      firstStreetLabel ??= layer.id;
+      const minzoom = (layer as { minzoom?: number }).minzoom ?? 0;
+      const maxzoom = (layer as { maxzoom?: number }).maxzoom ?? 24;
+      if (minzoom > STREET_DETAIL_ZOOM) map.setLayerZoomRange(layer.id, STREET_DETAIL_ZOOM, maxzoom);
     } else if (sourceLayer === BUILDING_SOURCE_LAYER && layer.type === "fill") {
       hasBuildings = true;
       const minzoom = (layer as { minzoom?: number }).minzoom ?? 13;
@@ -157,7 +167,7 @@ function flattenBaseMap(map: maplibregl.Map): void {
       type: "symbol",
       source: "openmaptiles",
       "source-layer": "housenumber",
-      minzoom: 17.5,
+      minzoom: STREET_DETAIL_ZOOM,
       layout: {
         "text-field": ["get", "housenumber"],
         "text-font": ["Noto Sans Regular"],
@@ -169,7 +179,7 @@ function flattenBaseMap(map: maplibregl.Map): void {
         "text-halo-color": "rgba(253,251,242,0.85)",
         "text-halo-width": 1,
       },
-    });
+    }, firstStreetLabel);
   }
 }
 

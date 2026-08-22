@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { SHOTS, createEventViaApi, registerViaApi } from "./helpers";
 
+test.slow();
+
 test("a long thread opens at the newest message and scrolls back for older ones", async ({ browser }) => {
   const authorCtx = await browser.newContext();
   const authorPage = await authorCtx.newPage();

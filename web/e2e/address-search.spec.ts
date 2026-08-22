@@ -1,38 +1,8 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { SHOTS, gotoBoard } from "./helpers";
+import { HERALD_SQUARE, SHOTS, gotoBoard, settled, stubGeocoder } from "./helpers";
 
-const HERALD = { lng: -73.9877, lat: 40.7505 };
-
-async function stubGeocoder(page: Page): Promise<string[]> {
-  const asked: string[] = [];
-  await page.route("**/api/v1/places?*", async (route) => {
-    asked.push(route.request().url());
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        items: [
-          {
-            id: "N1",
-            name: "Herald Square",
-            context: "Manhattan, New York",
-            location: HERALD,
-            bounds: null,
-          },
-          {
-            id: "R2",
-            name: "Herald Square Park",
-            context: "Midtown, New York",
-            location: { lng: -73.988, lat: 40.751 },
-            bounds: null,
-          },
-        ],
-      }),
-    });
-  });
-  return asked;
-}
+const HERALD = HERALD_SQUARE;
 
 function centre(page: Page) {
   return page.evaluate(() => {
@@ -65,14 +35,7 @@ test("typing an address offers matches, and picking one moves the board", async 
   expect(asked.at(-1), "the map's centre goes along, so matches are local first").toContain("near=");
 
   await field.press("Enter");
-  await page.evaluate(
-    () =>
-      new Promise<void>((resolve) => {
-        const map = (window as unknown as { __corkboardMap: { once(e: string, cb: () => void): void } }).__corkboardMap;
-        map.once("moveend", () => resolve());
-        setTimeout(resolve, 10_000);
-      }),
-  );
+  await settled(page);
 
   const where = await centre(page);
   expect(where.lng).toBeCloseTo(HERALD.lng, 2);

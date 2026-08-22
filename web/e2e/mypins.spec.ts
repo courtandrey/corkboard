@@ -39,8 +39,10 @@ test("a note can be pinned with no end date, and the date field appears only whe
   await gotoBoard(page);
 
   await page.getByRole("button", { name: "Pin a note" }).click();
+  await expect(page.getByText("Click the map where your note belongs.")).toBeVisible();
   const map = (await page.locator(".map-wrap .map").boundingBox())!;
   await page.mouse.click(map.x + map.width / 2, map.y + map.height / 2);
+  await expect(page.getByText("Drag the pin to adjust, then continue.")).toBeVisible();
   await page.getByRole("button", { name: "Looks right — write the note" }).click();
 
   const dateField = page.locator('input[name="expiresAt"]');
