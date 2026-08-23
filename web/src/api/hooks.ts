@@ -134,7 +134,7 @@ export function useTagSearch(q: string) {
   });
 }
 
-const PLACE_MIN_QUERY = 3;
+export const PLACE_MIN_QUERY = 3;
 
 export function usePlaceSearch(q: string, near: string | undefined, enabled: boolean) {
   return useQuery({

@@ -72,3 +72,19 @@ test("the box gets out of the way: escape closes it, the cross empties it", asyn
   await expect(field).toHaveValue("");
   await expect(page.locator(".address-match")).toHaveCount(0);
 });
+
+test("deleting the query takes the list with it, without waiting out the typing pause", async ({ page }) => {
+  await stubGeocoder(page);
+  await gotoBoard(page);
+
+  const field = page.getByLabel("jump to an address…");
+  const matches = page.locator(".address-match");
+
+  for (const left of ["he", ""]) {
+    await field.fill("herald sq");
+    await expect(matches).toHaveCount(2);
+
+    await field.fill(left);
+    await expect(matches, `"${left}" is too short to be a search`).toHaveCount(0, { timeout: 400 });
+  }
+});

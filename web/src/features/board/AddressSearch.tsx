@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
-import { usePlaceSearch } from "../../api/hooks";
+import { PLACE_MIN_QUERY, usePlaceSearch } from "../../api/hooks";
 import type { PlaceSuggestion } from "../../api/client";
 import { strings } from "../../i18n/strings";
 import { CloseIcon, SearchIcon } from "../../ui/icons";
@@ -29,7 +29,7 @@ export function AddressSearch({
   const { data, isFetching, isError } = usePlaceSearch(typed, near, open);
   const matches = data?.items ?? [];
 
-  useEffect(() => setActive(0), [typed]);
+  useEffect(() => setActive(0), [text]);
 
   function pick(place: PlaceSuggestion) {
     onPick(place);
@@ -60,8 +60,12 @@ export function AddressSearch({
     }
   }
 
-  const showList = open && typed.trim().length >= 3;
-  const nothingFound = showList && !isFetching && !isError && matches.length === 0;
+
+  const query = text.trim();
+  const settled = query === typed.trim() && !isFetching;
+  const nothingFound = query.length >= PLACE_MIN_QUERY && settled && !isError && matches.length === 0;
+  const showList =
+    open && query.length >= PLACE_MIN_QUERY && (matches.length > 0 || nothingFound || isError);
 
   return (
     <div className="address-search" ref={boxRef}>
