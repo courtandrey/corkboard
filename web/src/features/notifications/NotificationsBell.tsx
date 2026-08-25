@@ -25,7 +25,7 @@ function label(notification: NotificationResponse): string {
     case "event_taken_down":
       return s.eventTakenDown(event);
     case "message_received":
-      return s.messageReceived(event);
+      return s.messageReceived(payload.senderName ?? "");
     default:
       return s.fallback;
   }

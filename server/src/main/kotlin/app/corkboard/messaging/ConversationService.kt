@@ -23,9 +23,20 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
-data class Participants(val ownerId: UUID, val applicantId: UUID) {
-    fun otherThan(userId: UUID): UUID = if (userId == ownerId) applicantId else ownerId
-    fun includes(userId: UUID): Boolean = userId == ownerId || userId == applicantId
+data class Participants(val userA: UUID, val userB: UUID) {
+    fun otherThan(userId: UUID): UUID = if (userId == userA) userB else userA
+    fun includes(userId: UUID): Boolean = userId == userA || userId == userB
+
+    companion object {
+        fun of(one: UUID, other: UUID): Participants =
+            if (sortsFirst(one, other)) Participants(one, other) else Participants(other, one)
+
+        private fun sortsFirst(one: UUID, other: UUID): Boolean {
+            val high = java.lang.Long.compareUnsigned(one.mostSignificantBits, other.mostSignificantBits)
+            if (high != 0) return high < 0
+            return java.lang.Long.compareUnsigned(one.leastSignificantBits, other.leastSignificantBits) < 0
+        }
+    }
 }
 
 @Service
@@ -37,23 +48,35 @@ class ConversationService(
 ) {
 
     fun requireParticipants(conversationId: UUID, userId: UUID): Participants {
-        val row = dsl.select(CONVERSATIONS.OWNER_ID, CONVERSATIONS.APPLICANT_ID)
+        val row = dsl.select(CONVERSATIONS.USER_A_ID, CONVERSATIONS.USER_B_ID)
             .from(CONVERSATIONS)
             .where(CONVERSATIONS.ID.eq(conversationId))
             .fetchOne()
             ?: throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
-        val participants = Participants(row[CONVERSATIONS.OWNER_ID]!!, row[CONVERSATIONS.APPLICANT_ID]!!)
+        val participants = Participants(row[CONVERSATIONS.USER_A_ID]!!, row[CONVERSATIONS.USER_B_ID]!!)
         if (!participants.includes(userId)) {
             throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
         }
         return participants
     }
 
-    fun list(userId: UUID, cursor: String?, limit: Int): ConversationListResponse {
-        val owner = USERS.`as`("owner_user")
-        val applicant = USERS.`as`("applicant_user")
+    fun between(one: UUID, other: UUID): UUID {
+        val pair = Participants.of(one, other)
+        dsl.insertInto(CONVERSATIONS)
+            .set(CONVERSATIONS.USER_A_ID, pair.userA)
+            .set(CONVERSATIONS.USER_B_ID, pair.userB)
+            .onConflictDoNothing()
+            .execute()
+        return dsl.select(CONVERSATIONS.ID).from(CONVERSATIONS)
+            .where(CONVERSATIONS.USER_A_ID.eq(pair.userA), CONVERSATIONS.USER_B_ID.eq(pair.userB))
+            .fetchOne(CONVERSATIONS.ID)!!
+    }
 
-        var cond = CONVERSATIONS.OWNER_ID.eq(userId).or(CONVERSATIONS.APPLICANT_ID.eq(userId))
+    fun list(userId: UUID, cursor: String?, limit: Int): ConversationListResponse {
+        val userA = USERS.`as`("user_a")
+        val userB = USERS.`as`("user_b")
+
+        var cond = CONVERSATIONS.USER_A_ID.eq(userId).or(CONVERSATIONS.USER_B_ID.eq(userId))
         Cursors.decode(cursor ?: "")?.let { (at, id) ->
             cond = cond.and(DSL.row(CONVERSATIONS.LAST_MESSAGE_AT, CONVERSATIONS.ID).lessThan(at, id))
         }
@@ -73,19 +96,14 @@ class ConversationService(
         )
 
         val rows = dsl.select(
-            CONVERSATIONS.ID, CONVERSATIONS.OWNER_ID, CONVERSATIONS.APPLICANT_ID,
-            CONVERSATIONS.APPLICATION_ID, CONVERSATIONS.LAST_MESSAGE_AT,
-            EVENTS.ID, EVENTS.TITLE, EVENTS.STATUS,
-            APPLICATIONS.STATUS,
-            owner.DISPLAY_NAME, owner.AVATAR_SEED, owner.CREATED_AT,
-            applicant.DISPLAY_NAME, applicant.AVATAR_SEED, applicant.CREATED_AT,
+            CONVERSATIONS.ID, CONVERSATIONS.USER_A_ID, CONVERSATIONS.LAST_MESSAGE_AT,
+            userA.DISPLAY_NAME, userA.AVATAR_SEED, userA.CREATED_AT,
+            userB.DISPLAY_NAME, userB.AVATAR_SEED, userB.CREATED_AT,
             unread, lastBody,
         )
             .from(CONVERSATIONS)
-            .join(EVENTS).on(EVENTS.ID.eq(CONVERSATIONS.EVENT_ID))
-            .join(APPLICATIONS).on(APPLICATIONS.ID.eq(CONVERSATIONS.APPLICATION_ID))
-            .join(owner).on(owner.ID.eq(CONVERSATIONS.OWNER_ID))
-            .join(applicant).on(applicant.ID.eq(CONVERSATIONS.APPLICANT_ID))
+            .join(userA).on(userA.ID.eq(CONVERSATIONS.USER_A_ID))
+            .join(userB).on(userB.ID.eq(CONVERSATIONS.USER_B_ID))
             .where(cond)
             .orderBy(CONVERSATIONS.LAST_MESSAGE_AT.desc(), CONVERSATIONS.ID.desc())
             .limit(limit + 1)
@@ -97,22 +115,14 @@ class ConversationService(
         } else null
 
         val items = page.map { r ->
-            val amOwner = r[CONVERSATIONS.OWNER_ID] == userId
-            val other = if (amOwner) applicant else owner
+            val other = if (r[CONVERSATIONS.USER_A_ID] == userId) userB else userA
             ConversationSummary(
                 id = r[CONVERSATIONS.ID]!!,
-                event = EventSnippet(
-                    id = r[EVENTS.ID]!!,
-                    title = r[EVENTS.TITLE]!!,
-                    status = EventStatus.fromDb(r[EVENTS.STATUS]!!.literal),
-                ),
                 otherParty = AuthorCard(
                     displayName = r[other.DISPLAY_NAME]!!,
                     avatarSeed = r[other.AVATAR_SEED]!!,
                     memberSince = r[other.CREATED_AT]!!.toInstant(),
                 ),
-                applicationId = r[CONVERSATIONS.APPLICATION_ID]!!,
-                applicationStatus = ApplicationStatus.fromDb(r[APPLICATIONS.STATUS]!!.literal),
                 lastMessageAt = r[CONVERSATIONS.LAST_MESSAGE_AT]!!.toInstant(),
                 lastMessageBody = r[lastBody],
                 unreadCount = r[unread]!!,
@@ -127,16 +137,21 @@ class ConversationService(
         Cursors.decode(cursor ?: "")?.let { (at, id) ->
             cond = cond.and(DSL.row(MESSAGES.CREATED_AT, MESSAGES.ID).lessThan(at, id))
         }
-        val rows = dsl.selectFrom(MESSAGES)
+        val rows = dsl.select(MESSAGES.asterisk(), EVENTS.ID, EVENTS.TITLE, EVENTS.STATUS)
+            .from(MESSAGES)
+            .leftJoin(EVENTS).on(EVENTS.ID.eq(MESSAGES.EVENT_ID))
             .where(cond)
             .orderBy(MESSAGES.CREATED_AT.desc(), MESSAGES.ID.desc())
             .limit(limit + 1)
             .fetch()
         val page = rows.take(limit)
         val nextCursor = if (rows.size > limit) {
-            page.last().let { Cursors.encode(it.createdAt!!, it.id!!) }
+            page.last().let { Cursors.encode(it[MESSAGES.CREATED_AT]!!, it[MESSAGES.ID]!!) }
         } else null
-        return MessageListResponse(page.reversed().map(::toMessage), nextCursor)
+        val items = page.reversed().map { r ->
+            toMessage(r.into(MESSAGES).into(MessagesRecord::class.java), snippet(r))
+        }
+        return MessageListResponse(items, nextCursor)
     }
 
     @Transactional
@@ -148,42 +163,45 @@ class ConversationService(
         }
         val message = insertMessage(conversationId, senderId, trimmed)
         val recipient = participants.otherThan(senderId)
-        notifyRecipient(conversationId, recipient)
+        notifyRecipient(conversationId, recipient, senderId)
         publisher.publishEvent(MessageCreated(recipient, conversationId, message))
         return message
     }
 
-    private fun notifyRecipient(conversationId: UUID, recipient: UUID) {
+    fun notifyRecipient(conversationId: UUID, recipient: UUID, senderId: UUID) {
         if (notifications.hasPendingForConversation(recipient, conversationId)) return
-        val row = dsl.select(CONVERSATIONS.EVENT_ID, EVENTS.TITLE)
-            .from(CONVERSATIONS)
-            .join(EVENTS).on(EVENTS.ID.eq(CONVERSATIONS.EVENT_ID))
-            .where(CONVERSATIONS.ID.eq(conversationId))
-            .fetchOne()
+        val senderName = dsl.select(USERS.DISPLAY_NAME).from(USERS)
+            .where(USERS.ID.eq(senderId))
+            .fetchOne(USERS.DISPLAY_NAME)
             ?: return
         notifications.create(
             recipient,
             NotificationKind.MESSAGE_RECEIVED,
             mapOf(
                 "conversationId" to conversationId.toString(),
-                "eventId" to row[CONVERSATIONS.EVENT_ID].toString(),
-                "eventTitle" to row[EVENTS.TITLE],
+                "senderName" to senderName,
             ),
         )
     }
 
-    fun insertMessage(conversationId: UUID, senderId: UUID, body: String): MessageResponse {
+    fun insertMessage(
+        conversationId: UUID,
+        senderId: UUID,
+        body: String,
+        event: EventSnippet? = null,
+    ): MessageResponse {
         val record = dsl.insertInto(MESSAGES)
             .set(MESSAGES.CONVERSATION_ID, conversationId)
             .set(MESSAGES.SENDER_ID, senderId)
             .set(MESSAGES.BODY, body)
+            .set(MESSAGES.EVENT_ID, event?.id)
             .returning()
             .fetchOne()!!
         dsl.update(CONVERSATIONS)
             .set(CONVERSATIONS.LAST_MESSAGE_AT, record.createdAt)
             .where(CONVERSATIONS.ID.eq(conversationId))
             .execute()
-        return toMessage(record)
+        return toMessage(record, event)
     }
 
     @Transactional
@@ -203,12 +221,22 @@ class ConversationService(
         }
     }
 
-    private fun toMessage(record: MessagesRecord): MessageResponse =
+    private fun snippet(record: org.jooq.Record): EventSnippet? =
+        record[EVENTS.ID]?.let {
+            EventSnippet(
+                id = it,
+                title = record[EVENTS.TITLE]!!,
+                status = EventStatus.fromDb(record[EVENTS.STATUS]!!.literal),
+            )
+        }
+
+    private fun toMessage(record: MessagesRecord, event: EventSnippet?): MessageResponse =
         MessageResponse(
             id = record.id!!,
             conversationId = record.conversationId!!,
             senderId = record.senderId!!,
             body = record.body!!,
+            event = event,
             createdAt = record.createdAt!!.toInstant(),
             readAt = record.readAt?.toInstant(),
         )

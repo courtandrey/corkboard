@@ -65,8 +65,9 @@ class Spec4MessagingTest : ApiTestBase() {
         assertThat(alerted["unreadCount"].asInt()).isEqualTo(1)
         val alert = alerted["items"].first { it["payload"]["conversationId"].asText() == conversationId }
         assertThat(alert["kind"].asText()).isEqualTo("message_received")
-        assertThat(alert["payload"]["eventTitle"].asText()).isEqualTo("Spare bicycle")
-        assertThat(alert["payload"]["eventId"].asText()).isEqualTo(eventId)
+        assertThat(alert["payload"]["senderName"].asText())
+            .describedAs("a dialogue spans notes, so the alert names who wrote")
+            .isEqualTo("Reply Applicant")
 
         repeat(3) {
             sendJson(
@@ -127,7 +128,7 @@ class Spec4MessagingTest : ApiTestBase() {
         val authorList = json(getJson("/api/v1/conversations", author.headers))
         val authorSummary = authorList["items"].first { it["id"].asText() == conversationId }
         assertThat(authorSummary["unreadCount"].asInt()).isEqualTo(2)
-        assertThat(authorSummary["applicationStatus"].asText()).isEqualTo("accepted")
+        assertThat(authorSummary["otherParty"]["displayName"].asText()).isEqualTo("Msg Applicant")
 
         val applicantSummary = json(getJson("/api/v1/conversations", applicant.headers))["items"]
             .first { it["id"].asText() == conversationId }

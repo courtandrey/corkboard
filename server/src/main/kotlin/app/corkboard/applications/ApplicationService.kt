@@ -19,7 +19,9 @@ import app.corkboard.notifications.NotificationKind
 import app.corkboard.notifications.NotificationService
 import app.corkboard.scopes.ScopeService
 import java.util.UUID
+import org.jooq.Condition
 import org.jooq.DSLContext
+import org.jooq.Field
 import org.jooq.impl.DSL
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.dao.DuplicateKeyException
@@ -71,15 +73,13 @@ class ApplicationService(
             throw ApiException(HttpStatus.CONFLICT, ProblemCode.ALREADY_APPLIED)
         }
 
-        val conversationId = dsl.insertInto(CONVERSATIONS)
-            .set(CONVERSATIONS.APPLICATION_ID, application.id)
-            .set(CONVERSATIONS.EVENT_ID, eventId)
-            .set(CONVERSATIONS.OWNER_ID, authorId)
-            .set(CONVERSATIONS.APPLICANT_ID, applicantId)
-            .returning(CONVERSATIONS.ID)
-            .fetchOne(CONVERSATIONS.ID)!!
-
-        val firstMessage = conversations.insertMessage(conversationId, applicantId, body)
+        val conversationId = conversations.between(authorId, applicantId)
+        val snippet = EventSnippet(
+            id = eventId,
+            title = event[EVENTS.TITLE]!!,
+            status = EventStatus.fromDb(event[EVENTS.STATUS]!!.literal),
+        )
+        val firstMessage = conversations.insertMessage(conversationId, applicantId, body, snippet)
 
         notifications.create(
             authorId,
@@ -158,7 +158,10 @@ class ApplicationService(
         val applicantUser = USERS.`as`("applicant_user")
         val firstBody = DSL.field(
             DSL.select(MESSAGES.BODY).from(MESSAGES)
-                .where(MESSAGES.CONVERSATION_ID.eq(CONVERSATIONS.ID))
+                .where(
+                    MESSAGES.EVENT_ID.eq(APPLICATIONS.EVENT_ID),
+                    MESSAGES.SENDER_ID.eq(APPLICATIONS.APPLICANT_ID),
+                )
                 .orderBy(MESSAGES.CREATED_AT.asc(), MESSAGES.ID.asc())
                 .limit(1)
         )
@@ -176,7 +179,7 @@ class ApplicationService(
         )
             .from(APPLICATIONS)
             .join(EVENTS).on(EVENTS.ID.eq(APPLICATIONS.EVENT_ID))
-            .join(CONVERSATIONS).on(CONVERSATIONS.APPLICATION_ID.eq(APPLICATIONS.ID))
+            .join(CONVERSATIONS).on(pairIs(EVENTS.AUTHOR_ID, APPLICATIONS.APPLICANT_ID))
             .join(applicantUser).on(applicantUser.ID.eq(APPLICATIONS.APPLICANT_ID))
             .where(roleCond)
             .orderBy(EVENTS.CREATED_AT.desc(), APPLICATIONS.CREATED_AT.desc())
@@ -212,6 +215,10 @@ class ApplicationService(
         return MyApplicationsResponse(groups)
     }
 
+    private fun pairIs(one: Field<UUID?>, other: Field<UUID?>): Condition =
+        CONVERSATIONS.USER_A_ID.eq(DSL.least(one, other))
+            .and(CONVERSATIONS.USER_B_ID.eq(DSL.greatest(one, other)))
+
     private data class ApplicationRow(
         val applicantId: UUID,
         val authorId: UUID,
@@ -230,7 +237,7 @@ class ApplicationService(
         )
             .from(APPLICATIONS)
             .join(EVENTS).on(EVENTS.ID.eq(APPLICATIONS.EVENT_ID))
-            .leftJoin(CONVERSATIONS).on(CONVERSATIONS.APPLICATION_ID.eq(APPLICATIONS.ID))
+            .leftJoin(CONVERSATIONS).on(pairIs(EVENTS.AUTHOR_ID, APPLICATIONS.APPLICANT_ID))
             .where(APPLICATIONS.ID.eq(applicationId))
             .fetchOne { r ->
                 ApplicationRow(

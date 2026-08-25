@@ -75,7 +75,6 @@ test("apply opens a conversation; replies arrive live over the websocket", async
   await expect(authorPage.locator(".topbar .badge")).toHaveCount(0);
 
   await authorPage.getByRole("link", { name: "Messages" }).click();
-  // the list re-renders as the websocket lands, which can swallow a click on a row
   await openThread(authorPage, "WS Applicant");
   await arrives(authorPage.locator(".bubble").first()).toContainText("Hello from the regression suite!");
   await authorPage.getByPlaceholder("Write a message…").fill("Live reply, no reload needed.");
@@ -123,9 +122,66 @@ test("a reply raises the bell live, for a recipient who is not in the thread", a
 
   await expect(authorPage.locator(".topbar .badge")).toHaveText("1", { timeout: 15_000 });
   await authorPage.getByRole("button", { name: "Notifications" }).click();
-  await expect(authorPage.locator(".bell-item").first()).toContainText("New message about");
+  await expect(authorPage.locator(".bell-item").first()).toContainText("New message from Bell Applicant");
   await authorPage.screenshot({ path: `${SHOTS}/message-alert.png` });
 
   await authorCtx.close();
   await applicantCtx.close();
+});
+
+test("answering a second note lands in the same dialogue, each message naming its note", async ({ browser }) => {
+  const authorCtx = await browser.newContext();
+  const authorPage = await authorCtx.newPage();
+  await authorPage.goto("/");
+  await registerViaApi(authorPage, "Two Note Author");
+  const stamp = Date.now();
+  const cats = await createEventViaApi(authorPage, { title: `Cat sitter wanted ${stamp}`, applyable: true });
+  const ladder = await createEventViaApi(authorPage, { title: `Ladder to borrow ${stamp}`, applyable: true });
+
+  const neighbourCtx = await browser.newContext();
+  const neighbourPage = await neighbourCtx.newPage();
+  await neighbourPage.goto("/");
+  await registerViaApi(neighbourPage, "Two Note Neighbour");
+
+  async function respond(noteId: string, message: string) {
+    await neighbourPage.goto(`/events/${noteId}`);
+    await neighbourPage.getByRole("button", { name: "Respond to this note" }).click();
+    await neighbourPage
+      .getByPlaceholder("Write a short note back — who you are, why you’re writing…")
+      .fill(message);
+    await neighbourPage.getByRole("button", { name: "Send response" }).click();
+    await expect(neighbourPage.getByRole("link", { name: "Open the conversation" })).toBeVisible();
+  }
+
+  await respond(cats.id, "I love cats — free all week.");
+  await respond(ladder.id, "I have a six-foot ladder.");
+
+  await neighbourPage.goto("/messages");
+  await expect(neighbourPage.locator(".conv-row"), "one dialogue per neighbour, not per note").toHaveCount(1);
+
+  await openThread(neighbourPage, "Two Note Author");
+  await arrives(neighbourPage.locator(".bubble")).toHaveCount(2);
+  await expect(neighbourPage.locator(".bubble-note")).toHaveText([
+    `Answering Cat sitter wanted ${stamp}`,
+    `Answering Ladder to borrow ${stamp}`,
+  ]);
+
+  await neighbourPage.locator(".bubble-note").first().click();
+  await expect(neighbourPage.locator(".modal-card .ev-title"), "the link opens the note it answers").toHaveText(
+    `Cat sitter wanted ${stamp}`,
+  );
+
+  await authorPage.goto("/messages");
+  await openThread(authorPage, "Two Note Neighbour");
+  await arrives(authorPage.locator(".bubble")).toHaveCount(2);
+  await authorPage.getByPlaceholder("Write a message…").fill("Come by for both.");
+  await authorPage.getByRole("button", { name: "Send", exact: true }).click();
+  await expect(authorPage.locator(".bubble").last()).toContainText("Come by for both.");
+  await expect(
+    authorPage.locator(".bubble").last().locator(".bubble-note"),
+    "an ordinary reply answers no note",
+  ).toHaveCount(0);
+
+  await authorCtx.close();
+  await neighbourCtx.close();
 });

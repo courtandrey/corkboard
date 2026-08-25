@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { ConversationSummary, MessageResponse } from "../../api/client";
 import { useConversations, useMe, useMessages } from "../../api/hooks";
+import { notePath } from "../../api/paths";
 import { useBoardHome } from "../../stores/boardStore";
 import { strings } from "../../i18n/strings";
 import { Modal } from "../../ui/Modal";
@@ -23,7 +24,6 @@ function ConversationRow({ conversation, active }: { conversation: ConversationS
         {conversation.otherParty.displayName}
         {conversation.unreadCount > 0 && <span className="badge">{conversation.unreadCount}</span>}
       </span>
-      <div className="conv-event">{conversation.event.title}</div>
       {conversation.lastMessageBody && <div className="conv-snippet">{conversation.lastMessageBody}</div>}
     </Link>
   );
@@ -104,11 +104,10 @@ function Thread({ conversation, onBack }: { conversation: ConversationSummary; o
             <BackIcon size={14} /> {s.backToList}
           </button>
         )}
-        <div>
-          {s.aboutNote} <Link to={`/events/${conversation.event.id}`}>{conversation.event.title}</Link>
-          {" · "}
-          {s.statusLabel(conversation.applicationStatus)}
-        </div>
+        <span className="thread-who">
+          <PixelAvatar seed={conversation.otherParty.avatarSeed} size={20} />
+          {conversation.otherParty.displayName}
+        </span>
       </div>
       <div className="thread-messages" ref={scrollRef} onScroll={onScroll}>
         {hasNextPage && (
@@ -118,6 +117,11 @@ function Thread({ conversation, onBack }: { conversation: ConversationSummary; o
         )}
         {messages.map((m) => (
           <div key={m.id} className={`bubble${m.senderId === me?.id ? " mine" : ""}`}>
+            {m.event && (
+              <Link className="bubble-note" to={notePath(null, m.event.id)}>
+                {s.aboutNote} {m.event.title}
+              </Link>
+            )}
             {m.body}
             <span className="bubble-time">
               {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}

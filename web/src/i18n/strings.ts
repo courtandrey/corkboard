@@ -132,7 +132,7 @@ export const strings = {
     loadingOlder: "Fetching older messages…",
     inputPlaceholder: "Write a message…",
     send: "Send",
-    aboutNote: "About the note:",
+    aboutNote: "Answering",
     statusLabel: (status: string) => `response ${status}`,
     accept: "Accept",
     decline: "Decline",
@@ -149,7 +149,7 @@ export const strings = {
     eventExpiring: (event: string) => `“${event}” is about to leave the board`,
     eventUnderReview: (event: string) => `“${event}” was taken off the board for review`,
     eventTakenDown: (event: string) => `“${event}” was taken off the board by a keeper`,
-    messageReceived: (event: string) => `New message about “${event}”`,
+    messageReceived: (name: string) => `New message from ${name}`,
     fallback: "Something happened on the board",
   },
   myPins: {

@@ -766,6 +766,13 @@ export interface components {
         SendMessageRequest: {
             body: string;
         };
+        EventSnippet: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            /** @enum {string} */
+            status: "active" | "resolved" | "expired" | "removed" | "taken_down" | "under_review";
+        };
         MessageResponse: {
             /** Format: uuid */
             id: string;
@@ -774,6 +781,7 @@ export interface components {
             /** Format: uuid */
             senderId: string;
             body: string;
+            event?: components["schemas"]["EventSnippet"];
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -985,13 +993,6 @@ export interface components {
             conversationId: string;
             applicant?: components["schemas"]["AuthorCard"];
         };
-        EventSnippet: {
-            /** Format: uuid */
-            id: string;
-            title: string;
-            /** @enum {string} */
-            status: "active" | "resolved" | "expired" | "removed" | "taken_down" | "under_review";
-        };
         MyApplicationsResponse: {
             items: components["schemas"]["ApplicationGroup"][];
         };
@@ -1049,12 +1050,7 @@ export interface components {
         ConversationSummary: {
             /** Format: uuid */
             id: string;
-            event: components["schemas"]["EventSnippet"];
             otherParty: components["schemas"]["AuthorCard"];
-            /** Format: uuid */
-            applicationId: string;
-            /** @enum {string} */
-            applicationStatus: "pending" | "accepted" | "declined" | "withdrawn";
             /** Format: date-time */
             lastMessageAt: string;
             lastMessageBody?: string;

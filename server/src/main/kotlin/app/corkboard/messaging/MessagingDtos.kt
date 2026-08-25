@@ -23,6 +23,7 @@ data class MessageResponse(
     val conversationId: UUID,
     val senderId: UUID,
     val body: String,
+    val event: EventSnippet?,
     val createdAt: Instant,
     val readAt: Instant?,
 )
@@ -39,10 +40,7 @@ data class MessageListResponse(
 
 data class ConversationSummary(
     val id: UUID,
-    val event: EventSnippet,
     val otherParty: AuthorCard,
-    val applicationId: UUID,
-    val applicationStatus: ApplicationStatus,
     val lastMessageAt: Instant,
     val lastMessageBody: String?,
     val unreadCount: Int,

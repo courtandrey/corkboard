@@ -25,16 +25,16 @@ class Spec3ApplyTest : ApiTestBase() {
 
         val conversations = json(getJson("/api/v1/conversations", applicant.headers))
         val summary = conversations["items"].first { it["id"].asText() == conversationId }
-        assertThat(summary["event"]["id"].asText()).isEqualTo(eventId)
-        assertThat(summary["event"]["title"].asText()).isEqualTo("Cat sitter wanted")
         assertThat(summary["otherParty"]["displayName"].asText()).isEqualTo("Apply Author")
         assertThat(summary["lastMessageBody"].asText()).isEqualTo("I love cats and live around the corner.")
         assertThat(summary["unreadCount"].asInt()).isEqualTo(0)
-        assertThat(summary["applicationStatus"].asText()).isEqualTo("pending")
 
         val messages = json(getJson("/api/v1/conversations/$conversationId/messages", author.headers))
         assertThat(messages["items"]).hasSize(1)
         assertThat(messages["items"][0]["body"].asText()).isEqualTo("I love cats and live around the corner.")
+        val answered = messages["items"][0]["event"]
+        assertThat(answered["id"].asText()).describedAs("the note answered rides on the message").isEqualTo(eventId)
+        assertThat(answered["title"].asText()).isEqualTo("Cat sitter wanted")
 
         val detail = json(getJson("/api/v1/events/$eventId", applicant.headers))
         assertThat(detail["viewerState"]["applied"].asBoolean()).isTrue
@@ -52,6 +52,43 @@ class Spec3ApplyTest : ApiTestBase() {
         )
         assertThat(duplicate.statusCode.value()).isEqualTo(409)
         assertThat(json(duplicate)["code"].asText()).isEqualTo("already_applied")
+    }
+
+    @Test
+    fun `answering a second note continues the same conversation`() {
+        val author = registerUser("Two Notes Author")
+        val applicant = registerUser("Two Notes Applicant")
+        val first = createEvent(author, 34.31, 64.11, title = "Cat sitter wanted")
+        val second = createEvent(author, 34.32, 64.12, title = "Ladder to borrow")
+
+        fun applyTo(eventId: String, message: String) = json(
+            sendJson(
+                HttpMethod.POST, "/api/v1/events/$eventId/apply",
+                mapOf("message" to message), applicant.headers,
+            )
+        )["conversationId"].asText()
+
+        val opened = applyTo(first, "I love cats.")
+        val again = applyTo(second, "I have a ladder.")
+        assertThat(again).describedAs("one dialogue per pair, whatever the note").isEqualTo(opened)
+
+        val conversations = json(getJson("/api/v1/conversations", applicant.headers))
+        assertThat(conversations["items"].count { it["otherParty"]["displayName"].asText() == "Two Notes Author" })
+            .isEqualTo(1)
+
+        val messages = json(getJson("/api/v1/conversations/$opened/messages", author.headers))["items"]
+        assertThat(messages).hasSize(2)
+        assertThat(messages.map { it["event"]["id"].asText() }).containsExactly(first, second)
+        assertThat(messages.map { it["event"]["title"].asText() })
+            .containsExactly("Cat sitter wanted", "Ladder to borrow")
+
+        val plain = json(
+            sendJson(
+                HttpMethod.POST, "/api/v1/conversations/$opened/messages",
+                mapOf("body" to "Tomorrow at six?"), author.headers,
+            )
+        )
+        assertThat(plain["event"].isNull).describedAs("an ordinary message answers no note").isTrue
     }
 
     @Test
