@@ -54,7 +54,12 @@ class GoogleRedirectTest : ApiTestBase() {
         val password = "Pw-${java.util.UUID.randomUUID()}"
         val register = rest.postForEntity(
             "/api/v1/auth/register",
-            mapOf("email" to email, "password" to password, "displayName" to "Coexists"),
+            mapOf(
+                "email" to email,
+                "password" to password,
+                "displayName" to "Coexists",
+                "handle" to "coexists_${java.util.UUID.randomUUID().toString().take(8)}".replace("-", ""),
+            ),
             String::class.java,
         )
         assertThat(register.statusCode.value()).isEqualTo(201)

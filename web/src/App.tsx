@@ -7,6 +7,7 @@ import { BoardMap } from "./features/board/BoardMap";
 import { EventDrawer } from "./features/events/EventDrawer";
 import { CreateEventFlow } from "./features/events/CreateEventFlow";
 import { AuthDrawer } from "./features/auth/AuthDrawer";
+import { FinishSignup } from "./features/auth/FinishSignup";
 import { VerifyBanner } from "./features/auth/VerifyBanner";
 import { VerifyGate } from "./features/auth/verifyGate";
 import { AccountModal } from "./features/auth/AccountModal";
@@ -88,6 +89,7 @@ export function App() {
           <Route path="/messages" element={<MessagesDrawer />} />
           <Route path="/messages/:conversationId" element={<MessagesDrawer />} />
           <Route path="/login" element={<AuthDrawer />} />
+          <Route path="/finish-signup" element={<FinishSignup />} />
           <Route path="*" element={null} />
         </Routes>
       </div>

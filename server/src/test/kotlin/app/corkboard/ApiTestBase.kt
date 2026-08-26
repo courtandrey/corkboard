@@ -99,7 +99,12 @@ abstract class ApiTestBase {
         val res = sendJson(
             HttpMethod.POST,
             "/api/v1/auth/register",
-            mapOf("email" to email, "password" to "Pw-${UUID.randomUUID()}", "displayName" to displayName),
+            mapOf(
+                "email" to email,
+                "password" to "Pw-${UUID.randomUUID()}",
+                "displayName" to displayName,
+                "handle" to "u_${UUID.randomUUID().toString().replace("-", "").take(12)}",
+            ),
         )
         check(res.statusCode.value() == 201) { "register failed: ${res.body}" }
         val cookie = res.headers[HttpHeaders.SET_COOKIE]!!

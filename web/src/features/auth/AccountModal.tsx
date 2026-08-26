@@ -7,6 +7,7 @@ import type { AuthResponse } from "../../api/client";
 import { useMe, useMeta } from "../../api/hooks";
 import { useBoardHome } from "../../stores/boardStore";
 import { strings } from "../../i18n/strings";
+import { handleOf } from "../../ui/handle";
 import { useFeature } from "../../ui/features";
 import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
@@ -73,6 +74,14 @@ export function AccountModal() {
                 </span>
               </div>
             </div>
+
+            <label>
+              {s.handleLabel}
+              <input name="handle" value={handleOf(me.handle)} disabled readOnly />
+            </label>
+            <p className="form-hint" style={{ marginTop: -10 }}>
+              {s.handleHelp}
+            </p>
 
             <label>
               {s.displayNameLabel}

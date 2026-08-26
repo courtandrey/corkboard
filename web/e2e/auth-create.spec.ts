@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { PASSWORD, SHOTS, confirmEmail, gotoBoard, uniqueEmail } from "./helpers";
+import { PASSWORD, SHOTS, confirmEmail, gotoBoard, uniqueEmail, uniqueHandle } from "./helpers";
 
 test("register via UI, pin a note through the crosshair flow, sign out", async ({ page }) => {
   await gotoBoard(page);
@@ -9,6 +9,7 @@ test("register via UI, pin a note through the crosshair flow, sign out", async (
   await page.getByRole("button", { name: "New here? Create an account" }).click();
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Display name").fill("E2E Creator");
+  await page.getByLabel("User ID").fill(uniqueHandle());
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Join the board" }).click();
   await expect(page.locator(".whoami")).toContainText("E2E Creator");

@@ -12,12 +12,14 @@ class GoogleIdentityServiceTest : ApiTestBase() {
     @Autowired
     lateinit var identity: GoogleIdentityService
 
-
     private fun uniqueEmail() = "google-${UUID.randomUUID()}@example.com"
+
+    private fun handle() = "g_${UUID.randomUUID().toString().replace("-", "").take(12)}"
 
     private fun insertPasswordUser(email: String): UUID =
         dsl.insertInto(USERS)
             .set(USERS.EMAIL, email)
+            .set(USERS.HANDLE, handle())
             .set(USERS.DISPLAY_NAME, "Password Person")
             .set(USERS.PASSWORD_HASH, "not-a-real-hash")
             .set(USERS.AVATAR_SEED, UUID.randomUUID().toString())
@@ -31,10 +33,10 @@ class GoogleIdentityServiceTest : ApiTestBase() {
     fun `matching google_sub signs in without touching the row`() {
         val email = uniqueEmail()
         val sub = "sub-${UUID.randomUUID()}"
-        val first = identity.createOrLink(GoogleProfile(sub, email, true, "Googler"))
-        val again = identity.createOrLink(GoogleProfile(sub, "changed-$email", true, "Renamed"))
+        val id = identity.create(GoogleProfile(sub, email, true, "Googler"), handle(), "Googler")
 
-        val id = (first as GoogleIdentityResult.SignedIn).userId
+        val again = identity.signIn(GoogleProfile(sub, "changed-$email", true, "Renamed"))
+
         assertThat((again as GoogleIdentityResult.SignedIn).userId).isEqualTo(id)
         assertThat(dsl.fetchCount(USERS, USERS.GOOGLE_SUB.eq(sub))).isEqualTo(1)
     }
@@ -45,7 +47,7 @@ class GoogleIdentityServiceTest : ApiTestBase() {
         val existing = insertPasswordUser(email)
         val sub = "sub-${UUID.randomUUID()}"
 
-        val result = identity.createOrLink(GoogleProfile(sub, email, true, "Googler"))
+        val result = identity.signIn(GoogleProfile(sub, email, true, "Googler"))
 
         assertThat((result as GoogleIdentityResult.SignedIn).userId).isEqualTo(existing)
         assertThat(googleSub(existing)).isEqualTo(sub)
@@ -56,24 +58,21 @@ class GoogleIdentityServiceTest : ApiTestBase() {
         val email = uniqueEmail()
         val existing = insertPasswordUser(email)
 
-        val result = identity.createOrLink(GoogleProfile("sub-${UUID.randomUUID()}", email, false, "Impostor"))
+        val result = identity.signIn(GoogleProfile("sub-${UUID.randomUUID()}", email, false, "Impostor"))
 
         assertThat(result).isEqualTo(GoogleIdentityResult.EmailConflict)
         assertThat(googleSub(existing)).isNull()
     }
 
     @Test
-    fun `unknown identity creates a passwordless user with a truncated display name`() {
+    fun `an unknown identity writes nothing until the user id is chosen`() {
         val email = uniqueEmail()
-        val longName = "N".repeat(80)
 
-        val result = identity.createOrLink(GoogleProfile("sub-${UUID.randomUUID()}", email, true, longName))
+        val result = identity.signIn(GoogleProfile("sub-${UUID.randomUUID()}", email, true, "Newcomer"))
 
-        val row = dsl.selectFrom(USERS)
-            .where(USERS.ID.eq((result as GoogleIdentityResult.SignedIn).userId))
-            .fetchOne()!!
-        assertThat(row.passwordHash).isNull()
-        assertThat(row.displayName).hasSize(50)
-        assertThat(row.email).isEqualTo(email)
+        assertThat(result).isEqualTo(GoogleIdentityResult.NeedsSignup)
+        assertThat(dsl.fetchCount(USERS, USERS.EMAIL.eq(email)))
+            .describedAs("no half-made account is left behind")
+            .isZero()
     }
 }

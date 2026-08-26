@@ -1469,6 +1469,17 @@ textarea:focus {
   color: var(--ink);
 }
 
+.user-handle {
+  color: var(--ink-faint);
+  font-weight: 400;
+  font-size: 11.5px;
+}
+
+.conv-name .user-handle,
+.thread-who .user-handle {
+  font-size: 11px;
+}
+
 .ev-meta .dot {
   color: var(--ink-faint);
 }

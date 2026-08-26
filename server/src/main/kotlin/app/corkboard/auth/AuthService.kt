@@ -37,17 +37,37 @@ class AuthService(
         val record = try {
             dsl.insertInto(USERS)
                 .set(USERS.EMAIL, req.email.trim())
+                .set(USERS.HANDLE, handle(req.handle))
                 .set(USERS.DISPLAY_NAME, req.displayName.trim())
                 .set(USERS.PASSWORD_HASH, passwords.hash(req.password))
                 .set(USERS.AVATAR_SEED, UUID.randomUUID().toString())
                 .returning()
                 .fetchOne()!!
-        } catch (e: DuplicateKeyException) {
-            throw ApiException(HttpStatus.CONFLICT, ProblemCode.EMAIL_TAKEN)
+        } catch (taken: DuplicateKeyException) {
+            throw ApiException(HttpStatus.CONFLICT, claimedAlready(taken))
         }
         val user = toResponse(record)
         verifications.issue(user.id, user.email, user.displayName)
         return AuthenticatedUser(user, sessions.create(user.id, userAgent))
+    }
+
+    fun handle(raw: String): String = raw.trim().lowercase()
+
+    companion object {
+        private const val HANDLE_CONSTRAINT = "users_handle_key"
+
+        fun claimedAlready(taken: DuplicateKeyException): ProblemCode =
+            if (taken.message?.contains(HANDLE_CONSTRAINT) == true) {
+                ProblemCode.HANDLE_TAKEN
+            } else {
+                ProblemCode.EMAIL_TAKEN
+            }
+    }
+
+    fun userById(userId: UUID): UserResponse {
+        val record = dsl.selectFrom(USERS).where(USERS.ID.eq(userId)).fetchOne()
+            ?: throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
+        return toResponse(record)
     }
 
     private fun toResponse(record: UsersRecord): UserResponse {
@@ -56,6 +76,7 @@ class AuthService(
         return UserResponse(
             id = record.id!!,
             email = record.email!!,
+            handle = record.handle!!,
             displayName = record.displayName!!,
             avatarSeed = record.avatarSeed!!,
             emailVerified = emailVerified,

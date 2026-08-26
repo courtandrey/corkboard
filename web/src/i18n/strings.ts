@@ -8,6 +8,8 @@ export const strings = {
     email: "Email",
     password: "Password",
     displayName: "Display name",
+    handle: "User ID",
+    handleHelp: "Letters, numbers and underscores. This one is yours for good — it can’t be changed.",
     signOut: "Sign out",
     signedInAs: (name: string) => `Signed in as ${name}`,
     googleSignIn: "Sign in with Google",
@@ -17,6 +19,13 @@ export const strings = {
     genericError: "Something went wrong. Please try again.",
     signInToPin: "Sign in to pin a note on the board.",
     accountMenu: "Your account",
+  },
+  finishSignup: {
+    title: "One thing to pick",
+    intro: "Google signed you in. Choose the user ID people will know you by, and the board is yours.",
+    submit: "Create my account",
+    welcome: "Welcome to the board.",
+    expired: "That sign-up link has run out. Start again from Sign in.",
   },
   verify: {
     banner: (email: string) =>
@@ -237,6 +246,8 @@ export const strings = {
   },
   account: {
     title: "Your account",
+    handleLabel: "User ID",
+    handleHelp: "How people find you. Chosen once, and it stays.",
     displayNameLabel: "Display name",
     displayNameHelp: "This is the name on every note and message you write.",
     emailConfirmed: "email confirmed",

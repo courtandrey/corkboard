@@ -276,6 +276,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/google/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["completeGoogleSignup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/applications/{id}/withdraw": {
         parameters: {
             query?: never;
@@ -686,6 +702,7 @@ export interface components {
         };
         AuthorCard: {
             displayName: string;
+            handle: string;
             avatarSeed: string;
             /** Format: date-time */
             memberSince: string;
@@ -791,6 +808,7 @@ export interface components {
             email: string;
             password: string;
             displayName: string;
+            handle: string;
             /** @enum {string} */
             transport?: "cookie" | "bearer";
         };
@@ -802,6 +820,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             email: string;
+            handle: string;
             displayName: string;
             avatarSeed: string;
             emailVerified: boolean;
@@ -813,6 +832,13 @@ export interface components {
         LoginRequest: {
             email: string;
             password: string;
+            /** @enum {string} */
+            transport?: "cookie" | "bearer";
+        };
+        CompleteSignupRequest: {
+            token: string;
+            displayName: string;
+            handle: string;
             /** @enum {string} */
             transport?: "cookie" | "bearer";
         };
@@ -1581,6 +1607,30 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthResponse"];
+                };
+            };
+        };
+    };
+    completeGoogleSignup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteSignupRequest"];
             };
         };
         responses: {

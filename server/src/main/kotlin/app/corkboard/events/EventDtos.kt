@@ -106,6 +106,7 @@ data class EventSnippet(
 
 data class AuthorCard(
     val displayName: String,
+    val handle: String,
     val avatarSeed: String,
     val memberSince: Instant,
 )

@@ -188,7 +188,8 @@ class SeedRunner(
     }
 
     private fun register(email: String, displayName: String, password: String): UUID {
-        val id = auth.register(RegisterRequest(email, password, displayName), null).user.id
+        val handle = displayName.lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_').take(24)
+        val id = auth.register(RegisterRequest(email, password, displayName, handle), null).user.id
         dsl.update(USERS)
             .set(USERS.EMAIL_VERIFIED_AT, OffsetDateTime.now())
             .where(USERS.ID.eq(id))

@@ -40,6 +40,7 @@ class WsGatewayTest : ApiTestBase() {
                 "email" to "ws-${UUID.randomUUID()}@example.com",
                 "password" to "Pw-${UUID.randomUUID()}",
                 "displayName" to "WS User",
+                "handle" to "ws_${UUID.randomUUID().toString().replace("-", "").take(12)}",
                 "transport" to "bearer",
             ),
         )
@@ -106,6 +107,7 @@ class WsGatewayTest : ApiTestBase() {
                 "email" to email,
                 "password" to "Pw-${UUID.randomUUID()}",
                 "displayName" to "WS Unconfirmed",
+                "handle" to "wsu_${UUID.randomUUID().toString().replace("-", "").take(12)}",
                 "transport" to "bearer",
             ),
         )

@@ -265,7 +265,7 @@ class EventService(
             } ?: throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
 
     private fun toDetail(event: EventRow, viewerId: UUID?): EventDetail {
-        val author = dsl.select(USERS.DISPLAY_NAME, USERS.AVATAR_SEED, USERS.CREATED_AT)
+        val author = dsl.select(USERS.DISPLAY_NAME, USERS.HANDLE, USERS.AVATAR_SEED, USERS.CREATED_AT)
             .from(USERS).where(USERS.ID.eq(event.authorId)).fetchOne()!!
 
         return EventDetail(
@@ -283,6 +283,7 @@ class EventService(
             tags = tags.eventTags(event.id).map { (name, slug) -> TagRef(name, slug) },
             author = AuthorCard(
                 displayName = author[USERS.DISPLAY_NAME]!!,
+                handle = author[USERS.HANDLE]!!,
                 avatarSeed = author[USERS.AVATAR_SEED]!!,
                 memberSince = author[USERS.CREATED_AT]!!.toInstant(),
             ),

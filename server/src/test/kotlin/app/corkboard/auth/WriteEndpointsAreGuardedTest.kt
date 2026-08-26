@@ -16,6 +16,7 @@ class WriteEndpointsAreGuardedTest : ApiTestBase() {
     private val exempt = mapOf(
         "POST /api/v1/auth/register" to "signing up cannot require an account",
         "POST /api/v1/auth/login" to "signing in cannot require an account",
+        "POST /api/v1/auth/google/complete" to "finishing a sign-up is what creates the account",
         "POST /api/v1/auth/logout" to "leaving is always allowed",
         "PATCH /api/v1/auth/me" to "renaming yourself reaches nobody else",
         "POST /api/v1/auth/verification/resend" to "the way out of being unconfirmed",

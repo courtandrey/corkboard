@@ -97,8 +97,8 @@ class ConversationService(
 
         val rows = dsl.select(
             CONVERSATIONS.ID, CONVERSATIONS.USER_A_ID, CONVERSATIONS.LAST_MESSAGE_AT,
-            userA.DISPLAY_NAME, userA.AVATAR_SEED, userA.CREATED_AT,
-            userB.DISPLAY_NAME, userB.AVATAR_SEED, userB.CREATED_AT,
+            userA.DISPLAY_NAME, userA.HANDLE, userA.AVATAR_SEED, userA.CREATED_AT,
+            userB.DISPLAY_NAME, userB.HANDLE, userB.AVATAR_SEED, userB.CREATED_AT,
             unread, lastBody,
         )
             .from(CONVERSATIONS)
@@ -120,6 +120,7 @@ class ConversationService(
                 id = r[CONVERSATIONS.ID]!!,
                 otherParty = AuthorCard(
                     displayName = r[other.DISPLAY_NAME]!!,
+                    handle = r[other.HANDLE]!!,
                     avatarSeed = r[other.AVATAR_SEED]!!,
                     memberSince = r[other.CREATED_AT]!!.toInstant(),
                 ),

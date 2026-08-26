@@ -18,6 +18,8 @@ data class GoogleProfile(
 sealed interface GoogleIdentityResult {
     data class SignedIn(val userId: UUID) : GoogleIdentityResult
 
+    data object NeedsSignup : GoogleIdentityResult
+
     data object EmailConflict : GoogleIdentityResult
 }
 
@@ -25,7 +27,7 @@ sealed interface GoogleIdentityResult {
 class GoogleIdentityService(private val dsl: DSLContext, private val clock: Clock) {
 
     @Transactional
-    fun createOrLink(profile: GoogleProfile): GoogleIdentityResult {
+    fun signIn(profile: GoogleProfile): GoogleIdentityResult {
         val bySub = dsl.select(USERS.ID).from(USERS)
             .where(USERS.GOOGLE_SUB.eq(profile.sub))
             .fetchOne(USERS.ID)
@@ -44,16 +46,18 @@ class GoogleIdentityService(private val dsl: DSLContext, private val clock: Cloc
             return GoogleIdentityResult.SignedIn(byEmail)
         }
 
-        val displayName = profile.name?.trim()?.take(50)?.takeIf { it.isNotEmpty() }
-            ?: profile.email.substringBefore("@").take(50)
-        val id = dsl.insertInto(USERS)
+        return GoogleIdentityResult.NeedsSignup
+    }
+
+    @Transactional
+    fun create(profile: GoogleProfile, handle: String, displayName: String): UUID =
+        dsl.insertInto(USERS)
             .set(USERS.EMAIL, profile.email)
+            .set(USERS.HANDLE, handle)
             .set(USERS.DISPLAY_NAME, displayName)
             .set(USERS.GOOGLE_SUB, profile.sub)
             .set(USERS.AVATAR_SEED, UUID.randomUUID().toString())
             .set(USERS.EMAIL_VERIFIED_AT, if (profile.emailVerified) OffsetDateTime.now(clock) else null)
             .returning(USERS.ID)
             .fetchOne(USERS.ID)!!
-        return GoogleIdentityResult.SignedIn(id)
-    }
 }

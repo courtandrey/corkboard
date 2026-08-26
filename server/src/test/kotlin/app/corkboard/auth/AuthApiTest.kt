@@ -36,13 +36,21 @@ class AuthApiTest : ApiTestBase() {
     private fun bearerHeader(token: String): HttpHeaders =
         HttpHeaders().apply { setBearerAuth(token) }
 
+    private fun uniqueHandle() = "t_${UUID.randomUUID().toString().replace("-", "").take(12)}"
+
     private fun register(
         email: String = uniqueEmail(),
         password: String = strongPassword(),
         displayName: String = "Test Resident",
+        handle: String = uniqueHandle(),
         transport: String? = null,
     ): ResponseEntity<String> {
-        val body = mutableMapOf<String, Any?>("email" to email, "password" to password, "displayName" to displayName)
+        val body = mutableMapOf<String, Any?>(
+            "email" to email,
+            "password" to password,
+            "displayName" to displayName,
+            "handle" to handle,
+        )
         if (transport != null) body["transport"] = transport
         return post("/api/v1/auth/register", body)
     }

@@ -24,6 +24,7 @@ class AuthController(
     private val authService: AuthService,
     private val verifications: EmailVerificationService,
     private val cookies: SessionCookies,
+    private val signups: GoogleSignupService,
     private val props: CorkboardProperties,
 ) {
 
@@ -35,6 +36,16 @@ class AuthController(
         request: HttpServletRequest,
     ): ResponseEntity<AuthResponse> {
         val result = authService.register(req, request.getHeader("User-Agent"))
+        return respond(HttpStatus.CREATED, result, req.transport ?: SessionTransport.COOKIE)
+    }
+
+    /** The second half of a Google sign-up: the account is written here, not at the callback. */
+    @PostMapping("/google/complete")
+    fun completeGoogleSignup(
+        @Valid @RequestBody req: CompleteSignupRequest,
+        request: HttpServletRequest,
+    ): ResponseEntity<AuthResponse> {
+        val result = signups.complete(req, request.getHeader("User-Agent"))
         return respond(HttpStatus.CREATED, result, req.transport ?: SessionTransport.COOKIE)
     }
 

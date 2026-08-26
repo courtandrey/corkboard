@@ -8,6 +8,7 @@ import { useConversations, useMe, useMessages } from "../../api/hooks";
 import { notePath } from "../../api/paths";
 import { useBoardHome } from "../../stores/boardStore";
 import { strings } from "../../i18n/strings";
+import { handleOf } from "../../ui/handle";
 import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
 import { useIsPhone } from "../../ui/useMediaQuery";
@@ -22,6 +23,7 @@ function ConversationRow({ conversation, active }: { conversation: ConversationS
       <span className="conv-name">
         <PixelAvatar seed={conversation.otherParty.avatarSeed} size={18} />
         {conversation.otherParty.displayName}
+        <span className="user-handle">{handleOf(conversation.otherParty.handle)}</span>
         {conversation.unreadCount > 0 && <span className="badge">{conversation.unreadCount}</span>}
       </span>
       {conversation.lastMessageBody && <div className="conv-snippet">{conversation.lastMessageBody}</div>}
@@ -107,6 +109,7 @@ function Thread({ conversation, onBack }: { conversation: ConversationSummary; o
         <span className="thread-who">
           <PixelAvatar seed={conversation.otherParty.avatarSeed} size={20} />
           {conversation.otherParty.displayName}
+          <span className="user-handle">{handleOf(conversation.otherParty.handle)}</span>
         </span>
       </div>
       <div className="thread-messages" ref={scrollRef} onScroll={onScroll}>

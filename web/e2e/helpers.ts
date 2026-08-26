@@ -17,10 +17,14 @@ export async function registerViaApi(page: Page, displayName: string): Promise<s
   return email;
 }
 
+export function uniqueHandle(): string {
+  return `e2e_${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`;
+}
+
 export async function registerUnverifiedViaApi(page: Page, displayName: string): Promise<string> {
   const email = uniqueEmail("e2e");
   const res = await page.request.post("/api/v1/auth/register", {
-    data: { email, password: PASSWORD, displayName },
+    data: { email, password: PASSWORD, displayName, handle: uniqueHandle() },
   });
   expect(res.status(), await res.text()).toBe(201);
   return email;

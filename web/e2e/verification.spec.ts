@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { PASSWORD, SHOTS, gotoBoard, uniqueEmail, verificationLink } from "./helpers";
+import { PASSWORD, SHOTS, gotoBoard, uniqueEmail, verificationLink, uniqueHandle } from "./helpers";
 
 test("a new account is read-only until the emailed link is opened", async ({ page }) => {
   await gotoBoard(page);
@@ -9,6 +9,7 @@ test("a new account is read-only until the emailed link is opened", async ({ pag
   await page.getByRole("button", { name: "New here? Create an account" }).click();
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Display name").fill("Unconfirmed Neighbour");
+  await page.getByLabel("User ID").fill(uniqueHandle());
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Join the board" }).click();
 

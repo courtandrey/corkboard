@@ -8,6 +8,7 @@ import org.springframework.http.ProblemDetail
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.authorization.AuthorizationDeniedException
 import org.springframework.web.ErrorResponse
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -28,6 +29,9 @@ class ApiExceptionHandler(private val problems: Problems) {
                 e.bindingResult.fieldErrors.associate { it.field to (it.defaultMessage ?: "invalid") },
             )
         }
+
+    @ExceptionHandler(HttpMessageNotReadableException::class)
+    fun unreadableBody(): ProblemDetail = problems.detail(HttpStatus.BAD_REQUEST, ProblemCode.BAD_REQUEST)
 
     @ExceptionHandler(ConstraintViolationException::class)
     fun invalidParams(e: ConstraintViolationException): ProblemDetail =

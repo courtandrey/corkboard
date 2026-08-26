@@ -19,6 +19,7 @@ data class SessionUser(
     val userId: UUID,
     val sessionId: UUID,
     val email: String,
+    val handle: String,
     val displayName: String,
     val avatarSeed: String,
     val emailVerified: Boolean,
@@ -28,7 +29,7 @@ data class SessionUser(
 ) {
     fun toResponse(): UserResponse =
         UserResponse(
-            userId, email, displayName, avatarSeed, emailVerified, createdAt.toInstant(),
+            userId, email, handle, displayName, avatarSeed, emailVerified, createdAt.toInstant(),
             roles = roles.sorted(),
             permissions = permissions.map { it.name }.sorted(),
         )
@@ -68,7 +69,8 @@ class SessionService(
         )
         val row = dsl.select(
             SESSIONS.ID, SESSIONS.LAST_SEEN_AT,
-            USERS.ID, USERS.EMAIL, USERS.DISPLAY_NAME, USERS.AVATAR_SEED, USERS.EMAIL_VERIFIED_AT, USERS.CREATED_AT,
+            USERS.ID, USERS.EMAIL, USERS.HANDLE, USERS.DISPLAY_NAME, USERS.AVATAR_SEED,
+            USERS.EMAIL_VERIFIED_AT, USERS.CREATED_AT,
             grantedRoles,
         )
             .from(SESSIONS)
@@ -94,6 +96,7 @@ class SessionService(
             userId = row[USERS.ID]!!,
             sessionId = sessionId,
             email = row[USERS.EMAIL]!!,
+            handle = row[USERS.HANDLE]!!,
             displayName = row[USERS.DISPLAY_NAME]!!,
             avatarSeed = row[USERS.AVATAR_SEED]!!,
             emailVerified = emailVerified,

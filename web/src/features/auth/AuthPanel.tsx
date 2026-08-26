@@ -36,6 +36,7 @@ export function AuthPanel({ onSignedIn }: { onSignedIn?: () => void }) {
           email,
           password,
           displayName: String(data.get("displayName") ?? ""),
+          handle: String(data.get("handle") ?? "").trim().toLowerCase(),
         });
       }
       await invalidateMe();
@@ -59,10 +60,26 @@ export function AuthPanel({ onSignedIn }: { onSignedIn?: () => void }) {
           <input name="email" type="email" required autoComplete="email" />
         </label>
         {mode === "register" && (
-          <label>
-            {s.displayName}
-            <input name="displayName" required maxLength={50} />
-          </label>
+          <>
+            <label>
+              {s.displayName}
+              <input name="displayName" required maxLength={50} />
+            </label>
+            <label>
+              {s.handle}
+              <input
+                name="handle"
+                required
+                minLength={3}
+                maxLength={30}
+                pattern="[A-Za-z0-9_]{3,30}"
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+              />
+              <span className="form-hint">{s.handleHelp}</span>
+            </label>
+          </>
         )}
         <label>
           {s.password}

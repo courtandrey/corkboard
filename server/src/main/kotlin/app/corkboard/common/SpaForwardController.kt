@@ -11,6 +11,7 @@ class SpaForwardController {
         "/events/{id}",
         "/new",
         "/login",
+        "/finish-signup",
         "/boards/**",
         "/me/**",
         "/admin/**",

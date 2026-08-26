@@ -6,6 +6,7 @@ import { api, ApiError } from "../../api/client";
 import type { ApplyResponse } from "../../api/client";
 import { useEventDetail, useMe, useMeta } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
+import { handleOf } from "../../ui/handle";
 import { boardPath } from "../../api/paths";
 import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
@@ -178,6 +179,7 @@ export function EventDrawer() {
               <span className="who">
                 <PixelAvatar seed={event.author.avatarSeed} size={20} />
                 {strings.event.postedBy(event.author.displayName)}
+                <span className="user-handle">{handleOf(event.author.handle)}</span>
               </span>
               <span className="dot">·</span>
               <span className="with-icon">

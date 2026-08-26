@@ -29,6 +29,7 @@ class GoogleLoginCustomizer(
     private val identity: GoogleIdentityService,
     private val sessions: SessionService,
     private val cookies: SessionCookies,
+    private val pending: PendingSignups,
     private val webOrigin: String,
 ) {
 
@@ -41,14 +42,13 @@ class GoogleLoginCustomizer(
             login.redirectionEndpoint { it.baseUri("/api/v1/auth/google/callback") }
             login.successHandler { request, response, authentication ->
                 val oidcUser = authentication.principal as OidcUser
-                val result = identity.createOrLink(
-                    GoogleProfile(
-                        sub = oidcUser.subject,
-                        email = oidcUser.email,
-                        emailVerified = oidcUser.emailVerified ?: false,
-                        name = oidcUser.fullName,
-                    )
+                val profile = GoogleProfile(
+                    sub = oidcUser.subject,
+                    email = oidcUser.email,
+                    emailVerified = oidcUser.emailVerified ?: false,
+                    name = oidcUser.fullName,
                 )
+                val result = identity.signIn(profile)
                 SecurityContextHolder.clearContext()
                 when (result) {
                     is GoogleIdentityResult.SignedIn -> {
@@ -56,6 +56,8 @@ class GoogleLoginCustomizer(
                         response.addHeader("Set-Cookie", cookies.session(token))
                         response.sendRedirect("$webOrigin/")
                     }
+                    is GoogleIdentityResult.NeedsSignup ->
+                        response.sendRedirect("$webOrigin/finish-signup?token=${pending.issue(profile)}")
                     is GoogleIdentityResult.EmailConflict ->
                         response.sendRedirect("$webOrigin/?authError=google")
                 }
@@ -88,6 +90,7 @@ class GoogleOAuthConfig {
         identity: GoogleIdentityService,
         sessions: SessionService,
         cookies: SessionCookies,
+        pending: PendingSignups,
         props: CorkboardProperties,
     ): GoogleLoginCustomizer {
         val delegate = DefaultOAuth2AuthorizationRequestResolver(registrations, "/api/v1/auth")
@@ -106,6 +109,7 @@ class GoogleOAuthConfig {
             identity,
             sessions,
             cookies,
+            pending,
             props.webOrigin,
         )
     }

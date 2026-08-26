@@ -50,7 +50,12 @@ class PerfSeedRunner(
     private fun seed() {
         val total = environment.getProperty("PERF_EVENT_COUNT", "100000").toInt()
         val authorId = auth.register(
-            RegisterRequest("perf-${UUID.randomUUID()}@corkboard.local", "Perf-${UUID.randomUUID()}", "Perf Fixture"),
+            RegisterRequest(
+                "perf-${UUID.randomUUID()}@corkboard.local",
+                "Perf-${UUID.randomUUID()}",
+                "Perf Fixture",
+                "perf_${UUID.randomUUID().toString().take(8).replace("-", "")}",
+            ),
             null,
         ).user.id
 
