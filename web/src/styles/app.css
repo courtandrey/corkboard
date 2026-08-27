@@ -1860,6 +1860,37 @@ button.tag-chip.active {
   color: var(--ink-soft);
 }
 
+.form-grid label:has(.hint-mark) {
+  position: relative;
+}
+
+.hint-mark {
+  position: absolute;
+  top: -2px;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border: 1px solid var(--fb-border);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: normal;
+  padding-left: 1px;
+  cursor: help;
+}
+
+.hint-mark:hover,
+.hint-mark:focus-visible {
+  border-color: var(--fb-blue);
+  color: var(--fb-blue);
+}
+
 .form-grid label input,
 .form-grid label textarea,
 .form-grid label select {

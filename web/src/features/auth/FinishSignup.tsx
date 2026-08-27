@@ -5,6 +5,7 @@ import { api, ApiError } from "../../api/client";
 import type { AuthResponse } from "../../api/client";
 import { useInvalidateMe } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
+import { HintMark } from "../../ui/HintMark";
 import { Modal } from "../../ui/Modal";
 import { toast } from "../../ui/toast";
 
@@ -56,8 +57,10 @@ export function FinishSignup() {
             </label>
             <label>
               {strings.auth.handle}
+              <HintMark hint={strings.auth.handleHelp} />
               <input
                 name="handle"
+                title={strings.auth.handleHelp}
                 required
                 minLength={3}
                 maxLength={30}
@@ -67,7 +70,6 @@ export function FinishSignup() {
                 spellCheck={false}
                 autoFocus
               />
-              <span className="form-hint">{strings.auth.handleHelp}</span>
             </label>
             {error && (
               <p className="error-note" role="alert">

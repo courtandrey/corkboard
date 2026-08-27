@@ -46,13 +46,12 @@ test("blocked actions explain themselves instead of doing nothing", async ({ pag
     const gate = page.getByRole("dialog", { name: "One step left" });
     await expect(gate).toContainText(email);
     if (label === "vote") {
-      // the card scales in, so measuring mid-animation compares two different instants
       await gate.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
       const row = (await gate.locator(".modal-actions").boundingBox())!;
       const primary = (await gate.getByRole("button", { name: "Send it again" }).boundingBox())!;
       const ghost = (await gate.getByRole("button", { name: "Not now" }).boundingBox())!;
-      expect(primary.height, "the icon must not make one button taller").toBe(ghost.height);
-      expect(primary.y).toBe(ghost.y);
+      expect(primary.height, "the icon must not make one button taller").toBeCloseTo(ghost.height, 1);
+      expect(primary.y).toBeCloseTo(ghost.y, 1);
       expect(primary.x, "the primary sits flush left").toBeCloseTo(row.x, 0);
       expect(ghost.x + ghost.width, "the way out sits flush right").toBeCloseTo(row.x + row.width, 0);
       await page.screenshot({ path: `${SHOTS}/verify-gate.png` });

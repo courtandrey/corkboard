@@ -9,7 +9,7 @@ export const strings = {
     password: "Password",
     displayName: "Display name",
     handle: "User ID",
-    handleHelp: "Letters, numbers and underscores. This one is yours for good — it can’t be changed.",
+    handleHelp: "Letters, numbers and underscores. It cannot be changed later.",
     signOut: "Sign out",
     signedInAs: (name: string) => `Signed in as ${name}`,
     googleSignIn: "Sign in with Google",

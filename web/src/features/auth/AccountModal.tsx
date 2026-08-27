@@ -8,6 +8,7 @@ import { useMe, useMeta } from "../../api/hooks";
 import { useBoardHome } from "../../stores/boardStore";
 import { strings } from "../../i18n/strings";
 import { handleOf } from "../../ui/handle";
+import { HintMark } from "../../ui/HintMark";
 import { useFeature } from "../../ui/features";
 import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
@@ -77,11 +78,15 @@ export function AccountModal() {
 
             <label>
               {s.handleLabel}
-              <input name="handle" value={handleOf(me.handle)} disabled readOnly />
+              <HintMark hint={s.handleHelp} />
+              <input
+                name="handle"
+                value={handleOf(me.handle)}
+                title={s.handleHelp}
+                disabled
+                readOnly
+              />
             </label>
-            <p className="form-hint" style={{ marginTop: -10 }}>
-              {s.handleHelp}
-            </p>
 
             <label>
               {s.displayNameLabel}

@@ -4,6 +4,7 @@ import { api, ApiError } from "../../api/client";
 import type { AuthResponse } from "../../api/client";
 import { useInvalidateMe, useMe, useMeta } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
+import { HintMark } from "../../ui/HintMark";
 
 const s = strings.auth;
 
@@ -67,8 +68,10 @@ export function AuthPanel({ onSignedIn }: { onSignedIn?: () => void }) {
             </label>
             <label>
               {s.handle}
+              <HintMark hint={s.handleHelp} />
               <input
                 name="handle"
+                title={s.handleHelp}
                 required
                 minLength={3}
                 maxLength={30}
@@ -77,7 +80,6 @@ export function AuthPanel({ onSignedIn }: { onSignedIn?: () => void }) {
                 autoCapitalize="none"
                 spellCheck={false}
               />
-              <span className="form-hint">{s.handleHelp}</span>
             </label>
           </>
         )}
