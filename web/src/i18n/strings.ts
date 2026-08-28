@@ -247,7 +247,7 @@ export const strings = {
   account: {
     title: "Your account",
     handleLabel: "User ID",
-    handleHelp: "How people find you. Chosen once, and it stays.",
+    handleHelp: "How people find you. Cannot be changed at the moment",
     displayNameLabel: "Display name",
     displayNameHelp: "This is the name on every note and message you write.",
     emailConfirmed: "email confirmed",
