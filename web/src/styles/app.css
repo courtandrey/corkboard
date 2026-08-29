@@ -1764,6 +1764,94 @@ body:has(.modal-scrim) .cookie-banner {
   }
 }
 
+/* ── connections ──────────────────────────────────────────────── */
+
+.connections-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  flex: 1;
+  padding-top: 14px;
+  padding-bottom: 18px;
+}
+
+.connections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+@media (min-width: 769px) {
+  .modal-connections .modal-card {
+    height: 520px;
+    max-height: 86vh;
+  }
+}
+
+.connections-section h3 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-soft);
+}
+
+.person-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--paper-edge);
+}
+
+.person-row:last-child {
+  border-bottom: none;
+}
+
+.person-who {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.person-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.person-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.link-btn {
+  align-self: flex-start;
+  justify-content: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  color: var(--fb-blue);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  background: none;
+  border-color: transparent;
+  text-decoration: underline;
+}
+
 /* ── chips, badges, avatars ───────────────────────────────────── */
 
 .type-chip {

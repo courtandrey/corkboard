@@ -10,7 +10,9 @@ import type {
   MetaResponse,
   MyApplicationsResponse,
   MyEventsResponse,
+  ConnectionsResponse,
   NotificationListResponse,
+  PeopleResponse,
   PlaceSuggestions,
   TagListResponse,
   ViewportResponse,
@@ -144,6 +146,24 @@ export function usePlaceSearch(q: string, near: string | undefined, enabled: boo
     placeholderData: keepPreviousData,
     staleTime: 300_000,
     retry: false,
+  });
+}
+
+export function useConnections(enabled: boolean) {
+  return useQuery({
+    queryKey: ["connections"],
+    enabled,
+    queryFn: () => api.get<ConnectionsResponse>("/api/v1/connections"),
+  });
+}
+
+export function usePeopleSearch(q: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["people", q],
+    enabled: enabled && q.trim().length >= 2,
+    queryFn: () => api.get<PeopleResponse>(`/api/v1/connections/people${query({ q: q.trim() })}`),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
   });
 }
 

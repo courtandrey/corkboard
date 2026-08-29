@@ -26,6 +26,10 @@ function label(notification: NotificationResponse): string {
       return s.eventTakenDown(event);
     case "message_received":
       return s.messageReceived(payload.senderName ?? "");
+    case "connection_requested":
+      return s.connectionRequested(payload.senderName ?? "");
+    case "connection_accepted":
+      return s.connectionAccepted(payload.senderName ?? "");
     default:
       return s.fallback;
   }
@@ -33,6 +37,7 @@ function label(notification: NotificationResponse): string {
 
 function target(notification: NotificationResponse): string {
   const payload = notification.payload as unknown as Record<string, string | undefined>;
+  if (payload.connectionId) return "/me/connections";
   if (payload.conversationId) return `/messages/${payload.conversationId}`;
   if (payload.eventId) return `/events/${payload.eventId}`;
   return "/";

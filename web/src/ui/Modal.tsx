@@ -19,12 +19,14 @@ export function Modal({
   children: ReactNode;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     cardRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") closeRef.current();
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -33,7 +35,7 @@ export function Modal({
       document.body.style.overflow = "";
       previous?.focus?.();
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div className="modal-scrim" onMouseDown={onClose}>

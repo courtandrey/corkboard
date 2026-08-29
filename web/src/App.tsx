@@ -14,6 +14,7 @@ import { AccountModal } from "./features/auth/AccountModal";
 import { CookieBanner } from "./features/consent/CookieBanner";
 import { AdminPanel } from "./features/admin/AdminPanel";
 import { MessagesDrawer } from "./features/messaging/MessagesDrawer";
+import { ConnectionsModal } from "./features/connections/ConnectionsModal";
 import { MyPins } from "./features/events/MyPins";
 import { useSocket } from "./features/realtime/useSocket";
 import { strings } from "./i18n/strings";
@@ -84,6 +85,7 @@ export function App() {
           <Route path="/boards/:ownerId/new" element={<CreateEventFlow />} />
           <Route path="/me/pins" element={<MyPins />} />
           <Route path="/me/account" element={<AccountModal />} />
+          <Route path="/me/connections" element={<ConnectionsModal />} />
           <Route path="/admin/reports" element={<AdminPanel tab="reports" />} />
           <Route path="/admin/features" element={<AdminPanel tab="features" />} />
           <Route path="/messages" element={<MessagesDrawer />} />

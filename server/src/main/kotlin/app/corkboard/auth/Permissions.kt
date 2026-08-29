@@ -9,6 +9,7 @@ enum class Permission {
     EVENT_REPORT,
     EVENT_APPLY,
     MESSAGE_SEND,
+    CONNECTION_MANAGE,
     EVENT_TAKE_DOWN_ANY,
     REPORT_QUEUE_VIEW,
     ROLE_MANAGE,

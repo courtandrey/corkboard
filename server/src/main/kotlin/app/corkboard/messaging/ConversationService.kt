@@ -42,6 +42,7 @@ data class Participants(val userA: UUID, val userB: UUID) {
 @Service
 class ConversationService(
     private val dsl: DSLContext,
+    private val connections: app.corkboard.connections.ConnectionService,
     private val publisher: ApplicationEventPublisher,
     private val notifications: app.corkboard.notifications.NotificationService,
     private val clock: Clock,
@@ -70,6 +71,15 @@ class ConversationService(
         return dsl.select(CONVERSATIONS.ID).from(CONVERSATIONS)
             .where(CONVERSATIONS.USER_A_ID.eq(pair.userA), CONVERSATIONS.USER_B_ID.eq(pair.userB))
             .fetchOne(CONVERSATIONS.ID)!!
+    }
+
+    /** Only people who know each other can start a thread out of nothing. */
+    fun openWith(userId: UUID, otherId: UUID): UUID {
+        if (userId == otherId) throw ApiException(HttpStatus.UNPROCESSABLE_ENTITY, ProblemCode.VALIDATION_FAILED)
+        if (!connections.areConnected(userId, otherId)) {
+            throw ApiException(HttpStatus.FORBIDDEN, ProblemCode.NOT_CONNECTED)
+        }
+        return between(userId, otherId)
     }
 
     fun list(userId: UUID, cursor: String?, limit: Int): ConversationListResponse {

@@ -46,6 +46,8 @@ data class ConversationSummary(
     val unreadCount: Int,
 )
 
+data class ConversationRef(val id: UUID)
+
 data class ConversationListResponse(
     val items: List<ConversationSummary>,
     val nextCursor: String?,

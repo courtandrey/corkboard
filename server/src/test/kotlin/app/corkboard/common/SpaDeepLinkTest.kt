@@ -22,6 +22,7 @@ class SpaDeepLinkTest : ApiTestBase() {
             "/boards/$someone/new",
             "/boards/$someone/events/$note",
             "/me/pins",
+        "/me/connections",
             "/me/account",
             "/messages",
             "/messages/$note",

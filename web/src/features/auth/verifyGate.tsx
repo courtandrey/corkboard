@@ -17,6 +17,7 @@ const NEEDED: Record<GatedAction, Permission> = {
   report: "EVENT_REPORT",
   respond: "EVENT_APPLY",
   message: "MESSAGE_SEND",
+  connect: "CONNECTION_MANAGE",
 };
 
 interface GateState {

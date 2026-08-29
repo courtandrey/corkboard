@@ -151,6 +151,15 @@ export const UserIcon = (p: IconProps) => (
   </Base>
 );
 
+export const UsersIcon = (p: IconProps) => (
+  <Base {...p}>
+    <circle cx="9" cy="8" r="3.2" />
+    <path d="M3 20c0-3.4 2.7-5.2 6-5.2s6 1.8 6 5.2" />
+    <path d="M16 5.6a3.2 3.2 0 0 1 0 5.6" />
+    <path d="M17.5 14.4c2.1.6 3.5 2.2 3.5 4.6" />
+  </Base>
+);
+
 export const SignOutIcon = (p: IconProps) => (
   <Base {...p}>
     <path d="M14 20H6a1 1 0 01-1-1V5a1 1 0 011-1h8" />

@@ -164,7 +164,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boards/{ownerId}/events": {
+    "/api/v1/conversations/with/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["with"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/connections": {
         parameters: {
             query?: never;
             header?: never;
@@ -172,6 +188,54 @@ export interface paths {
             cookie?: never;
         };
         get: operations["list_1"];
+        put?: never;
+        post: operations["request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/connections/{id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["decline"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/connections/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/boards/{ownerId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_2"];
         put?: never;
         post: operations["create_1"];
         delete?: never;
@@ -459,7 +523,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_2"];
+        get: operations["list_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -491,7 +555,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -523,7 +587,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -587,7 +651,23 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_6"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/connections/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["search_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -651,7 +731,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -804,6 +884,20 @@ export interface components {
             /** Format: date-time */
             readAt?: string;
         };
+        ConversationRef: {
+            /** Format: uuid */
+            id: string;
+        };
+        ConnectionRequest: {
+            /** Format: uuid */
+            userId: string;
+        };
+        ConnectionResponse: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            state: "none" | "incoming" | "outgoing" | "connected";
+        };
         RegisterRequest: {
             email: string;
             password: string;
@@ -915,7 +1009,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            kind: "application_received" | "application_status" | "message_received" | "event_expiring" | "event_under_review" | "event_taken_down";
+            kind: "application_received" | "application_status" | "message_received" | "event_expiring" | "event_under_review" | "event_taken_down" | "connection_requested" | "connection_accepted";
             payload: {
                 [key: string]: Record<string, never>;
             };
@@ -1086,6 +1180,34 @@ export interface components {
         MessageListResponse: {
             items: components["schemas"]["MessageResponse"][];
             nextCursor?: string;
+        };
+        ConnectionItem: {
+            /** Format: uuid */
+            id: string;
+            person: components["schemas"]["PersonCard"];
+            /** Format: date-time */
+            since: string;
+        };
+        ConnectionsResponse: {
+            connected: components["schemas"]["ConnectionItem"][];
+            incoming: components["schemas"]["ConnectionItem"][];
+            outgoing: components["schemas"]["ConnectionItem"][];
+        };
+        PersonCard: {
+            /** Format: uuid */
+            id: string;
+            handle: string;
+            displayName: string;
+            avatarSeed: string;
+            /** Format: date-time */
+            memberSince: string;
+            /** @enum {string} */
+            state: "none" | "incoming" | "outgoing" | "connected";
+            /** Format: uuid */
+            connectionId?: string;
+        };
+        PeopleResponse: {
+            items: components["schemas"]["PersonCard"][];
         };
         RoleCatalogResponse: {
             roles: string[];
@@ -1431,7 +1553,117 @@ export interface operations {
             };
         };
     };
+    with: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConversationRef"];
+                };
+            };
+        };
+    };
     list_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConnectionsResponse"];
+                };
+            };
+        };
+    };
+    request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConnectionResponse"];
+                };
+            };
+        };
+    };
+    decline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConnectionResponse"];
+                };
+            };
+        };
+    };
+    accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConnectionResponse"];
+                };
+            };
+        };
+    };
+    list_2: {
         parameters: {
             query: {
                 bbox: string;
@@ -1986,7 +2218,7 @@ export interface operations {
             };
         };
     };
-    list_2: {
+    list_3: {
         parameters: {
             query?: {
                 q?: string;
@@ -2033,7 +2265,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query?: {
                 cursor?: string;
@@ -2076,7 +2308,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: {
                 status?: string;
@@ -2162,7 +2394,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: {
                 cursor?: string;
@@ -2181,6 +2413,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ConversationListResponse"];
+                };
+            };
+        };
+    };
+    search_1: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PeopleResponse"];
                 };
             };
         };
@@ -2247,7 +2501,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query?: never;
             header?: never;

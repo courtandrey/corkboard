@@ -26,6 +26,12 @@ class ConversationController(private val conversations: ConversationService) {
     ): ConversationListResponse =
         conversations.list(auth.user.userId, cursor, limit.coerceIn(1, 100))
 
+    /** The thread with someone you know — opened here rather than by answering a note. */
+    @PreAuthorize("hasAuthority('MESSAGE_SEND')")
+    @PostMapping("/with/{userId}")
+    fun with(@PathVariable userId: UUID, auth: SessionAuthentication): ConversationRef =
+        ConversationRef(conversations.openWith(auth.user.userId, userId))
+
     @GetMapping("/{id}/messages")
     fun messages(
         @PathVariable id: UUID,

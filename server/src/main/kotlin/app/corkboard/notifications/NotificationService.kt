@@ -21,7 +21,9 @@ enum class NotificationKind(@get:JsonValue val key: String) {
     MESSAGE_RECEIVED("message_received"),
     EVENT_EXPIRING("event_expiring"),
     EVENT_UNDER_REVIEW("event_under_review"),
-    EVENT_TAKEN_DOWN("event_taken_down");
+    EVENT_TAKEN_DOWN("event_taken_down"),
+    CONNECTION_REQUESTED("connection_requested"),
+    CONNECTION_ACCEPTED("connection_accepted");
 
     companion object {
         fun fromDb(literal: String): NotificationKind = entries.first { it.key == literal }
@@ -94,18 +96,22 @@ class NotificationService(
             conversationIs(conversationId),
         )
 
+    fun clearForConnection(userId: UUID, connectionId: UUID) {
+        dsl.deleteFrom(NOTIFICATIONS)
+            .where(NOTIFICATIONS.USER_ID.eq(userId), payloadIs("connectionId", connectionId))
+            .execute()
+    }
+
     fun clearForConversation(userId: UUID, conversationId: UUID) {
         dsl.deleteFrom(NOTIFICATIONS)
             .where(NOTIFICATIONS.USER_ID.eq(userId), conversationIs(conversationId))
             .execute()
     }
 
-    private fun conversationIs(conversationId: UUID): Condition =
-        DSL.condition(
-            "{0}->>'conversationId' = {1}",
-            NOTIFICATIONS.PAYLOAD,
-            DSL.`val`(conversationId.toString()),
-        )
+    private fun conversationIs(conversationId: UUID): Condition = payloadIs("conversationId", conversationId)
+
+    private fun payloadIs(key: String, id: UUID): Condition =
+        DSL.condition("{0}->>{1} = {2}", NOTIFICATIONS.PAYLOAD, DSL.`val`(key), DSL.`val`(id.toString()))
 
     private fun toResponse(record: NotificationsRecord): NotificationResponse =
         NotificationResponse(

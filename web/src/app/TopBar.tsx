@@ -20,6 +20,7 @@ import {
   SignOutIcon,
   SlidersIcon,
   UserIcon,
+  UsersIcon,
 } from "../ui/icons";
 
 const logoPin = pushpinDataUri("#C94C4C");
@@ -98,6 +99,9 @@ export function TopBar() {
                 </Link>
                 <Link to="/messages" className="menu-item on-phone" role="menuitem" onClick={closeMenu}>
                   <ChatIcon size={15} /> {strings.messagesUi.title}
+                </Link>
+                <Link to="/me/connections" className="menu-item" role="menuitem" onClick={closeMenu}>
+                  <UsersIcon size={15} /> {strings.connections.menuItem}
                 </Link>
                 <Link to="/me/account" className="menu-item" role="menuitem" onClick={closeMenu}>
                   <UserIcon size={15} /> {strings.account.menuItem}
