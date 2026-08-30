@@ -13,6 +13,7 @@ import type {
   ConnectionsResponse,
   NotificationListResponse,
   PeopleResponse,
+  PersonCard,
   PlaceSuggestions,
   TagListResponse,
   ViewportResponse,
@@ -154,6 +155,14 @@ export function useConnections(enabled: boolean) {
     queryKey: ["connections"],
     enabled,
     queryFn: () => api.get<ConnectionsResponse>("/api/v1/connections"),
+  });
+}
+
+export function usePerson(userId: string | null) {
+  return useQuery({
+    queryKey: ["person", userId],
+    enabled: !!userId,
+    queryFn: () => api.get<PersonCard>(`/api/v1/users/${userId}`),
   });
 }
 

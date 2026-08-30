@@ -5,6 +5,8 @@ import { strings } from "../i18n/strings";
 
 type Size = "sm" | "md" | "lg" | "wide";
 
+const open: symbol[] = [];
+
 export function Modal({
   onClose,
   size = "md",
@@ -23,16 +25,19 @@ export function Modal({
   closeRef.current = onClose;
 
   useEffect(() => {
+    const token = Symbol("modal");
+    open.push(token);
     const previous = document.activeElement as HTMLElement | null;
     cardRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeRef.current();
+      if (e.key === "Escape" && open[open.length - 1] === token) closeRef.current();
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => {
+      open.splice(open.indexOf(token), 1);
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      if (open.length === 0) document.body.style.overflow = "";
       previous?.focus?.();
     };
   }, []);

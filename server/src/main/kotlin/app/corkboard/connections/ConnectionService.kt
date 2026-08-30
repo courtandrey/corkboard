@@ -99,6 +99,20 @@ class ConnectionService(
         )
     }
 
+    fun profile(viewerId: UUID?, userId: UUID): PersonCard {
+        val row = dsl.select(USERS.ID, USERS.HANDLE, USERS.DISPLAY_NAME, USERS.AVATAR_SEED, USERS.CREATED_AT)
+            .from(USERS)
+            .where(USERS.ID.eq(userId))
+            .fetchOne()
+            ?: throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
+        val standing = if (viewerId == null || viewerId == userId) {
+            null
+        } else {
+            standingsWith(viewerId, listOf(userId))[userId]
+        }
+        return person(row, standing?.first ?: ConnectionState.NONE, standing?.second)
+    }
+
     @Transactional
     fun request(requesterId: UUID, addresseeId: UUID): ConnectionResponse {
         if (requesterId == addresseeId) {

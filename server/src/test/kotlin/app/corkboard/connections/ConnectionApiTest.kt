@@ -132,6 +132,49 @@ class ConnectionApiTest : ApiTestBase() {
     }
 
     @Test
+    fun `anyone's card can be read, and it says where the reader stands with them`() {
+        val reader = registerUser("Card Reader")
+        val subject = registerUser("Card Subject")
+        val subjectId = idOf(subject.headers)
+
+        val toVisitor = json(getJson("/api/v1/users/$subjectId"))
+        assertThat(toVisitor["displayName"].asText()).isEqualTo("Card Subject")
+        assertThat(toVisitor["handle"].asText()).isEqualTo(handleOf(subject.headers))
+        assertThat(toVisitor["memberSince"].isNull).isFalse
+        assertThat(toVisitor["state"].asText())
+            .describedAs("a signed-out reader stands nowhere")
+            .isEqualTo("none")
+
+        assertThat(json(getJson("/api/v1/users/$subjectId", reader.headers))["state"].asText()).isEqualTo("none")
+
+        val connectionId = json(
+            sendJson(HttpMethod.POST, "/api/v1/connections", mapOf("userId" to subjectId), reader.headers),
+        )["id"].asText()
+        val asked = json(getJson("/api/v1/users/$subjectId", reader.headers))
+        assertThat(asked["state"].asText()).isEqualTo("outgoing")
+        assertThat(json(getJson("/api/v1/users/${idOf(reader.headers)}", subject.headers))["state"].asText())
+            .describedAs("the other side sees the question coming")
+            .isEqualTo("incoming")
+
+        sendJson(HttpMethod.POST, "/api/v1/connections/$connectionId/accept", null, subject.headers)
+        assertThat(json(getJson("/api/v1/users/$subjectId", reader.headers))["state"].asText())
+            .isEqualTo("connected")
+
+        assertThat(json(getJson("/api/v1/users/${idOf(reader.headers)}", reader.headers))["state"].asText())
+            .describedAs("you stand nowhere with yourself")
+            .isEqualTo("none")
+    }
+
+    @Test
+    fun `a card for somebody who is not there is a 404`() {
+        val reader = registerUser("Card Misser")
+
+        val res = getJson("/api/v1/users/${java.util.UUID.randomUUID()}", reader.headers)
+
+        assertThat(res.statusCode.value()).isEqualTo(404)
+    }
+
+    @Test
     fun `a thread can be opened with a connection, and nobody else`() {
         val one = registerUser("Chat One")
         val other = registerUser("Chat Other")

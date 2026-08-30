@@ -73,7 +73,6 @@ class ConversationService(
             .fetchOne(CONVERSATIONS.ID)!!
     }
 
-    /** Only people who know each other can start a thread out of nothing. */
     fun openWith(userId: UUID, otherId: UUID): UUID {
         if (userId == otherId) throw ApiException(HttpStatus.UNPROCESSABLE_ENTITY, ProblemCode.VALIDATION_FAILED)
         if (!connections.areConnected(userId, otherId)) {
@@ -107,8 +106,8 @@ class ConversationService(
 
         val rows = dsl.select(
             CONVERSATIONS.ID, CONVERSATIONS.USER_A_ID, CONVERSATIONS.LAST_MESSAGE_AT,
-            userA.DISPLAY_NAME, userA.HANDLE, userA.AVATAR_SEED, userA.CREATED_AT,
-            userB.DISPLAY_NAME, userB.HANDLE, userB.AVATAR_SEED, userB.CREATED_AT,
+            userA.ID, userA.DISPLAY_NAME, userA.HANDLE, userA.AVATAR_SEED, userA.CREATED_AT,
+            userB.ID, userB.DISPLAY_NAME, userB.HANDLE, userB.AVATAR_SEED, userB.CREATED_AT,
             unread, lastBody,
         )
             .from(CONVERSATIONS)
@@ -129,6 +128,7 @@ class ConversationService(
             ConversationSummary(
                 id = r[CONVERSATIONS.ID]!!,
                 otherParty = AuthorCard(
+                    id = r[other.ID]!!,
                     displayName = r[other.DISPLAY_NAME]!!,
                     handle = r[other.HANDLE]!!,
                     avatarSeed = r[other.AVATAR_SEED]!!,

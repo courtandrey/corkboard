@@ -1852,6 +1852,67 @@ body:has(.modal-scrim) .cookie-banner {
   text-decoration: underline;
 }
 
+/* ── a person's card ──────────────────────────────────────────── */
+
+.person-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 26px 20px 22px;
+  text-align: center;
+}
+
+.person-card .modal-body,
+.person-card-name {
+  margin: 8px 0 0;
+  font-size: 19px;
+}
+
+.person-card-since {
+  margin: 2px 0 0;
+}
+
+.person-card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  width: 100%;
+}
+
+.person-card-state {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.person-card-state.connected {
+  color: var(--fb-blue);
+}
+
+.person-link {
+  display: inline;
+  gap: 5px;
+  font-weight: inherit;
+  color: inherit;
+}
+
+.person-link:hover {
+  color: var(--fb-blue);
+  text-decoration: underline;
+}
+
+.person-link .user-handle {
+  margin-left: 5px;
+}
+
+.thread-who .person-link,
+.appl-head .person-link {
+  font-weight: 600;
+}
+
 /* ── chips, badges, avatars ───────────────────────────────────── */
 
 .type-chip {

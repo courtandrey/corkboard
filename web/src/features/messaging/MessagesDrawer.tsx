@@ -9,6 +9,7 @@ import { notePath } from "../../api/paths";
 import { useBoardHome } from "../../stores/boardStore";
 import { strings } from "../../i18n/strings";
 import { handleOf } from "../../ui/handle";
+import { PersonLink } from "../connections/personCard";
 import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
 import { useIsPhone } from "../../ui/useMediaQuery";
@@ -108,8 +109,11 @@ function Thread({ conversation, onBack }: { conversation: ConversationSummary; o
         )}
         <span className="thread-who">
           <PixelAvatar seed={conversation.otherParty.avatarSeed} size={20} />
-          {conversation.otherParty.displayName}
-          <span className="user-handle">{handleOf(conversation.otherParty.handle)}</span>
+          <PersonLink
+            userId={conversation.otherParty.id}
+            displayName={conversation.otherParty.displayName}
+            handle={conversation.otherParty.handle}
+          />
         </span>
       </div>
       <div className="thread-messages" ref={scrollRef} onScroll={onScroll}>

@@ -34,6 +34,7 @@ private val PUBLIC_READS = arrayOf(
     "/api/v1/events",
     "/api/v1/events/*",
     "/api/v1/tags",
+    "/api/v1/users/*",
     "/api/v1/places",
     "/ws",
     "/",

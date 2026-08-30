@@ -516,6 +516,22 @@ export interface paths {
         patch: operations["update_2"];
         trace?: never;
     };
+    "/api/v1/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["person"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tags": {
         parameters: {
             query?: never;
@@ -781,6 +797,8 @@ export interface components {
             lat: number;
         };
         AuthorCard: {
+            /** Format: uuid */
+            id: string;
             displayName: string;
             handle: string;
             avatarSeed: string;
@@ -969,6 +987,19 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
             updatedBy?: string;
+        };
+        PersonCard: {
+            /** Format: uuid */
+            id: string;
+            handle: string;
+            displayName: string;
+            avatarSeed: string;
+            /** Format: date-time */
+            memberSince: string;
+            /** @enum {string} */
+            state: "none" | "incoming" | "outgoing" | "connected";
+            /** Format: uuid */
+            connectionId?: string;
         };
         TagItem: {
             name: string;
@@ -1192,19 +1223,6 @@ export interface components {
             connected: components["schemas"]["ConnectionItem"][];
             incoming: components["schemas"]["ConnectionItem"][];
             outgoing: components["schemas"]["ConnectionItem"][];
-        };
-        PersonCard: {
-            /** Format: uuid */
-            id: string;
-            handle: string;
-            displayName: string;
-            avatarSeed: string;
-            /** Format: date-time */
-            memberSince: string;
-            /** @enum {string} */
-            state: "none" | "incoming" | "outgoing" | "connected";
-            /** Format: uuid */
-            connectionId?: string;
         };
         PeopleResponse: {
             items: components["schemas"]["PersonCard"][];
@@ -2214,6 +2232,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["FeatureFlagItem"];
+                };
+            };
+        };
+    };
+    person: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PersonCard"];
                 };
             };
         };

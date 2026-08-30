@@ -6,13 +6,13 @@ import { api, ApiError } from "../../api/client";
 import type { ApplyResponse } from "../../api/client";
 import { useEventDetail, useMe, useMeta } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
-import { handleOf } from "../../ui/handle";
 import { boardPath } from "../../api/paths";
 import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
 import { toast } from "../../ui/toast";
 import { useNoteFontReady } from "../../ui/noteFont";
 import { ChatIcon, ClockIcon, FlagIcon, HideIcon, SendIcon, ShowIcon, TrashIcon } from "../../ui/icons";
+import { PersonLink } from "../connections/personCard";
 import { useVerifyGate } from "../auth/verifyGate";
 import { usePermissions } from "../../ui/permissions";
 import { VoteControl } from "./VoteControl";
@@ -178,8 +178,11 @@ export function EventDrawer() {
             <div className="ev-meta">
               <span className="who">
                 <PixelAvatar seed={event.author.avatarSeed} size={20} />
-                {strings.event.postedBy(event.author.displayName)}
-                <span className="user-handle">{handleOf(event.author.handle)}</span>
+                <PersonLink
+                  userId={event.author.id}
+                  displayName={strings.event.postedBy(event.author.displayName)}
+                  handle={event.author.handle}
+                />
               </span>
               <span className="dot">·</span>
               <span className="with-icon">

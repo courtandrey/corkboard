@@ -1,6 +1,5 @@
 package app.corkboard.connections
 
-import app.corkboard.events.AuthorCard
 import com.fasterxml.jackson.annotation.JsonValue
 import java.time.Instant
 import java.util.UUID
@@ -26,12 +25,7 @@ data class PersonCard(
     val memberSince: Instant,
     val state: ConnectionState,
     val connectionId: UUID? = null,
-) {
-    companion object {
-        fun of(id: UUID, card: AuthorCard, state: ConnectionState, connectionId: UUID? = null) =
-            PersonCard(id, card.handle, card.displayName, card.avatarSeed, card.memberSince, state, connectionId)
-    }
-}
+)
 
 data class ConnectionsResponse(
     val connected: List<ConnectionItem>,

@@ -282,6 +282,7 @@ class EventService(
             applicationCount = event.applicationCount,
             tags = tags.eventTags(event.id).map { (name, slug) -> TagRef(name, slug) },
             author = AuthorCard(
+                id = event.authorId,
                 displayName = author[USERS.DISPLAY_NAME]!!,
                 handle = author[USERS.HANDLE]!!,
                 avatarSeed = author[USERS.AVATAR_SEED]!!,

@@ -174,7 +174,8 @@ class ApplicationService(
             APPLICATIONS.ID, APPLICATIONS.STATUS, APPLICATIONS.CREATED_AT,
             EVENTS.ID, EVENTS.TITLE, EVENTS.STATUS,
             CONVERSATIONS.ID,
-            applicantUser.DISPLAY_NAME, applicantUser.HANDLE, applicantUser.AVATAR_SEED, applicantUser.CREATED_AT,
+            applicantUser.ID, applicantUser.DISPLAY_NAME, applicantUser.HANDLE, applicantUser.AVATAR_SEED,
+            applicantUser.CREATED_AT,
             firstBody,
         )
             .from(APPLICATIONS)
@@ -203,6 +204,7 @@ class ApplicationService(
                         conversationId = r[CONVERSATIONS.ID]!!,
                         applicant = if (role == ApplicationRole.RECEIVED) {
                             AuthorCard(
+                                id = r[applicantUser.ID]!!,
                                 displayName = r[applicantUser.DISPLAY_NAME]!!,
                                 handle = r[applicantUser.HANDLE]!!,
                                 avatarSeed = r[applicantUser.AVATAR_SEED]!!,

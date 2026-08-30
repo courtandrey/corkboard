@@ -164,6 +164,14 @@ export const strings = {
     connectionAccepted: (name: string) => `${name} accepted your connection`,
     fallback: "Something happened on the board",
   },
+  person: {
+    openCard: (name: string) => `About ${name}`,
+    memberSince: (date: string) => `on the board since ${date}`,
+    requested: "Connection requested",
+    wantsToConnect: "Would like to connect with you",
+    connected: "Connected",
+    notFound: "That person isn’t on the board anymore.",
+  },
   connections: {
     menuItem: "Connections",
     title: "Your connections",

@@ -105,6 +105,7 @@ data class EventSnippet(
 )
 
 data class AuthorCard(
+    val id: UUID,
     val displayName: String,
     val handle: String,
     val avatarSeed: String,

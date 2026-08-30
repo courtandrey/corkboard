@@ -15,6 +15,7 @@ import { CookieBanner } from "./features/consent/CookieBanner";
 import { AdminPanel } from "./features/admin/AdminPanel";
 import { MessagesDrawer } from "./features/messaging/MessagesDrawer";
 import { ConnectionsModal } from "./features/connections/ConnectionsModal";
+import { PersonCardModal } from "./features/connections/personCard";
 import { MyPins } from "./features/events/MyPins";
 import { useSocket } from "./features/realtime/useSocket";
 import { strings } from "./i18n/strings";
@@ -96,6 +97,7 @@ export function App() {
         </Routes>
       </div>
       <CookieBanner />
+      <PersonCardModal />
       <VerifyGate />
       <Toaster />
     </div>

@@ -8,6 +8,7 @@ import { boardEvent, notePath } from "../../api/paths";
 import { useBoardHome } from "../../stores/boardStore";
 import { strings } from "../../i18n/strings";
 import { Modal } from "../../ui/Modal";
+import { PersonLink } from "../connections/personCard";
 import { PixelAvatar } from "../../ui/PixelAvatar";
 import { toast } from "../../ui/toast";
 import { useIsPhone } from "../../ui/useMediaQuery";
@@ -34,7 +35,13 @@ function ApplicationRow({ application }: { application: ApplicationItem }) {
     <div className="pin-application">
       <div className="appl-head">
         {application.applicant && <PixelAvatar seed={application.applicant.avatarSeed} size={18} />}
-        {application.applicant?.displayName}
+        {application.applicant && (
+          <PersonLink
+            userId={application.applicant.id}
+            displayName={application.applicant.displayName}
+            handle={application.applicant.handle}
+          />
+        )}
         <span className="meta-row" style={{ margin: 0, fontWeight: 400 }}>
           · {strings.messagesUi.statusLabel(application.status)}
         </span>
