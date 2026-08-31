@@ -49,8 +49,12 @@ export function PersonLink({
       onClick={() => openPerson(userId)}
       title={s.openCard(displayName)}
     >
-      {displayName}
-      {handle && <span className="user-handle">{handleOf(handle)}</span>}
+      <span className="person-link-part">{displayName}</span>
+      {handle && (
+        <span className="user-handle">
+          <span aria-hidden="true">@</span><span className="person-link-part">{handle}</span>
+        </span>
+      )}
     </button>
   );
 }

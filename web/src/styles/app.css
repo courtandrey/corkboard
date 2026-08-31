@@ -1901,6 +1901,10 @@ body:has(.modal-scrim) .cookie-banner {
 
 .person-link:hover {
   color: var(--fb-blue);
+  text-decoration: none;
+}
+
+.person-link-part:hover {
   text-decoration: underline;
 }
 
