@@ -46,7 +46,7 @@ class EventController(
         val viewer = viewerId(principal)
         return viewport.run(
             ViewportQuery.Params(
-                scopeId = scopes.globalId,
+                scopeIds = listOf(scopes.globalId),
                 bounds = Bounds.parse(bbox)!!,
                 zoom = zoom.coerceIn(0, 22),
                 types = types?.let(::parseTypes),

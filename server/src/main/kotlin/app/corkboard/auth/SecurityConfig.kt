@@ -47,6 +47,8 @@ private val PUBLIC_READS = arrayOf(
     "/login",
     "/finish-signup",
     "/boards/**",
+    "/subscriptions",
+    "/subscriptions/**",
     "/me/**",
     "/admin/**",
     "/messages",

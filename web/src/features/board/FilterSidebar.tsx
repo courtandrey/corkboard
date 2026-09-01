@@ -1,9 +1,10 @@
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router";
-import { useTagSearch } from "../../api/hooks";
+import { useMe, useSubscriptions, useTagSearch } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
-import { newNotePath } from "../../api/paths";
+import { isSubscriptions, newNotePath } from "../../api/paths";
 import { useBoardStore } from "../../stores/boardStore";
+import { PixelAvatar } from "../../ui/PixelAvatar";
 import { useScopeTypes } from "../../ui/scope";
 import { CloseIcon, PlusIcon, SearchIcon } from "../../ui/icons";
 
@@ -12,6 +13,11 @@ export function FilterSidebar() {
   const filters = useBoardStore((s) => s.filters);
   const types = useScopeTypes(filters.board);
   const shared = filters.board === null;
+  const feed = isSubscriptions(filters.board);
+  const { data: me } = useMe();
+  const { data: subscriptions } = useSubscriptions(feed && !!me);
+  const togglePerson = useBoardStore((s) => s.togglePerson);
+  const following = subscriptions?.following ?? [];
   const toggleType = useBoardStore((s) => s.toggleType);
   const setFilters = useBoardStore((s) => s.setFilters);
   const sidebarOpen = useBoardStore((s) => s.sidebarOpen);
@@ -41,16 +47,18 @@ export function FilterSidebar() {
           <CloseIcon size={18} />
         </button>
       </div>
-      <button
-        type="button"
-        className="primary pin-cta"
-        onClick={() => {
-          if (sidebarOpen) toggleSidebar();
-          navigate(newNotePath(filters.board));
-        }}
-      >
-        <PlusIcon size={17} /> {strings.board.pinANote}
-      </button>
+      {!feed && (
+        <button
+          type="button"
+          className="primary pin-cta"
+          onClick={() => {
+            if (sidebarOpen) toggleSidebar();
+            navigate(newNotePath(filters.board));
+          }}
+        >
+          <PlusIcon size={17} /> {strings.board.pinANote}
+        </button>
+      )}
       <div className="panel">
         <h3>{strings.board.filtersTitle}</h3>
         <form className="search sidebar-search" onSubmit={onSearch}>
@@ -91,6 +99,31 @@ export function FilterSidebar() {
           </label>
         )}
       </div>
+      {feed && (
+        <div className="panel">
+          <h3>{strings.scope.peopleTitle}</h3>
+          {following.length === 0 && <p className="form-hint">{strings.scope.noSubscriptions}</p>}
+          {following.map((person) => (
+            <label key={person.ownerId} className="type-row">
+              <input
+                type="checkbox"
+                checked={filters.people.length === 0 || filters.people.includes(person.ownerId)}
+                onChange={() => {
+                  if (filters.people.length === 0) {
+                    setFilters({
+                      people: following.map((p) => p.ownerId).filter((id) => id !== person.ownerId),
+                    });
+                  } else {
+                    togglePerson(person.ownerId);
+                  }
+                }}
+              />
+              <PixelAvatar seed={person.avatarSeed} size={16} />
+              {person.displayName}
+            </label>
+          ))}
+        </div>
+      )}
       {shared && topTags && topTags.items.length > 0 && (
         <div className="panel">
           <h3>{strings.tags.popularTitle}</h3>

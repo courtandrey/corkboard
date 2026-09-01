@@ -47,15 +47,20 @@ class ApplicationService(
         val event = dsl.select(EVENTS.AUTHOR_ID, EVENTS.TITLE, EVENTS.STATUS, EVENTS.APPLYABLE, EVENTS.SCOPE_ID)
             .from(EVENTS).where(EVENTS.ID.eq(eventId)).fetchOne()
             ?: throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
-        scopes.requireSharedBoard(event[EVENTS.SCOPE_ID]!!)
         val authorId = event[EVENTS.AUTHOR_ID]!!
+        val shared = scopes.isGlobal(event[EVENTS.SCOPE_ID]!!)
+        if (!shared) {
+            // a note on somebody's own board is answerable by the people they let in — nobody else
+            if (!scopes.subscriptionsEnabled()) throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
+            scopes.requireBoardReadable(authorId, applicantId)
+        }
         if (authorId == applicantId) {
             throw ApiException(HttpStatus.CONFLICT, ProblemCode.OWN_EVENT)
         }
         if (event[EVENTS.STATUS] in HIDDEN_STATUSES) {
             throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
         }
-        if (event[EVENTS.STATUS] != DbEventStatus.active || event[EVENTS.APPLYABLE] != true) {
+        if (event[EVENTS.STATUS] != DbEventStatus.active || (shared && event[EVENTS.APPLYABLE] != true)) {
             throw ApiException(HttpStatus.CONFLICT, ProblemCode.NOT_APPLYABLE)
         }
         val body = message.trim()

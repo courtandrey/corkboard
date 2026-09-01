@@ -34,3 +34,12 @@ enum class ScopeKind(val types: List<EventType>) {
         fun fromKey(key: String): ScopeKind? = entries.firstOrNull { it.key == key }
     }
 }
+
+data class Subscription(
+    val scopeId: java.util.UUID,
+    val ownerId: java.util.UUID,
+    val handle: String,
+    val displayName: String,
+    val avatarSeed: String,
+    val memberSince: java.time.Instant,
+)

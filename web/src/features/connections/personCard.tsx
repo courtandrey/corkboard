@@ -10,6 +10,7 @@ import { PixelAvatar } from "../../ui/PixelAvatar";
 import { handleOf } from "../../ui/handle";
 import { toast } from "../../ui/toast";
 import { CheckIcon, ChatIcon, PlusIcon } from "../../ui/icons";
+import { useFeature } from "../../ui/features";
 import { useVerifyGate } from "../auth/verifyGate";
 
 const s = strings.person;
@@ -65,6 +66,7 @@ export function PersonCardModal() {
   const { data: me } = useMe();
   const { data: person, error } = usePerson(personId);
   const { guard } = useVerifyGate();
+  const subscriptions = useFeature("IS_SUBSCRIPTION_ENABLED");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -73,6 +75,8 @@ export function PersonCardModal() {
       queryClient.invalidateQueries({ queryKey: ["person", personId] }),
       queryClient.invalidateQueries({ queryKey: ["connections"] }),
       queryClient.invalidateQueries({ queryKey: ["people"] }),
+      queryClient.invalidateQueries({ queryKey: ["subscriptions"] }),
+      queryClient.invalidateQueries({ queryKey: ["events"] }),
       queryClient.invalidateQueries({ queryKey: ["notifications"] }),
     ]);
 
@@ -80,6 +84,17 @@ export function PersonCardModal() {
     mutationFn: (userId: string) => api.post("/api/v1/connections", { userId }),
     onSuccess: async () => {
       toast(strings.connections.requested);
+      await refresh();
+    },
+  });
+
+  const share = useMutation({
+    mutationFn: ({ userId, on }: { userId: string; on: boolean }) =>
+      on
+        ? api.post("/api/v1/subscriptions/viewers", { userId })
+        : api.del(`/api/v1/subscriptions/viewers/${userId}`),
+    onSuccess: async (_result, { on }) => {
+      toast(on ? strings.connections.shared : strings.connections.unshared);
       await refresh();
     },
   });
@@ -163,6 +178,17 @@ export function PersonCardModal() {
                     <button type="button" className="ghost" onClick={() => void openChat(person)}>
                       <ChatIcon size={15} /> {strings.connections.message}
                     </button>
+                    {subscriptions && (
+                      <label className="inline share-board">
+                        <input
+                          type="checkbox"
+                          checked={person.sharedWithThem}
+                          disabled={share.isPending}
+                          onChange={(event) => share.mutate({ userId: person.id, on: event.target.checked })}
+                        />
+                        {strings.connections.shareBoard}
+                      </label>
+                    )}
                   </>
                 )}
               </div>

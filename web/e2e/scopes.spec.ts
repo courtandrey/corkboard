@@ -29,7 +29,7 @@ test("a personal note lives on its own board and nowhere else", async ({ browser
   await gotoBoard(page);
 
   const ownerId = await myUserId(page);
-  await page.getByRole("button", { name: "Yours", exact: true }).click();
+  await page.selectOption(".scope-select", await myUserId(page));
   await expect(page).toHaveURL(new RegExp(`/boards/${ownerId}$`));
   await expect(
     page.getByRole("checkbox", { name: "Help Wanted / Offered" }),
@@ -42,7 +42,7 @@ test("a personal note lives on its own board and nowhere else", async ({ browser
 
   const drawer = page.locator(".modal-card");
   await expect(drawer.locator(".ev-title")).toHaveText(title);
-  await expect(drawer).toContainText("Only you can see what you pin here.");
+  await expect(drawer).toContainText("Only you and the people you let see your board.");
   await expect(drawer.getByRole("button", { name: "Respond to this note" })).toHaveCount(0);
   await expect(drawer.getByRole("button", { name: "Report this note" })).toHaveCount(0);
   const noteUrl = page.url();
@@ -64,7 +64,7 @@ test("a personal note lives on its own board and nowhere else", async ({ browser
   await page.getByRole("button", { name: "Never mind" }).click();
   await page.getByRole("button", { name: "Close" }).click();
 
-  await page.getByRole("button", { name: "The board", exact: true }).click();
+  await page.selectOption(".scope-select", "");
   await expect(page).not.toHaveURL(/\/boards\//);
   const onShared = await page.request.get(
     "/api/v1/events?bbox=-180,-85,180,85&zoom=2&clustered=false&q=" +
@@ -85,7 +85,7 @@ test("a personal note lives on its own board and nowhere else", async ({ browser
   );
   await expect(strangerPage.locator(".toaster")).toContainText("isn’t open to you");
 
-  await page.getByRole("button", { name: "Yours", exact: true }).click();
+  await page.selectOption(".scope-select", await myUserId(page));
   await page.getByRole("link", { name: "My pins" }).first().click();
   await expect(page.locator(".modal-card")).toContainText("Yours");
   await page.getByRole("button", { name: "Close" }).click();
@@ -113,16 +113,16 @@ test("switching the feature off closes the board API, not just the switcher", as
   await registerViaApi(page, "Toggled Pinner");
   const ownerId = await myUserId(page);
   await gotoBoard(page);
-  await expect(page.getByRole("button", { name: "Yours", exact: true })).toBeVisible();
+  await expect(page.locator(".scope-select")).toContainText("Yours");
 
-  await page.getByRole("button", { name: "Yours", exact: true }).click();
+  await page.selectOption(".scope-select", await myUserId(page));
   await pinHere(page, `Still here tomorrow ${Date.now()}`, "Plans");
   const noteUrl = page.url();
   const noteId = noteUrl.split("/").pop()!.split("?")[0];
   await page.getByRole("button", { name: "Close" }).click();
 
   await setFeatureFlag(FLAG, false);
-  await expect(page.getByRole("button", { name: "Yours", exact: true })).toHaveCount(0);
+  await expect(page.locator(".scope-select")).toHaveCount(0);
 
   for (const path of [
     `/api/v1/boards/${ownerId}/events?bbox=-180,-85,180,85&zoom=2`,

@@ -25,6 +25,7 @@ data class PersonCard(
     val memberSince: Instant,
     val state: ConnectionState,
     val connectionId: UUID? = null,
+    val sharedWithThem: Boolean = false,
 )
 
 data class ConnectionsResponse(

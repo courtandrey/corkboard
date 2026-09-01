@@ -1,12 +1,13 @@
 import { Fragment, useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../../api/client";
 import type { ApplyResponse } from "../../api/client";
 import { useEventDetail, useMe, useMeta } from "../../api/hooks";
 import { strings } from "../../i18n/strings";
 import { boardPath } from "../../api/paths";
+import { boardInPath } from "../../stores/boardStore";
 import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
 import { toast } from "../../ui/toast";
@@ -40,8 +41,8 @@ function Linkified({ text }: { text: string }) {
 type Mode = "view" | "respond" | "report" | "takedown" | "edit";
 
 export function EventDrawer() {
-  const { id, ownerId } = useParams();
-  const board = ownerId ?? null;
+  const { id } = useParams();
+  const board = boardInPath(useLocation().pathname);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: meta } = useMeta();
@@ -271,16 +272,40 @@ export function EventDrawer() {
               </div>
             </div>
           )}
-
-          {mode === "view" && event.scope === "personal" && (
+          {mode === "view" && event.scope === "personal" && event.viewerState.isAuthor && (
             <div className="ev-foot">
               <span className="grow meta-row" style={{ margin: 0 }}>
                 {strings.scope.personalHint}
               </span>
-              {event.viewerState.isAuthor && (
-                <button type="button" className="ghost" onClick={() => setMode("edit")}>
-                  {strings.event.edit}
+              <button type="button" className="ghost" onClick={() => setMode("edit")}>
+                {strings.event.edit}
+              </button>
+            </div>
+          )}
+          {mode === "view" && event.scope === "personal" && !event.viewerState.isAuthor && (
+            <div className="ev-foot">
+              {conversationId || event.viewerState.applied ? (
+                <span className="grow meta-row" style={{ margin: 0 }}>
+                  {conversationId ? strings.apply.sent : strings.apply.alreadyApplied}{" "}
+                  <Link to={conversationId ? `/messages/${conversationId}` : "/messages"}>
+                    {strings.apply.goToConversation}
+                  </Link>
+                </span>
+              ) : event.viewerState.canRespond ? (
+                <button
+                  type="button"
+                  className="primary grow"
+                  onClick={() => {
+                    if (!me) navigate("/login");
+                    else guard("respond", () => setMode("respond"))();
+                  }}
+                >
+                  <ChatIcon size={16} /> {strings.apply.respond}
                 </button>
+              ) : (
+                <span className="grow meta-row" style={{ margin: 0 }}>
+                  {strings.scope.sharedWithYou}
+                </span>
               )}
             </div>
           )}
@@ -302,7 +327,7 @@ export function EventDrawer() {
                       {strings.apply.alreadyApplied}{" "}
                       <Link to="/messages">{strings.apply.goToConversation}</Link>
                     </span>
-                  ) : event.applyable && event.status === "active" ? (
+                  ) : event.viewerState.canRespond ? (
                     <button
                       type="button"
                       className="primary grow"

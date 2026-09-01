@@ -12,6 +12,7 @@ import { handleOf } from "../../ui/handle";
 import { toast } from "../../ui/toast";
 import { useDebounced } from "../../ui/useDebounced";
 import { CheckIcon, CloseIcon, PlusIcon, SearchIcon } from "../../ui/icons";
+import { useFeature } from "../../ui/features";
 import { useVerifyGate } from "../auth/verifyGate";
 
 const s = strings.connections;
@@ -51,6 +52,7 @@ export function ConnectionsModal() {
   const { data: me, isLoading } = useMe();
   const { data } = useConnections(!!me);
   const { guard } = useVerifyGate();
+  const subscriptions = useFeature("IS_SUBSCRIPTION_ENABLED");
   const [text, setText] = useState("");
   const typed = useDebounced(text, TYPING_PAUSE_MS);
   const { data: found } = usePeopleSearch(typed, !!me);
@@ -59,6 +61,8 @@ export function ConnectionsModal() {
     Promise.all([
       queryClient.invalidateQueries({ queryKey: ["connections"] }),
       queryClient.invalidateQueries({ queryKey: ["people"] }),
+      queryClient.invalidateQueries({ queryKey: ["subscriptions"] }),
+      queryClient.invalidateQueries({ queryKey: ["events"] }),
       queryClient.invalidateQueries({ queryKey: ["notifications"] }),
     ]);
 
@@ -66,6 +70,17 @@ export function ConnectionsModal() {
     mutationFn: (userId: string) => api.post("/api/v1/connections", { userId }),
     onSuccess: async () => {
       toast(s.requested);
+      await refresh();
+    },
+  });
+
+  const share = useMutation({
+    mutationFn: ({ userId, on }: { userId: string; on: boolean }) =>
+      on
+        ? api.post("/api/v1/subscriptions/viewers", { userId })
+        : api.del(`/api/v1/subscriptions/viewers/${userId}`),
+    onSuccess: async (_result, { on }) => {
+      toast(on ? s.shared : s.unshared);
       await refresh();
     },
   });
@@ -186,7 +201,21 @@ export function ConnectionsModal() {
               <h3>{s.yours}</h3>
               {connected.length === 0 && <p className="empty-state">{s.empty}</p>}
               {connected.map((item: ConnectionItem) => (
-                <Person key={item.id} person={item.person} onOpen={() => void openChat(item.person)} />
+                <Person key={item.id} person={item.person} onOpen={() => void openChat(item.person)}>
+                  {subscriptions && (
+                    <label className="inline share-board">
+                      <input
+                        type="checkbox"
+                        checked={item.person.sharedWithThem}
+                        disabled={share.isPending}
+                        onChange={(event) =>
+                          share.mutate({ userId: item.person.id, on: event.target.checked })
+                        }
+                      />
+                      {s.shareBoard}
+                    </label>
+                  )}
+                </Person>
               ))}
             </section>
 

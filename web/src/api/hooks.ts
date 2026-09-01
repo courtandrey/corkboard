@@ -15,6 +15,7 @@ import type {
   PeopleResponse,
   PersonCard,
   PlaceSuggestions,
+  SubscriptionsResponse,
   TagListResponse,
   ViewportResponse,
 } from "./client";
@@ -77,6 +78,7 @@ export function useViewportEvents(viewport: Viewport | null, filters: Filters) {
           zoom: zoomInt!,
           types: filters.types.join(","),
           tags: filters.tags.join(","),
+          owners: filters.people.join(","),
           applyable: filters.applyableOnly ? true : undefined,
           q: filters.q,
         })}`,
@@ -147,6 +149,14 @@ export function usePlaceSearch(q: string, near: string | undefined, enabled: boo
     placeholderData: keepPreviousData,
     staleTime: 300_000,
     retry: false,
+  });
+}
+
+export function useSubscriptions(enabled: boolean) {
+  return useQuery({
+    queryKey: ["subscriptions"],
+    enabled,
+    queryFn: () => api.get<SubscriptionsResponse>("/api/v1/subscriptions"),
   });
 }
 

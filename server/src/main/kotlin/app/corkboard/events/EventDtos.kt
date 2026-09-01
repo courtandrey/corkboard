@@ -117,6 +117,7 @@ data class ViewerState(
     val hidden: Boolean,
     val applied: Boolean,
     val isAuthor: Boolean,
+    val canRespond: Boolean = false,
 )
 
 data class RenewRequest(

@@ -8,7 +8,8 @@ import { AddressSearch } from "./AddressSearch";
 import { ApiError, api, query } from "../../api/client";
 import type { MetaResponse, PlaceSuggestion, ViewportResponse } from "../../api/client";
 import { strings } from "../../i18n/strings";
-import { boardEvents, newNotePath, notePath } from "../../api/paths";
+import { boardEvents, isSubscriptions, newNotePath, notePath } from "../../api/paths";
+import type { BoardRef } from "../../api/paths";
 import { clusterPushpinDataUri, pushpinDataUri } from "../../ui/pushpin";
 import { PinIcon, PushpinIcon } from "../../ui/icons";
 import { toast } from "../../ui/toast";
@@ -31,9 +32,10 @@ function countLabel(count: number): string {
   return count > 99 ? "99+" : String(count);
 }
 
-function statusText(total: number, short: boolean, personal: boolean): string {
+function statusText(total: number, short: boolean, board: BoardRef): string {
   if (total === 0) {
-    if (personal) return strings.scope.emptyPersonal;
+    if (isSubscriptions(board)) return strings.scope.emptySubscriptions;
+    if (board) return strings.scope.emptyPersonal;
     return short ? strings.board.emptyViewportShort : strings.board.emptyViewport;
   }
   return short ? strings.board.notesHereShort(total) : strings.board.notesHere(total);
@@ -642,7 +644,7 @@ export function BoardMap() {
         <PinIcon size={15} />
         <span className="locate-label">{strings.board.useMyLocation}</span>
       </button>
-      {!crosshair && (
+      {!crosshair && !isSubscriptions(filters.board) && (
         <button
           type="button"
           className="pin-fab"
@@ -655,7 +657,7 @@ export function BoardMap() {
       )}
       {data && (
         <div className="status-line" role="status">
-          {statusText(data.total, isPhone, filters.board !== null)}
+          {statusText(data.total, isPhone, filters.board)}
         </div>
       )}
     </div>

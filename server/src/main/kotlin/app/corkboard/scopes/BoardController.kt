@@ -58,7 +58,7 @@ class BoardController(
 
         return viewport.run(
             ViewportQuery.Params(
-                scopeId = boardId,
+                scopeIds = listOf(boardId),
                 bounds = Bounds.parse(bbox)!!,
                 zoom = zoom.coerceIn(0, 22),
                 types = types?.let(::parseTypes),

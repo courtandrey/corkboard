@@ -1,11 +1,12 @@
 import { useMeta } from "../api/hooks";
 import type { TypeMeta } from "../api/client";
+import type { BoardRef } from "../api/paths";
 
 export type ScopeKind = "global" | "personal";
 
-export const scopeOf = (board: string | null): ScopeKind => (board ? "personal" : "global");
+export const scopeOf = (board: BoardRef): ScopeKind => (board ? "personal" : "global");
 
-export function useScopeTypes(board: string | null): TypeMeta[] {
+export function useScopeTypes(board: BoardRef): TypeMeta[] {
   const { data: meta } = useMeta();
   if (!meta) return [];
   const allowed = meta.scopes.find((s) => s.key === scopeOf(board))?.types ?? [];

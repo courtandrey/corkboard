@@ -13,6 +13,8 @@ class SpaForwardController {
         "/login",
         "/finish-signup",
         "/boards/**",
+        "/subscriptions",
+        "/subscriptions/**",
         "/me/**",
         "/admin/**",
         "/messages",

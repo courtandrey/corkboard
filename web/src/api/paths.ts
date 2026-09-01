@@ -1,14 +1,27 @@
-export const boardEvents = (owner: string | null): string =>
-  owner ? `/api/v1/boards/${owner}/events` : "/api/v1/events";
+export const SUBSCRIPTIONS = "subscriptions";
 
-export const boardEvent = (owner: string | null, id: string): string =>
-  `${boardEvents(owner)}/${id}`;
+export type BoardRef = string | null;
 
-export const notePath = (owner: string | null | undefined, id: string): string =>
-  owner ? `/boards/${owner}/events/${id}` : `/events/${id}`;
+export const isSubscriptions = (board: BoardRef | undefined): boolean => board === SUBSCRIPTIONS;
 
-export const boardPath = (owner: string | null | undefined): string =>
-  owner ? `/boards/${owner}` : "/";
+export const boardEvents = (board: BoardRef): string =>
+  board === SUBSCRIPTIONS
+    ? "/api/v1/subscriptions/events"
+    : board
+      ? `/api/v1/boards/${board}/events`
+      : "/api/v1/events";
 
-export const newNotePath = (owner: string | null): string =>
-  owner ? `/boards/${owner}/new` : "/new";
+export const boardEvent = (board: BoardRef, id: string): string => `${boardEvents(board)}/${id}`;
+
+export const notePath = (board: BoardRef | undefined, id: string): string =>
+  board === SUBSCRIPTIONS
+    ? `/subscriptions/events/${id}`
+    : board
+      ? `/boards/${board}/events/${id}`
+      : `/events/${id}`;
+
+export const boardPath = (board: BoardRef | undefined): string =>
+  board === SUBSCRIPTIONS ? "/subscriptions" : board ? `/boards/${board}` : "/";
+
+export const newNotePath = (board: BoardRef): string =>
+  board === SUBSCRIPTIONS ? "/new" : board ? `/boards/${board}/new` : "/new";

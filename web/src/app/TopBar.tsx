@@ -5,7 +5,7 @@ import { api } from "../api/client";
 import { useMe } from "../api/hooks";
 import { NotificationsBell } from "../features/notifications/NotificationsBell";
 import { strings } from "../i18n/strings";
-import { boardPath } from "../api/paths";
+import { SUBSCRIPTIONS, boardPath } from "../api/paths";
 import { useBoardStore } from "../stores/boardStore";
 import { useFeature } from "../ui/features";
 import { usePermissions } from "../ui/permissions";
@@ -30,6 +30,7 @@ export function TopBar() {
   const { can } = usePermissions();
   const board = useBoardStore((s) => s.filters.board);
   const personalBoards = useFeature("IS_PERSONAL_SCOPE_ENABLED");
+  const subscriptions = useFeature("IS_SUBSCRIPTION_ENABLED");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -53,19 +54,16 @@ export function TopBar() {
         <span>{after}</span>
       </Link>
       {me && personalBoards && (
-        <div className="scope-switch" role="group" aria-label={strings.scope.switcherLabel}>
-          {[null, me.id].map((owner) => (
-            <button
-              key={owner ?? "global"}
-              type="button"
-              className={`scope-option${board === owner ? " current" : ""}`}
-              aria-pressed={board === owner}
-              onClick={() => navigate(boardPath(owner))}
-            >
-              {owner ? strings.scope.personal : strings.scope.global}
-            </button>
-          ))}
-        </div>
+        <select
+          className="scope-select"
+          aria-label={strings.scope.switcherLabel}
+          value={board ?? ""}
+          onChange={(event) => navigate(boardPath(event.target.value || null))}
+        >
+          <option value="">{strings.scope.global}</option>
+          <option value={me.id}>{strings.scope.personal}</option>
+          {subscriptions && <option value={SUBSCRIPTIONS}>{strings.scope.subscriptions}</option>}
+        </select>
       )}
       <span className="spacer" />
       {me ? (

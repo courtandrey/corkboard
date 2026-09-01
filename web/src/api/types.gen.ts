@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/api/v1/subscriptions/viewers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["share"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notifications/read": {
         parameters: {
             query?: never;
@@ -548,6 +564,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/subscriptions/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_4"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/subscriptions/events/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["detail_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/places": {
         parameters: {
             query?: never;
@@ -571,7 +635,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -603,7 +667,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -667,7 +731,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -747,10 +811,26 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/subscriptions/viewers/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["unshare"];
         options?: never;
         head?: never;
         patch?: never;
@@ -776,6 +856,10 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ShareBoardRequest: {
+            /** Format: uuid */
+            userId: string;
+        };
         MarkReadRequest: {
             ids?: string[];
         };
@@ -845,6 +929,7 @@ export interface components {
             hidden: boolean;
             applied: boolean;
             isAuthor: boolean;
+            canRespond: boolean;
         };
         VoteResponse: {
             /** Format: int32 */
@@ -1000,6 +1085,7 @@ export interface components {
             state: "none" | "incoming" | "outgoing" | "connected";
             /** Format: uuid */
             connectionId?: string;
+            sharedWithThem: boolean;
         };
         TagItem: {
             name: string;
@@ -1009,6 +1095,58 @@ export interface components {
         };
         TagListResponse: {
             items: components["schemas"]["TagItem"][];
+        };
+        SubscriptionItem: {
+            /** Format: uuid */
+            ownerId: string;
+            handle: string;
+            displayName: string;
+            avatarSeed: string;
+            /** Format: date-time */
+            memberSince: string;
+        };
+        SubscriptionsResponse: {
+            following: components["schemas"]["SubscriptionItem"][];
+            viewers: components["schemas"]["SubscriptionItem"][];
+        };
+        ClusterBounds: {
+            /** Format: double */
+            west: number;
+            /** Format: double */
+            south: number;
+            /** Format: double */
+            east: number;
+            /** Format: double */
+            north: number;
+        };
+        ClusterPin: {
+            /** Format: int32 */
+            count: number;
+            location: components["schemas"]["LatLng"];
+            bounds: components["schemas"]["ClusterBounds"];
+        };
+        EventPin: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            type: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice" | "plan" | "memory";
+            title: string;
+            location: components["schemas"]["LatLng"];
+            applyable: boolean;
+            /** Format: int32 */
+            score: number;
+            /** Format: int32 */
+            applicationCount: number;
+            /** Format: date-time */
+            expiresAt?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ViewportResponse: {
+            items: components["schemas"]["EventPin"][];
+            clusters: components["schemas"]["ClusterPin"][];
+            /** Format: int32 */
+            total: number;
         };
         PlaceBounds: {
             /** Format: double */
@@ -1155,45 +1293,6 @@ export interface components {
                 [key: string]: boolean;
             };
         };
-        ClusterBounds: {
-            /** Format: double */
-            west: number;
-            /** Format: double */
-            south: number;
-            /** Format: double */
-            east: number;
-            /** Format: double */
-            north: number;
-        };
-        ClusterPin: {
-            /** Format: int32 */
-            count: number;
-            location: components["schemas"]["LatLng"];
-            bounds: components["schemas"]["ClusterBounds"];
-        };
-        EventPin: {
-            /** Format: uuid */
-            id: string;
-            /** @enum {string} */
-            type: "lost_found" | "activity" | "club" | "help" | "giveaway" | "happening" | "notice" | "plan" | "memory";
-            title: string;
-            location: components["schemas"]["LatLng"];
-            applyable: boolean;
-            /** Format: int32 */
-            score: number;
-            /** Format: int32 */
-            applicationCount: number;
-            /** Format: date-time */
-            expiresAt?: string;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        ViewportResponse: {
-            items: components["schemas"]["EventPin"][];
-            clusters: components["schemas"]["ClusterPin"][];
-            /** Format: int32 */
-            total: number;
-        };
         ConversationListResponse: {
             items: components["schemas"]["ConversationSummary"][];
             nextCursor?: string;
@@ -1265,6 +1364,28 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    share: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShareBoardRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     markRead: {
         parameters: {
             query?: never;
@@ -2281,6 +2402,77 @@ export interface operations {
             };
         };
     };
+    mine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SubscriptionsResponse"];
+                };
+            };
+        };
+    };
+    list_4: {
+        parameters: {
+            query: {
+                bbox: string;
+                zoom?: number;
+                types?: string;
+                tags?: string;
+                owners?: string;
+                q?: string;
+                limit?: number;
+                clustered?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ViewportResponse"];
+                };
+            };
+        };
+    };
+    detail_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EventDetail"];
+                };
+            };
+        };
+    };
     search: {
         parameters: {
             query: {
@@ -2305,7 +2497,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: {
                 cursor?: string;
@@ -2348,7 +2540,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: {
                 status?: string;
@@ -2434,7 +2626,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query?: {
                 cursor?: string;
@@ -2541,7 +2733,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -2558,6 +2750,26 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["FeatureFlagListResponse"];
                 };
+            };
+        };
+    };
+    unshare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

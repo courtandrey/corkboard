@@ -298,53 +298,45 @@ textarea:focus {
   flex: 1;
 }
 
-.scope-switch {
-  display: inline-flex;
-  padding: 2px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.16);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.scope-option {
-  padding: 4px 12px;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  box-shadow: none;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.scope-option:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: transparent;
+.scope-select {
+  appearance: none;
+  max-width: 170px;
+  min-height: 33px;
+  padding: 5px 26px 5px 10px;
+  background: rgba(255, 255, 255, 0.14)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 8px center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
   color: #fff;
+  font-weight: 600;
+  box-shadow: none;
 }
 
-.scope-option.current {
+.scope-select:hover {
+  background-color: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.scope-select option {
   background: var(--paper);
-  color: var(--fb-blue);
-  box-shadow: var(--shadow-1);
+  color: var(--ink);
 }
 
-.scope-option.current:hover {
-  background: var(--paper);
-}
-
-.scope-chip {
-  margin-left: 6px;
-  padding: 1px 7px;
-  border: 1px solid var(--fb-border);
-  border-radius: 999px;
-  background: var(--fb-blue-wash);
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.share-board {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 4px;
+  font-size: 12px;
   color: var(--ink-soft);
-  vertical-align: middle;
+}
+
+.share-board input {
+  accent-color: var(--fb-blue);
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  box-shadow: none;
 }
 
 .nav-link {
@@ -2602,8 +2594,8 @@ label.inline input[type="checkbox"] {
 
 @media (max-width: 768px) {
   .topbar {
-    gap: 6px;
-    padding: 0 8px;
+    gap: 4px;
+    padding: 0 6px;
   }
 
   .topbar .logo {
@@ -2616,9 +2608,14 @@ label.inline input[type="checkbox"] {
     display: none;
   }
 
-  .scope-option {
-    padding: 4px 8px;
-    font-size: 11px;
+  .scope-select {
+    flex: 0 1 auto;
+    width: 158px;
+    min-width: 0;
+    max-width: none;
+    padding-left: 8px;
+    padding-right: 22px;
+    background-position: right 6px center;
   }
 
   .user-menu {

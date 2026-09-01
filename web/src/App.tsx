@@ -80,6 +80,8 @@ export function App() {
         <Routes>
           <Route path="/" element={null} />
           <Route path="/boards/:ownerId" element={null} />
+          <Route path="/subscriptions" element={null} />
+          <Route path="/subscriptions/events/:id" element={<EventDrawer />} />
           <Route path="/events/:id" element={<EventDrawer />} />
           <Route path="/boards/:ownerId/events/:id" element={<EventDrawer />} />
           <Route path="/new" element={<CreateEventFlow />} />

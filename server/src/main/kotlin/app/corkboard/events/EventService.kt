@@ -97,6 +97,14 @@ class EventService(
         return toDetail(event, viewerId)
     }
 
+    fun detailAcross(id: UUID, viewerId: UUID, scopeIds: List<UUID>): EventDetail {
+        val event = fetchEvent(id, scopeIds)
+        if (event.status in HIDDEN_STATUSES && event.authorId != viewerId) {
+            throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
+        }
+        return toDetail(event, viewerId)
+    }
+
     @Transactional
     fun update(id: UUID, viewerId: UUID, scopeId: UUID, req: UpdateEventRequest): EventDetail {
         val event = fetchAuthored(id, viewerId, scopeId)
@@ -232,7 +240,9 @@ class EventService(
         return row[EVENTS.AUTHOR_ID]!!
     }
 
-    private fun fetchEvent(id: UUID, scopeId: UUID): EventRow =
+    private fun fetchEvent(id: UUID, scopeId: UUID): EventRow = fetchEvent(id, listOf(scopeId))
+
+    private fun fetchEvent(id: UUID, scopeIds: List<UUID>): EventRow =
         dsl.select(
             EVENTS.ID, EVENTS.AUTHOR_ID, EVENTS.SCOPE_ID, SCOPES.OWNER_ID,
             EVENTS.TYPE, EVENTS.STATUS, EVENTS.TITLE, EVENTS.BODY,
@@ -241,7 +251,7 @@ class EventService(
         )
             .from(EVENTS)
             .join(SCOPES).on(SCOPES.ID.eq(EVENTS.SCOPE_ID))
-            .where(EVENTS.ID.eq(id), EVENTS.SCOPE_ID.eq(scopeId))
+            .where(EVENTS.ID.eq(id), EVENTS.SCOPE_ID.`in`(scopeIds))
             .fetchOne { r ->
                 EventRow(
                     id = r[EVENTS.ID]!!,
@@ -288,7 +298,7 @@ class EventService(
                 avatarSeed = author[USERS.AVATAR_SEED]!!,
                 memberSince = author[USERS.CREATED_AT]!!.toInstant(),
             ),
-            viewerState = viewerState(event.id, event.authorId, viewerId),
+            viewerState = viewerState(event, viewerId),
             expiresAt = event.expiresAt?.toInstant(),
             resolvedAt = event.resolvedAt?.toInstant(),
             createdAt = event.createdAt.toInstant(),
@@ -296,14 +306,21 @@ class EventService(
         )
     }
 
-    private fun viewerState(eventId: UUID, authorId: UUID, viewerId: UUID?): ViewerState {
+    private fun viewerState(event: EventRow, viewerId: UUID?): ViewerState {
         if (viewerId == null) return ViewerState(voted = false, hidden = false, applied = false, isAuthor = false)
+        val eventId = event.id
         return ViewerState(
             voted = dsl.fetchExists(VOTES, VOTES.USER_ID.eq(viewerId), VOTES.EVENT_ID.eq(eventId)),
             hidden = dsl.fetchExists(EVENT_HIDES, EVENT_HIDES.USER_ID.eq(viewerId), EVENT_HIDES.EVENT_ID.eq(eventId)),
             applied = dsl.fetchExists(APPLICATIONS, APPLICATIONS.APPLICANT_ID.eq(viewerId), APPLICATIONS.EVENT_ID.eq(eventId)),
-            isAuthor = viewerId == authorId,
+            isAuthor = viewerId == event.authorId,
+            canRespond = canRespond(event, viewerId),
         )
+    }
+
+    private fun canRespond(event: EventRow, viewerId: UUID): Boolean {
+        if (viewerId == event.authorId || event.status != DbEventStatus.active) return false
+        return if (scopes.isGlobal(event.scopeId)) event.applyable else scopes.subscriptionsEnabled()
     }
 
     @Suppress("UNCHECKED_CAST")

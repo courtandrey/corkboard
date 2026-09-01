@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import type { LatLng } from "../api/client";
+import { SUBSCRIPTIONS, boardPath } from "../api/paths";
+import type { BoardRef } from "../api/paths";
 
 export interface Bbox {
   west: number;
@@ -15,9 +17,10 @@ export interface Viewport {
 }
 
 export interface Filters {
-  board: string | null;
+  board: BoardRef;
   types: string[];
   tags: string[];
+  people: string[];
   applyableOnly: boolean;
   q: string;
 }
@@ -31,8 +34,9 @@ interface BoardState {
   sidebarOpen: boolean;
   setViewport: (viewport: Viewport) => void;
   setFilters: (patch: Partial<Filters>) => void;
-  setBoard: (board: string | null) => void;
+  setBoard: (board: BoardRef) => void;
   toggleType: (key: string) => void;
+  togglePerson: (ownerId: string) => void;
   setCrosshair: (on: boolean) => void;
   setDraftLocation: (location: LatLng | null) => void;
   setDraftPinEl: (element: HTMLElement | null) => void;
@@ -66,11 +70,11 @@ export function savePosition(position: SavedPosition): void {
 const BOARD_IN_PATH = /^\/boards\/([^/]+)/;
 
 export function useBoardHome(): string {
-  const board = useBoardStore((s) => s.filters.board);
-  return board ? `/boards/${board}` : "/";
+  return boardPath(useBoardStore((s) => s.filters.board));
 }
 
-export function boardInPath(pathname: string): string | null {
+export function boardInPath(pathname: string): BoardRef {
+  if (pathname === "/subscriptions" || pathname.startsWith("/subscriptions/")) return SUBSCRIPTIONS;
   return BOARD_IN_PATH.exec(pathname)?.[1] ?? null;
 }
 
@@ -79,6 +83,7 @@ export function initialFilters(search: URLSearchParams, pathname: string): Filte
     board: boardInPath(pathname),
     types: search.get("types")?.split(",").filter(Boolean) ?? [],
     tags: search.get("tags")?.split(",").filter(Boolean) ?? [],
+    people: search.get("people")?.split(",").filter(Boolean) ?? [],
     applyableOnly: search.get("applyable") === "true",
     q: search.get("q") ?? "",
   };
@@ -88,6 +93,7 @@ export function filtersToSearch(filters: Filters): URLSearchParams {
   const search = new URLSearchParams();
   if (filters.types.length) search.set("types", filters.types.join(","));
   if (filters.tags.length) search.set("tags", filters.tags.join(","));
+  if (filters.people.length) search.set("people", filters.people.join(","));
   if (filters.applyableOnly) search.set("applyable", "true");
   if (filters.q) search.set("q", filters.q);
   return search;
@@ -102,7 +108,18 @@ export const useBoardStore = create<BoardState>((set) => ({
   setViewport: (viewport) => set({ viewport }),
   setFilters: (patch) => set((s) => ({ filters: { ...s.filters, ...patch } })),
   setBoard: (board) =>
-    set((s) => ({ filters: { ...s.filters, board, types: [], tags: [], applyableOnly: false } })),
+    set((s) => ({
+      filters: { ...s.filters, board, types: [], tags: [], people: [], applyableOnly: false },
+    })),
+  togglePerson: (ownerId) =>
+    set((s) => ({
+      filters: {
+        ...s.filters,
+        people: s.filters.people.includes(ownerId)
+          ? s.filters.people.filter((id) => id !== ownerId)
+          : [...s.filters.people, ownerId],
+      },
+    })),
   toggleType: (key) =>
     set((s) => ({
       filters: {

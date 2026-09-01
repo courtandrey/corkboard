@@ -7,6 +7,7 @@ import app.corkboard.jooq.tables.references.CONNECTIONS
 import app.corkboard.jooq.tables.references.USERS
 import app.corkboard.notifications.NotificationKind
 import app.corkboard.notifications.NotificationService
+import app.corkboard.scopes.ScopeService
 import java.time.Clock
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -26,6 +27,7 @@ private const val MIN_QUERY = 2
 class ConnectionService(
     private val dsl: DSLContext,
     private val notifications: NotificationService,
+    private val scopes: ScopeService,
     private val clock: Clock,
 ) {
 
@@ -41,6 +43,7 @@ class ConnectionService(
             .orderBy(CONNECTIONS.CREATED_AT.desc())
             .fetch()
 
+        val shared = viewers(userId)
         val connected = mutableListOf<ConnectionItem>()
         val incoming = mutableListOf<ConnectionItem>()
         val outgoing = mutableListOf<ConnectionItem>()
@@ -53,7 +56,7 @@ class ConnectionService(
             }
             val item = ConnectionItem(
                 id = r[CONNECTIONS.ID]!!,
-                person = person(r, state, r[CONNECTIONS.ID]),
+                person = person(r, state, r[CONNECTIONS.ID], shared),
                 since = (if (accepted) r[CONNECTIONS.ANSWERED_AT] else r[CONNECTIONS.CREATED_AT])
                     ?.toInstant() ?: r[CONNECTIONS.CREATED_AT]!!.toInstant(),
             )
@@ -91,10 +94,11 @@ class ConnectionService(
             .fetch()
 
         val standings = standingsWith(userId, rows.map { it[USERS.ID]!! })
+        val shared = viewers(userId)
         return PeopleResponse(
             rows.map { r ->
                 val found = standings[r[USERS.ID]!!]
-                person(r, found?.first ?: ConnectionState.NONE, found?.second)
+                person(r, found?.first ?: ConnectionState.NONE, found?.second, shared)
             },
         )
     }
@@ -110,7 +114,7 @@ class ConnectionService(
         } else {
             standingsWith(viewerId, listOf(userId))[userId]
         }
-        return person(row, standing?.first ?: ConnectionState.NONE, standing?.second)
+        return person(row, standing?.first ?: ConnectionState.NONE, standing?.second, viewers(viewerId))
     }
 
     @Transactional
@@ -241,7 +245,10 @@ class ConnectionService(
         dsl.select(USERS.DISPLAY_NAME).from(USERS).where(USERS.ID.eq(userId))
             .fetchOne(USERS.DISPLAY_NAME) ?: ""
 
-    private fun person(r: Record, state: ConnectionState, connectionId: UUID?) = PersonCard(
+    private fun viewers(viewerId: UUID?): Set<UUID> =
+        viewerId?.let { scopes.viewersOf(it).map { viewer -> viewer.ownerId }.toSet() } ?: emptySet()
+
+    private fun person(r: Record, state: ConnectionState, connectionId: UUID?, shared: Set<UUID>) = PersonCard(
         id = r[USERS.ID]!!,
         handle = r[USERS.HANDLE]!!,
         displayName = r[USERS.DISPLAY_NAME]!!,
@@ -249,6 +256,7 @@ class ConnectionService(
         memberSince = r[USERS.CREATED_AT]!!.toInstant(),
         state = state,
         connectionId = connectionId,
+        sharedWithThem = r[USERS.ID]!! in shared,
     )
 
     private fun mine(userId: UUID): Condition =

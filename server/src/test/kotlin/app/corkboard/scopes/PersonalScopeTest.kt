@@ -127,19 +127,26 @@ class PersonalScopeTest : ApiTestBase() {
         val id = json(pin(owner, board(owner.id), "notice", "Just for me"))["id"].asText()
 
         assertThat(json(getJson("${board(owner.id)}/$id", owner.headers))["applyable"].asBoolean())
-            .describedAs("nobody can respond, so the flag is not even offered")
+            .describedAs("the shared board's respond switch means nothing here")
             .isFalse()
 
         val refusals = listOf(
             sendJson(HttpMethod.POST, "/api/v1/events/$id/vote", null, owner.headers),
             sendJson(HttpMethod.POST, "/api/v1/events/$id/report", mapOf("reason" to "spam"), owner.headers),
-            sendJson(HttpMethod.POST, "/api/v1/events/$id/apply", mapOf("message" to "Me!"), owner.headers),
             sendJson(HttpMethod.POST, "/api/v1/events/$id/hide", null, owner.headers),
         )
 
         assertThat(refusals.map { it.statusCode.value() })
             .describedAs("those endpoints belong to the shared board, where this note is not")
             .containsOnly(404)
+
+        val stranger = registerUser("Inert Stranger")
+        assertThat(
+            sendJson(HttpMethod.POST, "/api/v1/events/$id/apply", mapOf("message" to "Me!"), stranger.headers)
+                .statusCode.value(),
+        )
+            .describedAs("a note is answerable by the people its author let in, and nobody else")
+            .isEqualTo(403)
     }
 
     @Test

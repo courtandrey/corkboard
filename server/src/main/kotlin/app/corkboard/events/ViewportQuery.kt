@@ -24,7 +24,7 @@ class ViewportQuery(
 ) {
 
     data class Params(
-        val scopeId: UUID,
+        val scopeIds: List<UUID>,
         val bounds: Bounds,
         val zoom: Int,
         val types: List<EventType>?,
@@ -151,9 +151,12 @@ class ViewportQuery(
             .or(envelope(-180.0, south, snapUp(bounds.east), north))
     }
 
+    private fun scopeCondition(scopeIds: List<UUID>): Condition =
+        if (scopeIds.size == 1) EVENTS.SCOPE_ID.eq(scopeIds.single()) else EVENTS.SCOPE_ID.`in`(scopeIds)
+
     private fun conditions(p: Params, cell: Double?): Condition {
         val now = OffsetDateTime.now(clock)
-        var cond = EVENTS.SCOPE_ID.eq(p.scopeId)
+        var cond = scopeCondition(p.scopeIds)
             .and(bboxCondition(p.bounds, cell))
             .and(
                 EVENTS.STATUS.eq(DbEventStatus.active)
