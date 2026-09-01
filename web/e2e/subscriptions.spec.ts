@@ -72,8 +72,8 @@ test("a shared board turns up in a subscriber's feed, and its notes can be answe
 
   await owner.goto("/me/connections");
   const row = owner.locator(".person-row", { hasText: "Dara Quinn" });
-  await row.getByRole("checkbox", { name: "Let them see my board" }).click();
-  await expect(row.getByRole("checkbox", { name: "Let them see my board" })).toBeChecked();
+  await row.getByRole("checkbox", { name: "Show my board" }).click();
+  await expect(row.getByRole("checkbox", { name: "Show my board" })).toBeChecked();
   await owner.screenshot({ path: `${SHOTS}/subscriptions-share.png` });
 
   await reader.reload();

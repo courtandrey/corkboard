@@ -1775,6 +1775,8 @@ body:has(.modal-scrim) .cookie-banner {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  padding-left: 10px;
+  padding-right: 25px;
 }
 
 @media (min-width: 769px) {
@@ -1870,7 +1872,7 @@ body:has(.modal-scrim) .cookie-banner {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  margin-top: 14px;
+  margin-top: 2px;
   width: 100%;
 }
 

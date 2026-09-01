@@ -198,7 +198,7 @@ export const strings = {
     accepted: "You are connected",
     dismissed: "Request dismissed",
     openChat: "Open the chat",
-    shareBoard: "Let them see my board",
+    shareBoard: "Show my board",
     shared: "They can see your board now",
     unshared: "Your board is private from them again",
   },
