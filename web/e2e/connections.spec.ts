@@ -37,6 +37,12 @@ test("asking to connect, hearing about it, and chatting once it is accepted", as
 
   const incoming = asked.locator(".connections-section", { hasText: "Asking to connect" });
   await expect(incoming).toContainText("Nora Ferry");
+
+  await incoming.locator(".person-link").click();
+  await expect(asked.locator(".modal-person")).toContainText("on the board since");
+  await asked.keyboard.press("Escape");
+  await expect(asked.locator(".modal-person")).toHaveCount(0);
+
   await incoming.getByRole("button", { name: "Accept" }).click();
 
   const connected = asked.locator(".connections-section", { hasText: "Connected" });

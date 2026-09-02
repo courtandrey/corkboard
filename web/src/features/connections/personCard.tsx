@@ -35,18 +35,20 @@ export function PersonLink({
   userId,
   displayName,
   handle,
+  stacked = false,
   className = "",
 }: {
   userId: string;
   displayName: string;
   handle?: string;
+  stacked?: boolean;
   className?: string;
 }) {
   const openPerson = useOpenPerson();
   return (
     <button
       type="button"
-      className={`link-btn person-link ${className}`.trim()}
+      className={`link-btn person-link ${stacked ? "person-link-stacked" : ""} ${className}`.trim()}
       onClick={() => openPerson(userId)}
       title={s.openCard(displayName)}
     >

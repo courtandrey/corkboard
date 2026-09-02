@@ -13,6 +13,7 @@ import { toast } from "../../ui/toast";
 import { useDebounced } from "../../ui/useDebounced";
 import { CheckIcon, CloseIcon, PlusIcon, SearchIcon } from "../../ui/icons";
 import { useFeature } from "../../ui/features";
+import { PersonLink } from "./personCard";
 import { useVerifyGate } from "../auth/verifyGate";
 
 const s = strings.connections;
@@ -32,13 +33,21 @@ function Person({
       <PixelAvatar seed={person.avatarSeed} size={26} />
       <span className="person-who">
         {onOpen ? (
-          <button type="button" className="link-btn person-name" onClick={onOpen} title={s.openChat}>
-            {person.displayName}
-          </button>
+          <>
+            <button type="button" className="link-btn person-name" onClick={onOpen} title={s.openChat}>
+              {person.displayName}
+            </button>
+            <span className="user-handle">{handleOf(person.handle)}</span>
+          </>
         ) : (
-          <span className="person-name">{person.displayName}</span>
+          <PersonLink
+            userId={person.id}
+            displayName={person.displayName}
+            handle={person.handle}
+            className="person-name"
+            stacked
+          />
         )}
-        <span className="user-handle">{handleOf(person.handle)}</span>
       </span>
       <span className="person-actions">{children}</span>
     </div>

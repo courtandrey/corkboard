@@ -1906,6 +1906,17 @@ body:has(.modal-scrim) .cookie-banner {
   margin-left: 5px;
 }
 
+.person-link-stacked {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.person-link-stacked .user-handle {
+  margin-left: 0;
+}
+
 .thread-who .person-link,
 .appl-head .person-link {
   font-weight: 600;
