@@ -1917,6 +1917,15 @@ body:has(.modal-scrim) .cookie-banner {
   margin-left: 0;
 }
 
+.person-link.user-handle {
+  color: var(--ink-faint);
+  font-weight: 400;
+}
+
+.person-link.user-handle:hover {
+  color: var(--fb-blue);
+}
+
 .thread-who .person-link,
 .appl-head .person-link {
   font-weight: 600;
@@ -2709,10 +2718,19 @@ label.inline input[type="checkbox"] {
     display: none;
   }
 
+  .board {
+    --map-control-h: 35px;
+  }
+
   .filters-toggle {
     display: inline-flex;
     left: 10px;
     top: 10px;
+    height: var(--map-control-h);
+  }
+
+  .address-field input {
+    height: var(--map-control-h);
   }
 
   .address-search {

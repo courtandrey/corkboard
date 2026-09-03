@@ -8,12 +8,11 @@ import { useBoardHome } from "../../stores/boardStore";
 import { strings } from "../../i18n/strings";
 import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
-import { handleOf } from "../../ui/handle";
 import { toast } from "../../ui/toast";
 import { useDebounced } from "../../ui/useDebounced";
 import { CheckIcon, CloseIcon, PlusIcon, SearchIcon } from "../../ui/icons";
 import { useFeature } from "../../ui/features";
-import { PersonLink } from "./personCard";
+import { HandleLink, PersonLink } from "./personCard";
 import { useVerifyGate } from "../auth/verifyGate";
 
 const s = strings.connections;
@@ -37,7 +36,7 @@ function Person({
             <button type="button" className="link-btn person-name" onClick={onOpen} title={s.openChat}>
               {person.displayName}
             </button>
-            <span className="user-handle">{handleOf(person.handle)}</span>
+            <HandleLink userId={person.id} handle={person.handle} />
           </>
         ) : (
           <PersonLink
