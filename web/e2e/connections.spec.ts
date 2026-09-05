@@ -49,7 +49,18 @@ test("asking to connect, hearing about it, and chatting once it is accepted", as
   await expect(connected.locator(".person-row")).toHaveCount(1);
   await expect(asked.locator(".connections-section", { hasText: "Asking to connect" })).toHaveCount(0);
 
-  await connected.getByRole("button", { name: "Nora Ferry" }).click();
+  for (const part of [0, 1]) {
+    await connected.locator(".person-link-part").nth(part).click();
+    await expect(asked.locator(".modal-person")).toContainText("Nora Ferry");
+    await asked.keyboard.press("Escape");
+    await expect(asked.locator(".modal-person")).toHaveCount(0);
+  }
+  await expect(
+    asked.locator(".connections-body").getByRole("checkbox"),
+    "the board is shared from a person's card, not from the list",
+  ).toHaveCount(0);
+
+  await connected.getByRole("button", { name: "Message" }).click();
   await expect(asked).toHaveURL(/\/messages\/[0-9a-f-]+$/);
   await asked.getByPlaceholder("Write a message…").fill("Good to know you.");
   await asked.getByRole("button", { name: "Send", exact: true }).click();

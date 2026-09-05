@@ -1906,6 +1906,10 @@ body:has(.modal-scrim) .cookie-banner {
   margin-left: 5px;
 }
 
+.person-who > .link-btn {
+  width: 100%;
+}
+
 .person-link-stacked {
   display: inline-flex;
   flex-direction: column;
@@ -1915,15 +1919,6 @@ body:has(.modal-scrim) .cookie-banner {
 
 .person-link-stacked .user-handle {
   margin-left: 0;
-}
-
-.person-link.user-handle {
-  color: var(--ink-faint);
-  font-weight: 400;
-}
-
-.person-link.user-handle:hover {
-  color: var(--fb-blue);
 }
 
 .thread-who .person-link,

@@ -31,20 +31,6 @@ export function useOpenPerson(): (personId: string) => void {
   return useCardStore((state) => state.open);
 }
 
-export function HandleLink({ userId, handle }: { userId: string; handle: string }) {
-  const openPerson = useOpenPerson();
-  return (
-    <button
-      type="button"
-      className="link-btn person-link user-handle"
-      onClick={() => openPerson(userId)}
-      title={s.openCard(handleOf(handle))}
-    >
-      <span aria-hidden="true">@</span><span className="person-link-part">{handle}</span>
-    </button>
-  );
-}
-
 export function PersonLink({
   userId,
   displayName,

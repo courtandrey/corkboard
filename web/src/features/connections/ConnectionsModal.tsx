@@ -10,43 +10,25 @@ import { Modal } from "../../ui/Modal";
 import { PixelAvatar } from "../../ui/PixelAvatar";
 import { toast } from "../../ui/toast";
 import { useDebounced } from "../../ui/useDebounced";
-import { CheckIcon, CloseIcon, PlusIcon, SearchIcon } from "../../ui/icons";
-import { useFeature } from "../../ui/features";
-import { HandleLink, PersonLink } from "./personCard";
+import { ChatIcon, CheckIcon, CloseIcon, PlusIcon, SearchIcon } from "../../ui/icons";
+import { PersonLink } from "./personCard";
 import { useVerifyGate } from "../auth/verifyGate";
 
 const s = strings.connections;
 const TYPING_PAUSE_MS = 300;
 
-function Person({
-  person,
-  onOpen,
-  children,
-}: {
-  person: PersonCard;
-  onOpen?: () => void;
-  children?: React.ReactNode;
-}) {
+function Person({ person, children }: { person: PersonCard; children?: React.ReactNode }) {
   return (
     <div className="person-row">
       <PixelAvatar seed={person.avatarSeed} size={26} />
       <span className="person-who">
-        {onOpen ? (
-          <>
-            <button type="button" className="link-btn person-name" onClick={onOpen} title={s.openChat}>
-              {person.displayName}
-            </button>
-            <HandleLink userId={person.id} handle={person.handle} />
-          </>
-        ) : (
-          <PersonLink
-            userId={person.id}
-            displayName={person.displayName}
-            handle={person.handle}
-            className="person-name"
-            stacked
-          />
-        )}
+        <PersonLink
+          userId={person.id}
+          displayName={person.displayName}
+          handle={person.handle}
+          className="person-name"
+          stacked
+        />
       </span>
       <span className="person-actions">{children}</span>
     </div>
@@ -60,7 +42,6 @@ export function ConnectionsModal() {
   const { data: me, isLoading } = useMe();
   const { data } = useConnections(!!me);
   const { guard } = useVerifyGate();
-  const subscriptions = useFeature("IS_SUBSCRIPTION_ENABLED");
   const [text, setText] = useState("");
   const typed = useDebounced(text, TYPING_PAUSE_MS);
   const { data: found } = usePeopleSearch(typed, !!me);
@@ -78,17 +59,6 @@ export function ConnectionsModal() {
     mutationFn: (userId: string) => api.post("/api/v1/connections", { userId }),
     onSuccess: async () => {
       toast(s.requested);
-      await refresh();
-    },
-  });
-
-  const share = useMutation({
-    mutationFn: ({ userId, on }: { userId: string; on: boolean }) =>
-      on
-        ? api.post("/api/v1/subscriptions/viewers", { userId })
-        : api.del(`/api/v1/subscriptions/viewers/${userId}`),
-    onSuccess: async (_result, { on }) => {
-      toast(on ? s.shared : s.unshared);
       await refresh();
     },
   });
@@ -209,20 +179,15 @@ export function ConnectionsModal() {
               <h3>{s.yours}</h3>
               {connected.length === 0 && <p className="empty-state">{s.empty}</p>}
               {connected.map((item: ConnectionItem) => (
-                <Person key={item.id} person={item.person} onOpen={() => void openChat(item.person)}>
-                  {subscriptions && (
-                    <label className="inline share-board">
-                      <input
-                        type="checkbox"
-                        checked={item.person.sharedWithThem}
-                        disabled={share.isPending}
-                        onChange={(event) =>
-                          share.mutate({ userId: item.person.id, on: event.target.checked })
-                        }
-                      />
-                      {s.shareBoard}
-                    </label>
-                  )}
+                <Person key={item.id} person={item.person}>
+                  <button
+                    type="button"
+                    className="ghost sm"
+                    onClick={() => void openChat(item.person)}
+                    title={s.openChat}
+                  >
+                    <ChatIcon size={14} /> {s.message}
+                  </button>
                 </Person>
               ))}
             </section>

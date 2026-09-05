@@ -22,8 +22,8 @@ test("register via UI, pin a note through the crosshair flow, sign out", async (
 
   const box = await page.locator(".map-wrap .map").boundingBox();
   await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
-  await expect(page.getByText("Drag the pin to adjust, then continue.")).toBeVisible();
-  await page.getByRole("button", { name: "Looks right — write the note" }).click();
+  await expect(page.getByText("Drag the pin to adjust")).toBeVisible();
+  await page.getByRole("button", { name: "Write the note" }).click();
 
   const title = `Crosshair-made note ${Date.now()}`;
   await page.locator(".modal-card .type-pick").getByText("Free Stuff").click();

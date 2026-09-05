@@ -74,7 +74,7 @@ async function checkEdges(page: Page, label: string) {
     expect(box.left).toBeGreaterThanOrEqual(map.x - 1);
     expect(box.right).toBeLessThanOrEqual(map.x + map.width + 1);
 
-    await expect(page.getByRole("button", { name: "Looks right — write the note" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Write the note" })).toBeVisible();
     await page.screenshot({ path: `${SHOTS}/pin-callout-${label}-${edge}.png` });
   }
 }

@@ -12,8 +12,8 @@ async function pinHere(page: import("@playwright/test").Page, title: string, typ
   await expect(page.getByText("Click the map where your note belongs.")).toBeVisible();
   const box = await page.locator(".map-wrap .map").boundingBox();
   await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
-  await expect(page.getByText("Drag the pin to adjust, then continue.")).toBeVisible();
-  await page.getByRole("button", { name: "Looks right — write the note" }).click();
+  await expect(page.getByText("Drag the pin to adjust")).toBeVisible();
+  await page.getByRole("button", { name: "Write the note" }).click();
   await page.locator(".modal-card .type-pick").getByText(type).click();
   await page.getByLabel("Title").fill(title);
   await page.getByLabel("The note itself").fill("Written on my own board by the regression suite.");
