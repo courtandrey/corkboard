@@ -9,7 +9,6 @@ import { strings } from "../../i18n/strings";
 import { boardPath } from "../../api/paths";
 import { boardInPath } from "../../stores/boardStore";
 import { Modal } from "../../ui/Modal";
-import { PixelAvatar } from "../../ui/PixelAvatar";
 import { toast } from "../../ui/toast";
 import { useNoteFontReady } from "../../ui/noteFont";
 import { ChatIcon, ClockIcon, FlagIcon, HideIcon, SendIcon, ShowIcon, TrashIcon } from "../../ui/icons";
@@ -178,11 +177,11 @@ export function EventDrawer() {
             </h2>
             <div className="ev-meta">
               <span className="who">
-                <PixelAvatar seed={event.author.avatarSeed} size={20} />
                 <PersonLink
                   userId={event.author.id}
                   displayName={strings.event.postedBy(event.author.displayName)}
                   handle={event.author.handle}
+                  avatarSeed={event.author.avatarSeed}
                 />
               </span>
               <span className="dot">·</span>

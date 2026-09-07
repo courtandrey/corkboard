@@ -9,7 +9,6 @@ import { useBoardHome } from "../../stores/boardStore";
 import { strings } from "../../i18n/strings";
 import { Modal } from "../../ui/Modal";
 import { PersonLink } from "../connections/personCard";
-import { PixelAvatar } from "../../ui/PixelAvatar";
 import { toast } from "../../ui/toast";
 import { useIsPhone } from "../../ui/useMediaQuery";
 import { CheckIcon, ChevronDownIcon, RenewIcon, TrashIcon } from "../../ui/icons";
@@ -34,12 +33,13 @@ function ApplicationRow({ application }: { application: ApplicationItem }) {
   return (
     <div className="pin-application">
       <div className="appl-head">
-        {application.applicant && <PixelAvatar seed={application.applicant.avatarSeed} size={18} />}
         {application.applicant && (
           <PersonLink
             userId={application.applicant.id}
             displayName={application.applicant.displayName}
             handle={application.applicant.handle}
+            avatarSeed={application.applicant.avatarSeed}
+            avatarSize={18}
           />
         )}
         <span className="meta-row" style={{ margin: 0, fontWeight: 400 }}>

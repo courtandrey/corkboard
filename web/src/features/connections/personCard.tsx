@@ -35,12 +35,16 @@ export function PersonLink({
   userId,
   displayName,
   handle,
+  avatarSeed,
+  avatarSize = 20,
   stacked = false,
   className = "",
 }: {
   userId: string;
   displayName: string;
   handle?: string;
+  avatarSeed?: string;
+  avatarSize?: number;
   stacked?: boolean;
   className?: string;
 }) {
@@ -52,12 +56,15 @@ export function PersonLink({
       onClick={() => openPerson(userId)}
       title={s.openCard(displayName)}
     >
-      <span className="person-link-part">{displayName}</span>
-      {handle && (
-        <span className="user-handle">
-          <span aria-hidden="true">@</span><span className="person-link-part">{handle}</span>
-        </span>
-      )}
+      {avatarSeed && <PixelAvatar seed={avatarSeed} size={avatarSize} />}
+      <span className="person-link-text">
+        <span className="person-link-part">{displayName}</span>
+        {handle && (
+          <span className="user-handle">
+            <span aria-hidden="true">@</span><span className="person-link-part">{handle}</span>
+          </span>
+        )}
+      </span>
     </button>
   );
 }

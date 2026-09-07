@@ -108,11 +108,11 @@ function Thread({ conversation, onBack }: { conversation: ConversationSummary; o
           </button>
         )}
         <span className="thread-who">
-          <PixelAvatar seed={conversation.otherParty.avatarSeed} size={20} />
           <PersonLink
             userId={conversation.otherParty.id}
             displayName={conversation.otherParty.displayName}
             handle={conversation.otherParty.handle}
+            avatarSeed={conversation.otherParty.avatarSeed}
           />
         </span>
       </div>

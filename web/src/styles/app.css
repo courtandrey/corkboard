@@ -1887,10 +1887,17 @@ body:has(.modal-scrim) .cookie-banner {
 }
 
 .person-link {
-  display: inline;
-  gap: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-weight: inherit;
   color: inherit;
+  vertical-align: middle;
+}
+
+.person-link-text {
+  display: inline;
+  min-width: 0;
 }
 
 .person-link:hover {
@@ -1911,7 +1918,11 @@ body:has(.modal-scrim) .cookie-banner {
 }
 
 .person-link-stacked {
-  display: inline-flex;
+  gap: 9px;
+}
+
+.person-link-stacked .person-link-text {
+  display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 1px;

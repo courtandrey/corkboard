@@ -7,7 +7,6 @@ import { useConnections, useMe, usePeopleSearch } from "../../api/hooks";
 import { useBoardHome } from "../../stores/boardStore";
 import { strings } from "../../i18n/strings";
 import { Modal } from "../../ui/Modal";
-import { PixelAvatar } from "../../ui/PixelAvatar";
 import { toast } from "../../ui/toast";
 import { useDebounced } from "../../ui/useDebounced";
 import { ChatIcon, CheckIcon, CloseIcon, PlusIcon, SearchIcon } from "../../ui/icons";
@@ -20,12 +19,13 @@ const TYPING_PAUSE_MS = 300;
 function Person({ person, children }: { person: PersonCard; children?: React.ReactNode }) {
   return (
     <div className="person-row">
-      <PixelAvatar seed={person.avatarSeed} size={26} />
       <span className="person-who">
         <PersonLink
           userId={person.id}
           displayName={person.displayName}
           handle={person.handle}
+          avatarSeed={person.avatarSeed}
+          avatarSize={26}
           className="person-name"
           stacked
         />
