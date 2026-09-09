@@ -2,6 +2,7 @@
 
 -include .env
 API_PORT ?= 8080
+NOTIFICATIONS_TOPIC ?= corkboard.notifications.v1
 PROD := docker compose -f compose.prod.yml
 
 up:
@@ -33,7 +34,7 @@ topics:
 
 dlt:
 	docker compose exec kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 \
-		--topic corkboard.emails.v1.DLT --from-beginning --timeout-ms 5000
+		--topic $(NOTIFICATIONS_TOPIC).DLT --from-beginning --timeout-ms 5000
 
 deploy:
 	./deploy/deploy.sh
