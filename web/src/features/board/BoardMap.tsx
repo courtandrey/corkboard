@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import type { GeoJSONSource, MapMouseEvent } from "maplibre-gl";
 import type { Feature, FeatureCollection, Point } from "geojson";
@@ -46,11 +46,38 @@ function reducedMotion(): boolean {
 }
 
 const FLY_TO_ME = { zoom: 14, speed: 2.8, curve: 1.3 } as const;
+const LOCATE_TIMEOUTS_MS = [5_000, 9_000];
+const LOCATE_RETRY_PAUSE_MS = 1_000;
+const PERMISSION_DENIED = 1;
 const STREET_DETAIL_ZOOM = 16;
 const STREET_NAME_SOURCE_LAYER = "transportation_name";
 
 const FLY_TO_PLACE = { zoom: STREET_DETAIL_ZOOM, speed: 2.4, curve: 1.3, maxDuration: 2200 } as const;
 const FIT_PLACE = { padding: 64, maxZoom: STREET_DETAIL_ZOOM, duration: 900 } as const;
+
+function currentPosition(timeout: number): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, { timeout, maximumAge: 60_000 });
+  });
+}
+
+// A cold provider often misses the first window and answers the next one, which is why
+// asking twice works where asking once did not. A refusal is a final answer and is
+// reported at once; a timeout waits and tries again on a longer window before it counts.
+async function locatePatiently(): Promise<GeolocationPosition> {
+  if (!navigator.geolocation) throw new Error("geolocation unavailable");
+  let last: unknown;
+  for (const [attempt, timeout] of LOCATE_TIMEOUTS_MS.entries()) {
+    if (attempt > 0) await new Promise((done) => setTimeout(done, LOCATE_RETRY_PAUSE_MS));
+    try {
+      return await currentPosition(timeout);
+    } catch (failure) {
+      if ((failure as GeolocationPositionError).code === PERMISSION_DENIED) throw failure;
+      last = failure;
+    }
+  }
+  throw last;
+}
 
 function wrapLng(value: number): number {
   return ((((value + 180) % 360) + 360) % 360) - 180;
@@ -210,6 +237,7 @@ export function BoardMap() {
   const easedToRef = useRef<string | null>(null);
   const flightRef = useRef<[number, number] | null>(null);
   const locatingRef = useRef(false);
+  const [locating, setLocating] = useState(false);
 
   const { data: meta } = useMeta();
   const viewport = useBoardStore((s) => s.viewport);
@@ -607,22 +635,23 @@ export function BoardMap() {
     if (locatingRef.current) return;
 
     locatingRef.current = true;
-    navigator.geolocation?.getCurrentPosition(
-      (pos) => {
-        locatingRef.current = false;
+    setLocating(true);
+    void locatePatiently()
+      .then((pos) => {
+        const settled = mapRef.current;
+        if (!settled) return;
         const center: [number, number] = [pos.coords.longitude, pos.coords.latitude];
         flightRef.current = center;
-        map.once("moveend", () => {
+        settled.once("moveend", () => {
           flightRef.current = null;
         });
-        map.flyTo({ center, ...FLY_TO_ME });
-      },
-      () => {
+        settled.flyTo({ center, ...FLY_TO_ME });
+      })
+      .catch(() => toast(strings.board.locateFailed, "info"))
+      .finally(() => {
         locatingRef.current = false;
-        toast(strings.board.locateFailed, "info");
-      },
-      { timeout: 5000, maximumAge: 60_000 },
-    );
+        setLocating(false);
+      });
   }
 
   return (
@@ -638,6 +667,7 @@ export function BoardMap() {
         type="button"
         className="locate-btn"
         onClick={locateMe}
+        aria-busy={locating}
         title={strings.board.useMyLocation}
         aria-label={strings.board.useMyLocation}
       >

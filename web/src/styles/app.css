@@ -1013,6 +1013,17 @@ textarea:focus {
   z-index: 5;
 }
 
+.locate-btn[aria-busy="true"] {
+  cursor: progress;
+  animation: locate-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes locate-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
 .pin-fab {
   display: none;
   position: absolute;
@@ -2609,7 +2620,8 @@ label.inline input[type="checkbox"] {
   .toast-slip,
   .bell-panel,
   .stamp,
-  .draft-pin {
+  .draft-pin,
+  .locate-btn[aria-busy="true"] {
     animation: none;
   }
 
