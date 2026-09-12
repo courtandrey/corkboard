@@ -154,3 +154,45 @@ test("the feed narrows to one person, and the feature switch closes it", async (
   await otherCtx.close();
   await readerCtx.close();
 });
+
+test("a note answered on a personal board is linked on that board, not the shared one", async ({ browser }) => {
+  const ownerCtx = await browser.newContext();
+  const owner = await ownerCtx.newPage();
+  await owner.goto("/");
+  await registerViaApi(owner, "Iva Bell");
+  const ownerId = await myId(owner);
+  const stamp = Date.now();
+  const note = await personalNote(owner, ownerId, `Mend the fence ${stamp}`, -73.981, 40.731);
+
+  const readerCtx = await browser.newContext();
+  const reader = await readerCtx.newPage();
+  await reader.goto("/");
+  await registerViaApi(reader, "Rue Amado");
+  const readerId = await myId(reader);
+  await connect(owner, readerId, reader);
+  expect(
+    (await owner.request.post("/api/v1/subscriptions/viewers", { data: { userId: readerId } })).status(),
+  ).toBe(204);
+
+  await reader.goto(`/subscriptions/events/${note.id}`);
+  await reader.getByRole("button", { name: "Respond to this note" }).click();
+  await reader
+    .getByPlaceholder("Write a short note back — who you are, why you’re writing…")
+    .fill("I have a spare plank.");
+  await reader.getByRole("button", { name: "Send response" }).click();
+  await expect(reader.locator(".ev-foot")).toContainText("Your note is on its way");
+
+  await owner.goto("/messages");
+  await owner.locator(".conv-row", { hasText: "Rue Amado" }).click();
+  await owner.locator(".bubble-note").click();
+
+  await expect(owner, "the link carries the board the note lives on").toHaveURL(
+    new RegExp(`/boards/${ownerId}/events/${note.id}$`),
+  );
+  await expect(owner.locator(".modal-card .ev-title")).toContainText(`Mend the fence ${stamp}`);
+  await expect(owner.locator(".error-note")).toHaveCount(0);
+  await expect(owner.locator(".scope-select")).toHaveValue(ownerId);
+
+  await ownerCtx.close();
+  await readerCtx.close();
+});

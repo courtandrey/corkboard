@@ -100,6 +100,7 @@ data class TagRef(
 
 data class EventSnippet(
     val id: UUID,
+    val boardOwnerId: UUID?,
     val title: String,
     val status: EventStatus,
 )

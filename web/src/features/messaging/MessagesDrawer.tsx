@@ -125,7 +125,7 @@ function Thread({ conversation, onBack }: { conversation: ConversationSummary; o
         {messages.map((m) => (
           <div key={m.id} className={`bubble${m.senderId === me?.id ? " mine" : ""}`}>
             {m.event && (
-              <Link className="bubble-note" to={notePath(null, m.event.id)}>
+              <Link className="bubble-note" to={notePath(m.event.boardOwnerId ?? null, m.event.id)}>
                 {s.aboutNote} {m.event.title}
               </Link>
             )}

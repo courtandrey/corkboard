@@ -11,6 +11,7 @@ import app.corkboard.jooq.tables.references.APPLICATIONS
 import app.corkboard.jooq.tables.references.CONVERSATIONS
 import app.corkboard.jooq.tables.references.EVENTS
 import app.corkboard.jooq.tables.references.MESSAGES
+import app.corkboard.jooq.tables.references.SCOPES
 import app.corkboard.jooq.tables.references.USERS
 import app.corkboard.messaging.ApplicationStatus
 import app.corkboard.messaging.ConversationService
@@ -50,7 +51,6 @@ class ApplicationService(
         val authorId = event[EVENTS.AUTHOR_ID]!!
         val shared = scopes.isGlobal(event[EVENTS.SCOPE_ID]!!)
         if (!shared) {
-            // a note on somebody's own board is answerable by the people they let in — nobody else
             if (!scopes.subscriptionsEnabled()) throw ApiException(HttpStatus.NOT_FOUND, ProblemCode.NOT_FOUND)
             scopes.requireBoardReadable(authorId, applicantId)
         }
@@ -81,6 +81,7 @@ class ApplicationService(
         val conversationId = conversations.between(authorId, applicantId)
         val snippet = EventSnippet(
             id = eventId,
+            boardOwnerId = if (shared) null else authorId,
             title = event[EVENTS.TITLE]!!,
             status = EventStatus.fromDb(event[EVENTS.STATUS]!!.literal),
         )
@@ -177,7 +178,7 @@ class ApplicationService(
 
         val rows = dsl.select(
             APPLICATIONS.ID, APPLICATIONS.STATUS, APPLICATIONS.CREATED_AT,
-            EVENTS.ID, EVENTS.TITLE, EVENTS.STATUS,
+            EVENTS.ID, EVENTS.TITLE, EVENTS.STATUS, SCOPES.OWNER_ID,
             CONVERSATIONS.ID,
             applicantUser.ID, applicantUser.DISPLAY_NAME, applicantUser.HANDLE, applicantUser.AVATAR_SEED,
             applicantUser.CREATED_AT,
@@ -185,6 +186,7 @@ class ApplicationService(
         )
             .from(APPLICATIONS)
             .join(EVENTS).on(EVENTS.ID.eq(APPLICATIONS.EVENT_ID))
+            .join(SCOPES).on(SCOPES.ID.eq(EVENTS.SCOPE_ID))
             .join(CONVERSATIONS).on(pairIs(EVENTS.AUTHOR_ID, APPLICATIONS.APPLICANT_ID))
             .join(applicantUser).on(applicantUser.ID.eq(APPLICATIONS.APPLICANT_ID))
             .where(roleCond)
@@ -197,6 +199,7 @@ class ApplicationService(
             ApplicationGroup(
                 event = EventSnippet(
                     id = first[EVENTS.ID]!!,
+                    boardOwnerId = first[SCOPES.OWNER_ID],
                     title = first[EVENTS.TITLE]!!,
                     status = EventStatus.fromDb(first[EVENTS.STATUS]!!.literal),
                 ),

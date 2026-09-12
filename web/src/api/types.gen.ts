@@ -969,6 +969,8 @@ export interface components {
         EventSnippet: {
             /** Format: uuid */
             id: string;
+            /** Format: uuid */
+            boardOwnerId?: string;
             title: string;
             /** @enum {string} */
             status: "active" | "resolved" | "expired" | "removed" | "taken_down" | "under_review";

@@ -11,6 +11,7 @@ import app.corkboard.jooq.tables.references.APPLICATIONS
 import app.corkboard.jooq.tables.references.CONVERSATIONS
 import app.corkboard.jooq.tables.references.EVENTS
 import app.corkboard.jooq.tables.references.MESSAGES
+import app.corkboard.jooq.tables.references.SCOPES
 import app.corkboard.jooq.tables.references.USERS
 import app.corkboard.notifications.NotificationKind
 import java.time.Clock
@@ -148,9 +149,10 @@ class ConversationService(
         Cursors.decode(cursor ?: "")?.let { (at, id) ->
             cond = cond.and(DSL.row(MESSAGES.CREATED_AT, MESSAGES.ID).lessThan(at, id))
         }
-        val rows = dsl.select(MESSAGES.asterisk(), EVENTS.ID, EVENTS.TITLE, EVENTS.STATUS)
+        val rows = dsl.select(MESSAGES.asterisk(), EVENTS.ID, EVENTS.TITLE, EVENTS.STATUS, SCOPES.OWNER_ID)
             .from(MESSAGES)
             .leftJoin(EVENTS).on(EVENTS.ID.eq(MESSAGES.EVENT_ID))
+            .leftJoin(SCOPES).on(SCOPES.ID.eq(EVENTS.SCOPE_ID))
             .where(cond)
             .orderBy(MESSAGES.CREATED_AT.desc(), MESSAGES.ID.desc())
             .limit(limit + 1)
@@ -236,6 +238,7 @@ class ConversationService(
         record[EVENTS.ID]?.let {
             EventSnippet(
                 id = it,
+                boardOwnerId = record[SCOPES.OWNER_ID],
                 title = record[EVENTS.TITLE]!!,
                 status = EventStatus.fromDb(record[EVENTS.STATUS]!!.literal),
             )

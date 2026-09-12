@@ -188,7 +188,7 @@ export function usePeopleSearch(q: string, enabled: boolean) {
 
 export function useEventDetail(id: string | undefined, boardOwner: string | null = null) {
   return useQuery({
-    queryKey: ["event", id],
+    queryKey: ["event", id, boardOwner],
     enabled: !!id,
     queryFn: () => api.get<EventDetail>(boardEvent(boardOwner, id!)),
   });
