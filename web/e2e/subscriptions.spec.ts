@@ -145,7 +145,7 @@ test("the feed narrows to one person, and the feature switch closes it", async (
   try {
     await reader.reload();
     await expect(reader, "a switched-off feed hands the reader back").toHaveURL(/\/$|\/\?/);
-    await expect(reader.locator(".scope-select")).not.toContainText("Subscriptions");
+    await expect(reader.locator(".scope-select")).not.toContainText("Shared");
   } finally {
     await setFeatureFlag(FLAG, true);
   }

@@ -54,9 +54,9 @@ export const strings = {
   },
   scope: {
     switcherLabel: "Which board",
-    global: "The board",
+    global: "World",
     personal: "Yours",
-    subscriptions: "Subscriptions",
+    subscriptions: "Shared",
     personalHint: "Only you and the people you let see your board.",
     sharedWithYou: "Shared with you from someone’s own board.",
     emptyPersonal: "Your board is empty. Anything you pin here is yours alone.",

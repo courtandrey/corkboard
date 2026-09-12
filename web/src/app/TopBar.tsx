@@ -54,16 +54,19 @@ export function TopBar() {
         <span>{after}</span>
       </Link>
       {me && personalBoards && (
-        <select
-          className="scope-select"
-          aria-label={strings.scope.switcherLabel}
-          value={board ?? ""}
-          onChange={(event) => navigate(boardPath(event.target.value || null))}
-        >
-          <option value="">{strings.scope.global}</option>
-          <option value={me.id}>{strings.scope.personal}</option>
-          {subscriptions && <option value={SUBSCRIPTIONS}>{strings.scope.subscriptions}</option>}
-        </select>
+        <>
+          <span className="bar-rule" aria-hidden="true" />
+          <select
+            className="scope-select"
+            aria-label={strings.scope.switcherLabel}
+            value={board ?? ""}
+            onChange={(event) => navigate(boardPath(event.target.value || null))}
+          >
+            <option value="">{strings.scope.global}</option>
+            <option value={me.id}>{strings.scope.personal}</option>
+            {subscriptions && <option value={SUBSCRIPTIONS}>{strings.scope.subscriptions}</option>}
+          </select>
+        </>
       )}
       <span className="spacer" />
       {me ? (

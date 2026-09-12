@@ -7,7 +7,6 @@
   --fb-border: #bdc7d8;
   --page-bg: #edeff4;
 
-  /* materials */
   --cork: #c89f6e;
   --cork-dark: #b98d58;
   --paper: #fdfbf2;
@@ -23,8 +22,8 @@
   --radius: 3px;
   --radius-md: 5px;
   --topbar-h: 54px;
+  --topbar-control-h: 34px;
 
-  /* elevation */
   --shadow-paper: 1px 2px 4px rgba(60, 45, 20, 0.25);
   --shadow-1: 0 1px 2px rgba(60, 45, 20, 0.16), 0 1px 1px rgba(60, 45, 20, 0.1);
   --shadow-2: 0 4px 12px rgba(46, 32, 14, 0.18), 0 1px 3px rgba(46, 32, 14, 0.12);
