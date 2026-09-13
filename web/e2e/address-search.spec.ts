@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { HERALD_SQUARE, SHOTS, gotoBoard, settled, stubGeocoder } from "./helpers";
+import { HERALD_SQUARE, SHOTS, gotoBoard, myUserId, registerViaApi, settled, stubGeocoder } from "./helpers";
 
 const HERALD = HERALD_SQUARE;
 
@@ -87,4 +87,26 @@ test("deleting the query takes the list with it, without waiting out the typing 
     await field.fill(left);
     await expect(matches, `"${left}" is too short to be a search`).toHaveCount(0, { timeout: 400 });
   }
+});
+
+test("phone: the board carries no status scrap to crowd the address row", async ({ page }) => {
+  await stubGeocoder(page);
+  await page.setViewportSize({ width: 390, height: 780 });
+  await page.goto("/");
+  await registerViaApi(page, "Nella Prior");
+  await gotoBoard(page);
+
+  const me = await myUserId(page);
+
+  for (const board of ["", me, "subscriptions"]) {
+    if (board) await page.selectOption(".scope-select", board);
+    await expect(page.locator(".address-search")).toBeVisible();
+    await expect(
+      page.locator(".status-line"),
+      `the scrap overlapped the filters and address row on phone (board "${board}")`,
+    ).toBeHidden();
+  }
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect(page.locator(".status-line"), "the desktop board keeps it").toBeVisible();
 });

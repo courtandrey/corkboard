@@ -153,6 +153,7 @@ export function EventDrawer() {
             {event.scope === "global" && (
               <VoteControl
                 event={event}
+                board={board}
                 interactive={!!me && !event.viewerState.isAuthor}
                 hint={
                   !me ? eng.voteSignedOut : event.viewerState.isAuthor ? eng.voteOwn : undefined

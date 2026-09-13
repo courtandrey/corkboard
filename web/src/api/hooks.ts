@@ -1,6 +1,7 @@
 import { keepPreviousData, useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, query } from "./client";
 import { boardEvent, boardEvents } from "./paths";
+import type { BoardRef } from "./paths";
 import type {
   AuthResponse,
   ConversationListResponse,
@@ -186,9 +187,11 @@ export function usePeopleSearch(q: string, enabled: boolean) {
   });
 }
 
-export function useEventDetail(id: string | undefined, boardOwner: string | null = null) {
+export const eventKey = (id: string, boardOwner: BoardRef = null) => ["event", id, boardOwner];
+
+export function useEventDetail(id: string | undefined, boardOwner: BoardRef = null) {
   return useQuery({
-    queryKey: ["event", id, boardOwner],
+    queryKey: eventKey(id!, boardOwner),
     enabled: !!id,
     queryFn: () => api.get<EventDetail>(boardEvent(boardOwner, id!)),
   });

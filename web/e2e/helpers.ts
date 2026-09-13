@@ -89,7 +89,7 @@ export async function createEventViaApi(
 
 export async function gotoBoard(page: Page): Promise<void> {
   await page.goto("/");
-  await expect(page.locator(".status-line")).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator(".status-line")).toBeAttached({ timeout: 20_000 });
 }
 
 export const HERALD_SQUARE = { lng: -73.9877, lat: 40.7505 };

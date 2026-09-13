@@ -2815,12 +2815,7 @@ label.inline input[type="checkbox"] {
   }
 
   .status-line {
-    left: auto;
-    right: 10px;
-    top: 10px;
-    bottom: auto;
-    max-width: 56%;
-    font-size: 12px;
+    display: none;
   }
 
   .locate-btn {

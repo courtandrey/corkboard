@@ -1,23 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
+import { eventKey } from "../../api/hooks";
+import type { BoardRef } from "../../api/paths";
 import type { EventDetail, VoteResponse } from "../../api/client";
 import { strings } from "../../i18n/strings";
 import { UpvoteIcon } from "../../ui/icons";
 
 export function VoteControl({
   event,
+  board,
   interactive,
   hint,
   intercept,
 }: {
   event: EventDetail;
+  board: BoardRef;
   interactive: boolean;
   hint?: string;
   intercept?: () => boolean;
 }) {
   const queryClient = useQueryClient();
-  const key = ["event", event.id];
+  const key = eventKey(event.id, board);
   const [bump, setBump] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
