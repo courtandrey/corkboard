@@ -177,6 +177,9 @@ button.sm {
 }
 
 .icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 6px;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
@@ -298,6 +301,15 @@ textarea:focus {
   flex: 1;
 }
 
+.topbar .about-btn {
+  flex: none;
+  margin-left: -2px;
+}
+
+.topbar .about-btn:hover {
+  text-decoration: none;
+}
+
 .topbar .bar-rule {
   width: 1px;
   height: 20px;
@@ -336,6 +348,55 @@ textarea:focus {
 .topbar .scope-select:hover {
   background-color: rgba(255, 255, 255, 0.16);
   border-color: transparent;
+}
+
+.about-lead {
+  margin: 0 0 14px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.about-points {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--paper-edge);
+}
+
+.about-points li {
+  position: relative;
+  padding: 9px 0 9px 18px;
+  border-bottom: 1px solid var(--paper-edge);
+}
+
+.about-points li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 16px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fb-blue);
+  opacity: 0.55;
+}
+
+.about-support {
+  margin-top: 16px;
+}
+
+.about-support h3 {
+  margin: 0 0 5px;
+  font-size: 13px;
+}
+
+.about-support p {
+  margin: 0 0 7px;
+  color: var(--ink-soft);
+}
+
+.about-support a {
+  font-weight: 600;
 }
 
 .scope-select option {
@@ -480,21 +541,29 @@ textarea:focus {
   color: var(--stamp-red);
 }
 
-.modal-scrim:has(.modal-account) {
+.modal-scrim:has(.modal-account),
+.modal-scrim:has(.modal-about) {
   overflow-y: auto;
   align-items: flex-start;
 }
 
-.modal-account {
+.modal-account,
+.modal-about {
   margin-block: auto;
 }
 
-.modal-account .modal-card {
+.modal-account .modal-card,
+.modal-about .modal-card {
   max-height: none;
 }
 
-.modal-account .modal-body {
+.modal-account .modal-body,
+.modal-about .modal-body {
   overflow: visible;
+}
+
+.modal-about .modal-body {
+  padding-bottom: 18px;
 }
 
 @media (min-width: 769px) {

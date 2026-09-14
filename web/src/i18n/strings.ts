@@ -242,6 +242,16 @@ export const strings = {
     edit: "Edit note",
     notFound: "This note isn’t on the board anymore.",
   },
+  about: {
+    open: "About the board",
+    title: "About the board",
+    lead: "A noticeboard for places you know and places you want to explore. Pin a note to the spot it belongs to, and the people nearby find it by wandering the map.",
+    boards: "There are three boards: the shared one everybody sees, your own, and the boards people have shown you.",
+    reports: "Anything can be reported. Enough reports take a note off the board until one of the keepers has looked at it.",
+    supportTitle: "Need a hand?",
+    supportBody: "Something broken, a note that should not be there, or a question we have not answered here, write to us and we will come back to you.",
+    supportEmail: "support@mail.lamppostal.com",
+  },
   consent: {
     title: "Cookies on the board.",
     body: "We only need one to keep you signed in. Anything beyond that is up to you.",

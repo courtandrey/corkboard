@@ -12,16 +12,7 @@ import { usePermissions } from "../ui/permissions";
 import { PixelAvatar } from "../ui/PixelAvatar";
 import { pushpinDataUri } from "../ui/pushpin";
 import { useDismiss } from "../ui/useDismiss";
-import {
-  ChatIcon,
-  ChevronDownIcon,
-  FlagIcon,
-  PinIcon,
-  SignOutIcon,
-  SlidersIcon,
-  UserIcon,
-  UsersIcon,
-} from "../ui/icons";
+import { ChatIcon, ChevronDownIcon, FlagIcon, HelpIcon, PinIcon, SignOutIcon, SlidersIcon, UserIcon, UsersIcon } from "../ui/icons";
 
 const logoPin = pushpinDataUri("#C94C4C");
 
@@ -52,6 +43,9 @@ export function TopBar() {
         <span>{before}</span>
         <img className="logo-pin" src={logoPin} alt="o" />
         <span>{after}</span>
+      </Link>
+      <Link to="/about" className="icon-btn about-btn" aria-label={strings.about.open} title={strings.about.open}>
+        <HelpIcon size={17} />
       </Link>
       {me && personalBoards && (
         <>

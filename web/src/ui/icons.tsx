@@ -175,6 +175,14 @@ export const SlidersIcon = (p: IconProps) => (
   </Base>
 );
 
+export const HelpIcon = (p: IconProps) => (
+  <Base {...p}>
+    <circle cx="12" cy="12" r="9.25" />
+    <path d="M9.2 9.3a2.9 2.9 0 0 1 5.65.7c0 1.9-2.85 2.5-2.85 4" />
+    <path d="M12 17.4h.01" />
+  </Base>
+);
+
 export const ChevronDownIcon = (p: IconProps) => (
   <Base {...p}>
     <path d="M6 9.5l6 6 6-6" />

@@ -10,6 +10,7 @@ import { AuthDrawer } from "./features/auth/AuthDrawer";
 import { FinishSignup } from "./features/auth/FinishSignup";
 import { VerifyBanner } from "./features/auth/VerifyBanner";
 import { VerifyGate } from "./features/auth/verifyGate";
+import { AboutModal } from "./features/about/AboutModal";
 import { AccountModal } from "./features/auth/AccountModal";
 import { CookieBanner } from "./features/consent/CookieBanner";
 import { AdminPanel } from "./features/admin/AdminPanel";
@@ -87,6 +88,7 @@ export function App() {
           <Route path="/new" element={<CreateEventFlow />} />
           <Route path="/boards/:ownerId/new" element={<CreateEventFlow />} />
           <Route path="/me/pins" element={<MyPins />} />
+          <Route path="/about" element={<AboutModal />} />
           <Route path="/me/account" element={<AccountModal />} />
           <Route path="/me/connections" element={<ConnectionsModal />} />
           <Route path="/admin/reports" element={<AdminPanel tab="reports" />} />

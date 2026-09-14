@@ -17,6 +17,7 @@ class SpaDeepLinkTest : ApiTestBase() {
             "/new",
             "/login",
             "/finish-signup",
+            "/about",
             "/events/$note",
             "/boards/$someone",
             "/boards/$someone/new",
